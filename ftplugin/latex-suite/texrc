@@ -95,13 +95,13 @@ TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
 " Set to 1 to supply the value of g:Tex_OutputDir to the -output-directory 
 " parameter. The string g:Tex_OutputDir is used to determine the directory 
 " in which to view the built object by Tex_ViewLaTeX(), as well as the 
-" location of auxiliary file for BibTexFlavor etc.  in 
+" location of auxiliary file for BibTexFlavor etc. in 
 " Tex_CompileMultipleTimes().
-let g:Tex_UseOutputDir = 1
-let g:Tex_OutputDir = 'bld' "relative to dir of main tex file
+let g:Tex_UseOutputDir = 0
+let g:Tex_OutputDir = '' "relative to dir of main tex file
 
-TexLet g:Tex_CompileRule_dvi = 'latex -interaction=nonstopmode 
--file-line-error-style "$*"'
+TexLet g:Tex_CompileRule_dvi =
+			\'latex -interaction=nonstopmode -file-line-error-style "$*"'
 TexLet g:Tex_EscapeChars = '{}\'
 
 TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
@@ -111,11 +111,18 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 "       possible.
 " Synctex is now supported by pdflatex.
 if g:Tex_UseOutputDir
-	TexLet g:Tex_CompileRule_pdf = 'pdflatex -interaction=nonstopmode 
-	-file-line-error-style -output-directory='.g:Tex_OutputDir.' "$*"'
+	TexLet g:Tex_CompileRule_pdf =
+				\'pdflatex '.
+				\'-interaction=nonstopmode '.
+				\'-file-line-error-style '.
+				\'-output-directory='.g:Tex_OutputDir.' '
+				\'"$*"'
 else
-	TexLet g:Tex_CompileRule_pdf = 'pdflatex -interaction=nonstopmode 
-	-file-line-error-style "$*"'
+	TexLet g:Tex_CompileRule_pdf =
+				\'pdflatex '.
+				\'-interaction=nonstopmode '.
+				\'-file-line-error-style '.
+				\'"$*"'
 endif
 
 " TexLet g:Tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
@@ -300,7 +307,8 @@ TexLet g:Tex_MainFileExpression = ''
 " place-holders. You can either completely disable placeholders (not
 " recommended) and/or you can change the place holder characters.
 
-TexLet g:Imap_UsePlaceHolders = 1 TexLet g:Imap_PlaceHolderStart = '<+'
+TexLet g:Imap_UsePlaceHolders = 1
+TexLet g:Imap_PlaceHolderStart = '<+'
 TexLet g:Imap_PlaceHolderEnd = '+>'
 
 " This option when set to 1 makes <C-J> in insert mode delete
@@ -487,8 +495,8 @@ TexLet g:Tex_SectionMenus = 1
 " <F5> key unmapped
 
 TexLet g:Tex_PromptedEnvironments =
-			\ 
-'equation*,align*,equation,align,enumerate,itemize,displaymath,figure,table'
+			\'equation*,align*,equation,align,enumerate,itemize,'.
+			\'displaymath,figure,table'
 
 " Another quick way of inserting environments is to press one of the shifted
 " function keys from <F1> through <F4>.
@@ -500,7 +508,7 @@ TexLet g:Tex_PromptedEnvironments =
 " silently ignored.
 " The number of items in this list decides how many shifted function keys 
 " are mapped.
-TexLet g:Tex_HotKeyMappings = \ 'equation*,align*,displaymath,enumerate'
+TexLet g:Tex_HotKeyMappings = 'equation*,align*,displaymath,enumerate'
 
 " Similar to above mechanisms works <F7> key. It prompts for command with 
 " list
@@ -509,7 +517,7 @@ TexLet g:Tex_HotKeyMappings = \ 'equation*,align*,displaymath,enumerate'
 " It works for commands of style \com{}. Changing of current command is done
 " with <S-F7> 
 
-TexLet g:Tex_PromptedCommands = \ 'footnote,cite,pageref,label'
+TexLet g:Tex_PromptedCommands = 'footnote,cite,pageref,label'
 
 " }}}
 " Smart Key Mappings: {{{
@@ -527,7 +535,8 @@ TexLet g:Tex_SmartKeyBS = 1
 " The pattern used to detect whether the previous characters comprise a
 " diacritic character. This default pattern detects the standard LaTeX
 " diacritics
-TexLet g:Tex_SmartBSPattern = \ '\(' .
+TexLet g:Tex_SmartBSPattern =
+			\ '\(' .
 			\ "\\\\[\"^'=v]{\\S}"      . '\|' .
 			\ "\\\\[\"^'=]\\S"         . '\|' .
 			\ '\\v \S'                 . '\|' .
@@ -666,8 +675,9 @@ TexLet g:Tex_UseCiteCompletionVer2 = 1
 " This is a string which is displayed to the user when he wants to sort or
 " filter the bibtex entries. This string also serves to define acronyms for
 " the various fields of a bibtex entry. 
-TexLet g:Tex_BibFieldPrompt = \ "Field acronyms: (`:let g:Tex_EchoBibFields 
-= 0` to avoid this message)\n" .
+TexLet g:Tex_BibFieldPrompt =
+			\ "Field acronyms: (`:let g:Tex_EchoBibFields= 0` to avoid ".
+			\ "this message)\n" .
 			\ " [t] title         [a] author        [b] booktitle     \n" .
 			\ " [j] journal       [y] year          [p] bibtype       \n" .
 			\ " (you can also enter the complete field name)    \n"
