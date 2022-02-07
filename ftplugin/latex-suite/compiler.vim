@@ -231,6 +231,10 @@ function! Tex_ViewLaTeX()
 
 	let l:origdir = fnameescape(getcwd())
 
+	let l:out_dir = ''
+	if g:Tex_UseOutputDir
+		let l:out_dir = '/'.g:Tex_OutputDir
+	endif
 	" If b:fragmentFile is set, it means this file was compiled as a fragment
 	" using Tex_PartCompile, which means that we want to ignore any
 	" *.latexmain or makefile's.
@@ -238,10 +242,10 @@ function! Tex_ViewLaTeX()
 		" cd to the location of the file to avoid having to deal with spaces
 		" in the directory name.
 		let mainfname = Tex_GetMainFileName(':p:t:r')
-		call Tex_CD(Tex_GetMainFileName(':p:h'))
+		call Tex_CD(Tex_GetMainFileName(':p:h').l:out_dir)
 	else
 		let mainfname = expand("%:p:t:r")
-		call Tex_CD(expand("%:p:h"))
+		call Tex_CD(expand("%:p:h").l:out_dir)
 	endif
 
 	if Tex_GetVarValue('Tex_ViewRuleComplete_'.s:target) != ''
@@ -560,6 +564,8 @@ function! Tex_CompileMultipleTimes()
 	" the log file names etc from it.
 	let l:origdir = fnameescape(getcwd())
 	let mainFileName_root = Tex_GetMainFileName(':p:t:r')
+	"let l:cwd = Tex_GetMainFileName(':p:h')
+	let l:main_fname = Tex_GetMainFileName(':t:r')
 	call Tex_CD(Tex_GetMainFileName(':p:h'))
 
 	" First ignore undefined references and the
@@ -573,8 +579,17 @@ function! Tex_CompileMultipleTimes()
 		\ . 'Rerun to get cross-references right'
 	TCLevel 1000
 
-	let idxFileName = mainFileName_root.'.idx'
-	let auxFileName = mainFileName_root.'.aux'
+	let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
+	if g:Tex_UseOutputDir
+		let idxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.idx'
+		let auxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.aux'
+		let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
+					\ . ' --input-directory='.g:Tex_OutputDir
+					\ . ' --output-directory='.g:Tex_OutputDir
+	else
+		let idxFileName = mainFileName_root.'.idx'
+		let auxFileName = mainFileName_root.'.aux'
+	endif
 
 	let runCount = 0
 	let needToRerun = 1
@@ -619,13 +634,13 @@ function! Tex_CompileMultipleTimes()
 		" The first time we see if we need to generate the bibliography and if the .bbl file
 		" changes, we will rerun latex.
 		" We use '\\bibdata' as a check for BibTeX and '\\abx' as a check for biber.
-		if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', mainFileName_root.'.aux')
+		if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', auxFileName)
 			let bibFileName = mainFileName_root.'.bbl'
 
 			let biblinesBefore = Tex_CatFile(bibFileName)
 
 			echomsg "Running '".Tex_GetVarValue('Tex_BibtexFlavor')."' ..."
-			let temp_mp = &mp | let &mp = Tex_GetVarValue('Tex_BibtexFlavor')
+			let temp_mp = &mp | let &mp = l:bib_cmd
 			exec 'silent! make "'.mainFileName_root.'"'
 			let &mp = temp_mp
 
