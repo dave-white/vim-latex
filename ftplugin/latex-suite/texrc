@@ -35,7 +35,8 @@ function! <SID>SafeLet(arg)
 			exe "let ".name." = value"
 		endif
 	endif
-endfunction com! -nargs=+ TexLet :call <SID>SafeLet(<q-args>)
+endfunction
+com! -nargs=+ TexLet :call <SID>SafeLet(<q-args>)
 " }}}
 " ==========================================================================
 
@@ -97,11 +98,11 @@ TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
 " in which to view the built object by Tex_ViewLaTeX(), as well as the 
 " location of auxiliary file for BibTexFlavor etc. in 
 " Tex_CompileMultipleTimes().
-let g:Tex_UseOutputDir = 0
-let g:Tex_OutputDir = '' "relative to dir of main tex file
+TexLet g:Tex_UseOutputDir = 0
+TexLet g:Tex_OutputDir = '' "relative to dir of main tex file
 
 TexLet g:Tex_CompileRule_dvi =
-			\'latex -interaction=nonstopmode -file-line-error-style "$*"'
+			\ 'latex -interaction=nonstopmode -file-line-error-style "$*"'
 TexLet g:Tex_EscapeChars = '{}\'
 
 TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
@@ -112,17 +113,17 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 " Synctex is now supported by pdflatex.
 if g:Tex_UseOutputDir
 	TexLet g:Tex_CompileRule_pdf =
-				\'pdflatex '.
-				\'-interaction=nonstopmode '.
-				\'-file-line-error-style '.
-				\'-output-directory='.g:Tex_OutputDir.' '
-				\'"$*"'
+				\ 'pdflatex '.
+				\ '-interaction=nonstopmode '.
+				\ '-file-line-error-style '.
+				\ '-output-directory='.g:Tex_OutputDir.' '.
+				\ '"$*"'
 else
 	TexLet g:Tex_CompileRule_pdf =
-				\'pdflatex '.
-				\'-interaction=nonstopmode '.
-				\'-file-line-error-style '.
-				\'"$*"'
+				\ 'pdflatex '.
+				\ '-interaction=nonstopmode '.
+				\ '-file-line-error-style '.
+				\ '"$*"'
 endif
 
 " TexLet g:Tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
@@ -227,14 +228,14 @@ TexLet g:Tex_ViewRuleComplete_dvi = ''
 " a
 " list of patterns seperated by '¡'
 TexLet g:Tex_IgnoredWarnings =
-			\'Underfull'."\n".
-			\'Overfull'."\n".
-			\'specifier changed to'."\n".
-			\'You have requested'."\n".
-			\'Missing number, treated as zero.'."\n".
-			\'There were undefined references'."\n".
-			\'Citation %.%# undefined'."\n".
-			\'Token not allowed in a PDF string'
+			\ 'Underfull'."\n".
+			\ 'Overfull'."\n".
+			\ 'specifier changed to'."\n".
+			\ 'You have requested'."\n".
+			\ 'Missing number, treated as zero.'."\n".
+			\ 'There were undefined references'."\n".
+			\ 'Citation %.%# undefined'."\n".
+			\ 'Token not allowed in a PDF string'
 
 " the 'ignore level' of the 'efm'. A value of 4 says that the first 4 kinds 
 " of
@@ -495,8 +496,8 @@ TexLet g:Tex_SectionMenus = 1
 " <F5> key unmapped
 
 TexLet g:Tex_PromptedEnvironments =
-			\'equation*,align*,equation,align,enumerate,itemize,'.
-			\'displaymath,figure,table'
+			\ 'equation*,align*,equation,align,enumerate,itemize,'.
+			\ 'displaymath,figure,table'
 
 " Another quick way of inserting environments is to press one of the shifted
 " function keys from <F1> through <F4>.
