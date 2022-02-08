@@ -190,7 +190,7 @@ function! Tex_RunLaTeX()
 		call Tex_SetTeXCompilerTarget('Compile', s:target)
 		call Tex_Debug('Tex_RunLaTeX: setting target to '.s:target, 'comp')
 
-		if Tex_GetVarValue('Tex_MultipleCompileFormats') =~ '\<'.s:target.'\>'
+		if Tex_GetVarValue('Tex_MultipleCompileFormats') =~ '\<'.s:target.'\>' " && g:Tex_EnableMultCompile
 			call Tex_Debug("Tex_RunLaTeX: compiling file multiple times via Tex_CompileMultipleTimes", "comp")
 			call Tex_CompileMultipleTimes()
 		else
@@ -232,10 +232,11 @@ function! Tex_ViewLaTeX()
 	let l:origdir = fnameescape(getcwd())
 
 	let l:out_dir = ''
-	if g:Tex_UseOutputDir
+	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
 		let l:out_dir = '/'.g:Tex_OutputDir
 	endif
-	" If b:fragmentFile is set, it means this file was compiled as a fragment
+	" If b:fragmentFile is set, it means this file was compiled as a 
+	" fragment
 	" using Tex_PartCompile, which means that we want to ignore any
 	" *.latexmain or makefile's.
 	if !exists('b:fragmentFile')
@@ -580,7 +581,7 @@ function! Tex_CompileMultipleTimes()
 	TCLevel 1000
 
 	let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
-	if g:Tex_UseOutputDir
+	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
 		let idxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.idx'
 		let auxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.aux'
 		let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')

@@ -93,13 +93,7 @@ TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
 " output, so use it with care. The '-file-line-error' flag helps sanitize 
 " LaTeX error messages for processing by Vim.
 
-" Set to 1 to supply the value of g:Tex_OutputDir to the -output-directory 
-" parameter. The string g:Tex_OutputDir is used to determine the directory 
-" in which to view the built object by Tex_ViewLaTeX(), as well as the 
-" location of auxiliary file for BibTexFlavor etc. in 
-" Tex_CompileMultipleTimes().
-TexLet g:Tex_UseOutputDir = 0
-TexLet g:Tex_OutputDir = '' "relative to dir of main tex file
+"TexLet g:Tex_OutputDir = '' "relative to dir of main tex file
 
 TexLet g:Tex_CompileRule_dvi =
 			\ 'latex -interaction=nonstopmode -file-line-error-style "$*"'
@@ -111,20 +105,11 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 " NOTE: pdflatex generates the same output as latex. therefore quickfix is
 "       possible.
 " Synctex is now supported by pdflatex.
-if g:Tex_UseOutputDir
-	TexLet g:Tex_CompileRule_pdf =
-				\ 'pdflatex '.
-				\ '-interaction=nonstopmode '.
-				\ '-file-line-error-style '.
-				\ '-output-directory='.g:Tex_OutputDir.' '.
-				\ '"$*"'
-else
-	TexLet g:Tex_CompileRule_pdf =
-				\ 'pdflatex '.
-				\ '-interaction=nonstopmode '.
-				\ '-file-line-error-style '.
-				\ '"$*"'
-endif
+TexLet g:Tex_CompileRule_pdf =
+			\ 'pdflatex '.
+			\ '-interaction=nonstopmode '.
+			\ '-file-line-error-style '.
+			\ '"$*"'
 
 " TexLet g:Tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
 " TexLet g:Tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
@@ -802,3 +787,4 @@ TexLet g:Tex_InternalTagsDefinitions = 1
 
 " }}}
 " ==========================================================================
+

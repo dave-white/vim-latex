@@ -22,12 +22,14 @@ endif
 
 let s:doneFunctionDefinitions = 1
 
+" Establish personal settings for current tex file.
+exe 'source '.fnameescape(expand('%:p:h').'/texrc')
+" set up personal global settings.
+runtime ftplugin/tex/texrc
 " get the place where this plugin resides for setting cpt and dict options.
 " these lines need to be outside the function.
 let s:path = expand('<sfile>:p:h')
-" set up personal defaults.
-runtime ftplugin/tex/texrc
-" set up global defaults.
+" set up global default settings.
 exe "so ".fnameescape(s:path.'/texrc')
 
 " }}}
