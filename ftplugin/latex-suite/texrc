@@ -29,7 +29,7 @@ function! <SID>SafeLet(arg)
 	let value = matchstr(a:arg, '=\s*\zs.*\ze')
 	let value = substitute(value, '\s*$', '', '')
 	if !exists(name)
-		if value =~ "^'\\|^\""
+		if (value =~ "^'\\|^\"") || (match(value, 's:\|l:\|a:') >= 0)
 			exec "let ".name." = ".value
 		else
 			exe "let ".name." = value"
@@ -93,8 +93,8 @@ TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
 " but it is known that it can sometimes give different results in the 
 " output, so use it with care. The '-file-line-error' flag helps sanitize 
 " LaTeX error messages for processing by Vim.
-
-"TexLet g:Tex_OutputDir = '' "relative to dir of main tex file
+"relative to dir of main tex file
+"TexLet g:Tex_OutputDir = ''
 
 TexLet g:Tex_CompileRule_dvi =
 			\ 'latex -interaction=nonstopmode -file-line-error-style "$*"'
@@ -106,20 +106,14 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 " NOTE: pdflatex generates the same output as latex. therefore quickfix is
 "       possible.
 " Synctex is now supported by pdflatex.
+let s:bld_cmd =
+				\ 'pdflatex '.
+				\ '-interaction=nonstopmode '.
+				\ '-file-line-error-style '
 if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-	TexLet g:Tex_CompileRule_pdf =
-				\ 'pdflatex '.
-				\ '-interaction=nonstopmode '.
-				\ '-file-line-error-style '.
-				\ '-output-directory='.g:Tex_OutputDir.' '.
-				\ '"$*"'
-else
-	TexLet g:Tex_CompileRule_pdf =
-				\ 'pdflatex '.
-				\ '-interaction=nonstopmode '.
-				\ '-file-line-error-style '.
-				\ '"$*"'
+	let s:bld_cmd .= '-output-directory='.g:Tex_OutputDir
 endif
+TexLet g:Tex_CompileRule_pdf = s:bld_cmd.' "$*"'
 
 " TexLet g:Tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
 " TexLet g:Tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
