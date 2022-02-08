@@ -922,15 +922,16 @@ function! <SID>Tex_SetCompilerMaps()
 	endif
 	let s:ml = '<Leader>'
 
-	nnoremap <buffer> <Plug>Tex_Compile :call Tex_RunLaTeX()<cr>
+	nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_RunLaTeX()<cr>
 	xnoremap <buffer> <Plug>Tex_Compile :call Tex_PartCompile()<cr>
 	nnoremap <buffer> <Plug>Tex_View :call Tex_ViewLaTeX()<cr>
 	nnoremap <buffer> <Plug>Tex_ForwardSearch :call Tex_ForwardSearchLaTeX()<cr>
 
-	call Tex_MakeMap(s:ml."ll", "<Plug>Tex_Compile", 'n', '<buffer>')
-	call Tex_MakeMap(s:ml."ll", "<Plug>Tex_Compile", 'v', '<buffer>')
-	call Tex_MakeMap(s:ml."lv", "<Plug>Tex_View", 'n', '<buffer>')
-	call Tex_MakeMap(s:ml."ls", "<Plug>Tex_ForwardSearch", 'n', '<buffer>')
+	call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'n', '<buffer>')
+	call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'v', '<buffer>')
+	call Tex_MakeMap(s:ml."v", "<Plug>Tex_View", 'n', '<buffer>')
+	call Tex_MakeMap(s:ml."a", '<Plug>Tex_Compile \| <Plug>Tex_View', 'n', '<buffer>')
+	call Tex_MakeMap(s:ml."s", "<Plug>Tex_ForwardSearch", 'n', '<buffer>')
 endfunction
 " }}}
 

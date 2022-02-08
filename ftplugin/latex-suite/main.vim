@@ -23,7 +23,10 @@ endif
 let s:doneFunctionDefinitions = 1
 
 " Establish personal settings for current tex file.
-exe 'source '.fnameescape(expand('%:p:h').'/texrc')
+let s:loc_texrc = fnameescape(expand('%:p:h').'/texrc')
+if filereadable(s:loc_texrc)
+	exe 'source '.s:loc_texrc
+endif
 " set up personal global settings.
 runtime ftplugin/tex/texrc
 " get the place where this plugin resides for setting cpt and dict options.
