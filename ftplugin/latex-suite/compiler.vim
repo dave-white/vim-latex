@@ -190,7 +190,7 @@ function! Tex_RunLaTeX()
 		call Tex_SetTeXCompilerTarget('Compile', s:target)
 		call Tex_Debug('Tex_RunLaTeX: setting target to '.s:target, 'comp')
 
-		if Tex_GetVarValue('Tex_MultipleCompileFormats') =~ '\<'.s:target.'\>' " && g:Tex_EnableMultCompile
+		if Tex_GetVarValue('Tex_MultipleCompileFormats') =~ '\<'.s:target.'\>' && g:Tex_EnableMultCompile
 			call Tex_Debug("Tex_RunLaTeX: compiling file multiple times via Tex_CompileMultipleTimes", "comp")
 			call Tex_CompileMultipleTimes()
 		else
