@@ -77,6 +77,7 @@ else
 	TexLet g:Tex_DefaultTargetFormat = 'pdf'
 endif
 
+TexLet g:Tex_EnableMultCompile = 1
 " A comma seperated list of formats which need multiple compilations to be
 " correctly compiled.
 TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
