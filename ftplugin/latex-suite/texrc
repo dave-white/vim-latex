@@ -802,6 +802,3 @@ TexLet g:Tex_InternalTagsDefinitions = 1
 
 " }}}
 " ==========================================================================
-
-map <leader>c :up<cr>:call Tex_RunLaTeX()<cr>
-map <leader>v :up<cr>:call Tex_RunLaTeX()<cr>:call Tex_ViewLaTeX()<cr>
