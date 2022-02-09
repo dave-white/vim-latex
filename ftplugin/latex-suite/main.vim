@@ -22,9 +22,29 @@ endif
 
 let s:doneFunctionDefinitions = 1
 
+" Search up the path from current file's directory for file matching expr.
+" Return str = absolute path to file matching expr
+function! Tex_FindFileAbove(expr)
+	let l:max_depth = 12
+	let l:count = 0
+	let l:dir = expand('%:p:h')
+	let l:dir_curr = ''
+	while l:count <= l:max_depth && l:dir_curr != l:dir
+		let l:count += 1
+		let l:fname = glob(l:dir.'/'.a:expr)
+		if l:fname != '' && filereadable(l:fname)
+			return l:fname
+		else
+			let l:dir_curr = l:dir
+			let l:dir = fnameescape(fnamemodify(l:dir, ':h'))
+		endif
+	endwhile
+	return ''
+endfunction
+
 " Establish personal settings for current tex file.
-let s:loc_texrc = fnameescape(expand('%:p:h').'/texrc')
-if filereadable(s:loc_texrc)
+let s:loc_texrc = Tex_FindFileAbove('texrc')
+if s:loc_texrc != '' && filereadable(s:loc_texrc)
 	exe 'source '.s:loc_texrc
 endif
 " set up personal global settings.
@@ -406,11 +426,23 @@ function! Tex_GetMainFileName(...)
 		let modifier = ':p'
 	endif
 
-	" If the user wants to use his own way to specify the main file name, then
-	" use it straight away.
-	if Tex_GetVarValue('Tex_MainFileExpression') != ''
-		exec 'let retval = '.Tex_GetVarValue('Tex_MainFileExpression')
-		return retval
+	" If the user wants to use their own way to specify the main file name, 
+	" then use it straight away.
+	let l:main_fname_expr = Tex_GetVarValue('Tex_MainFileExpression')
+	if l:main_fname_expr != ''
+		" absolute path
+		if l:main_fname_expr =~ '^\/.*'
+			let l:main_fname = glob(l:main_fname_expr)
+			if filereadable(l:main_fname)
+				return fnamemodify(l:main_fname, modifier)
+			endif
+		" rel fname
+		else
+			let l:main_fname = Tex_FindFileAbove(l:main_fname_expr)
+			if l:main_fname != ''
+				return fnamemodify(l:main_fname, modifier)
+			endif
+		endif
 	endif
 
 	let l:origdir = fnameescape(getcwd())
