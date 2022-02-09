@@ -266,7 +266,11 @@ function! Tex_ViewLaTeX()
 	" using Tex_PartCompile, which means that we want to ignore any
 	" *.latexmain or makefile's.
 	if exists('b:fragmentFile')
-		let l:output_file = expand('%:p:t:r')
+		if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
+			let l:output_file = expand('%:p:h').'/'.g:Tex_OutputDir.'/'.expand('%:t:r')
+		else
+			let l:output_file = expand('%:p:t:r')
+		endif
 	else
 		let l:output_file = Tex_GetOutputDir(':p').'/'.Tex_GetJobName()
 	endif
