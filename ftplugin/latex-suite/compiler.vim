@@ -10,6 +10,33 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+function! Tex_GetJobName()
+	if exists('g:Tex_JobName') && len(g:Tex_JobName) > 0
+		return g:Tex_JobName
+	else
+		return Tex_GetMainFileName(':t:r')
+	endif
+endfunction
+
+function! Tex_GetOutputDir(...)
+	if a:0 > 0
+		let l:mod = a:1
+	else
+		let l:mod = ':p'
+	endif
+
+	let l:main_fdir = Tex_GetMainFileName(':p:h')
+	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
+		let l:out_dir = fnameescape(l:main_fdir.'/'.g:Tex_OutputDir)
+		if glob(l:out_dir) != ''
+			return fnamemodify(l:out_dir, l:mod)
+		else
+		endif
+	else
+		return fnamemodify(l:main_fdir, l:mod)
+	endif
+endfunction
+
 " Tex_SetTeXCompilerTarget: sets the 'target' for the next call to Tex_RunLaTeX() {{{
 function! Tex_SetTeXCompilerTarget(type, target)
 	call Tex_Debug("+Tex_SetTeXCompilerTarget: setting target to [".a:target."] for ".a:type."r", "comp")
@@ -190,7 +217,9 @@ function! Tex_RunLaTeX()
 		call Tex_SetTeXCompilerTarget('Compile', s:target)
 		call Tex_Debug('Tex_RunLaTeX: setting target to '.s:target, 'comp')
 
-		if Tex_GetVarValue('Tex_MultipleCompileFormats') =~ '\<'.s:target.'\>' && g:Tex_EnableMultCompile
+		if g:Tex_EnableMultCompile
+					\ && Tex_GetVarValue('Tex_MultipleCompileFormats')
+					\ =~ '\<'.s:target.'\>'
 			call Tex_Debug("Tex_RunLaTeX: compiling file multiple times via Tex_CompileMultipleTimes", "comp")
 			call Tex_CompileMultipleTimes()
 		else
@@ -229,24 +258,14 @@ function! Tex_ViewLaTeX()
 		return
 	end
 
-	let l:origdir = fnameescape(getcwd())
-
-	let l:out_dir = ''
-	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-		let l:out_dir = '/'.g:Tex_OutputDir
-	endif
 	" If b:fragmentFile is set, it means this file was compiled as a 
 	" fragment
 	" using Tex_PartCompile, which means that we want to ignore any
 	" *.latexmain or makefile's.
-	if !exists('b:fragmentFile')
-		" cd to the location of the file to avoid having to deal with spaces
-		" in the directory name.
-		let mainfname = Tex_GetMainFileName(':p:t:r')
-		call Tex_CD(Tex_GetMainFileName(':p:h').l:out_dir)
+	if exists('b:fragmentFile')
+		let l:output_file = expand('%:p:t:r')
 	else
-		let mainfname = expand("%:p:t:r")
-		call Tex_CD(expand("%:p:h").l:out_dir)
+		let l:output_file = Tex_GetOutputDir(':p').'/'.Tex_GetJobName()
 	endif
 
 	if Tex_GetVarValue('Tex_ViewRuleComplete_'.s:target) != ''
@@ -316,7 +335,7 @@ function! Tex_ViewLaTeX()
 
 	end
 
-	let execString = substitute(execString, '\V$*', mainfname, 'g')
+	let execString = substitute(execString, '\V$*', l:output_file, 'g')
 	call Tex_Debug("Tex_ViewLaTeX: execString = ".execString, "comp")
 
 	exec 'silent! !'.execString
@@ -324,8 +343,6 @@ function! Tex_ViewLaTeX()
 	if !has('gui_running')
 		redraw!
 	endif
-
-	exe 'cd '.l:origdir
 endfunction
 
 " }}}
@@ -580,16 +597,13 @@ function! Tex_CompileMultipleTimes()
 		\ . 'Rerun to get cross-references right'
 	TCLevel 1000
 
+	let idx_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.idx'
+	let aux_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.aux'
+
 	let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
 	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-		let idxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.idx'
-		let auxFileName = g:Tex_OutputDir.'/'.l:main_fname.'.aux'
-		let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
-					\ . ' --input-directory='.g:Tex_OutputDir
+		let l:bib_cmd .= ' --input-directory='.g:Tex_OutputDir
 					\ . ' --output-directory='.g:Tex_OutputDir
-	else
-		let idxFileName = mainFileName_root.'.idx'
-		let auxFileName = mainFileName_root.'.aux'
 	endif
 
 	let runCount = 0
@@ -598,8 +612,8 @@ function! Tex_CompileMultipleTimes()
 		" assume we need to run only once.
 		let needToRerun = 0
 
-		let idxlinesBefore = Tex_CatFile(idxFileName)
-		let auxlinesBefore = Tex_GetAuxFile(auxFileName)
+		let idxlinesBefore = Tex_CatFile(l:idx_fname)
+		let auxlinesBefore = Tex_GetAuxFile(l:aux_fname)
 
 		" first run latex.
 		echomsg "latex run number : ".(runCount+1)
@@ -619,11 +633,11 @@ function! Tex_CompileMultipleTimes()
 			return
 		endif
 
-		let idxlinesAfter = Tex_CatFile(idxFileName)
+		let idxlinesAfter = Tex_CatFile(l:idx_fname)
 
 		" If .idx file changed, then run makeindex to generate the new .ind
 		" file and remember to rerun latex.
-		if runCount == 0 && glob(idxFileName) != '' && idxlinesBefore != idxlinesAfter
+		if runCount == 0 && glob(l:idx_fname) != '' && idxlinesBefore != idxlinesAfter
 			echomsg "Running makeindex..."
 			let temp_mp = &mp | let &mp = Tex_GetVarValue('Tex_MakeIndexFlavor')
 			exec 'silent! make "'.mainFileName_root.'"'
@@ -635,14 +649,14 @@ function! Tex_CompileMultipleTimes()
 		" The first time we see if we need to generate the bibliography and if the .bbl file
 		" changes, we will rerun latex.
 		" We use '\\bibdata' as a check for BibTeX and '\\abx' as a check for biber.
-		if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', auxFileName)
-			let bibFileName = mainFileName_root.'.bbl'
+		if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', l:aux_fname)
+			let bibFileName = Tex_GetJobName().'.bbl'
 
 			let biblinesBefore = Tex_CatFile(bibFileName)
 
 			echomsg "Running '".Tex_GetVarValue('Tex_BibtexFlavor')."' ..."
 			let temp_mp = &mp | let &mp = l:bib_cmd
-			exec 'silent! make "'.mainFileName_root.'"'
+			exec 'silent! make "'.Tex_GetJobName().'"'
 			let &mp = temp_mp
 
 			let biblinesAfter = Tex_CatFile(bibFileName)
@@ -657,7 +671,7 @@ function! Tex_CompileMultipleTimes()
 		endif
 
 		" check if latex asks us to rerun
-		let auxlinesAfter = Tex_GetAuxFile(auxFileName)
+		let auxlinesAfter = Tex_GetAuxFile(l:aux_fname)
 		if auxlinesAfter != auxlinesBefore
 			echomsg "Need to rerun because the AUX file changed..."
 			call Tex_Debug("Tex_CompileMultipleTimes: Need to rerun to get cross-references right...", 'comp')
@@ -677,9 +691,9 @@ function! Tex_CompileMultipleTimes()
 	" errors/warnings to handle the situation where the clist might have been
 	" emptied because of bibtex/makeindex being run as the last step.
 	if Tex_GetVarValue('Tex_GotoError') == 1
-		exec 'silent! cfile '.mainFileName_root.'.log'
+		exec 'silent! cfile '.Tex_GetJobName().'.log'
 	else
-		exec 'silent! cgetfile '.mainFileName_root.'.log'
+		exec 'silent! cgetfile '.Tex_GetJobName().'.log'
 	end
 
 	exe 'cd '.l:origdir
