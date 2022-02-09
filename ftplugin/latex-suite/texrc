@@ -107,11 +107,14 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 "       possible.
 " Synctex is now supported by pdflatex.
 let s:bld_cmd =
-				\ 'pdflatex '.
-				\ '-interaction=nonstopmode '.
-				\ '-file-line-error-style '
+				\ 'pdflatex'.
+				\ ' -interaction=nonstopmode'.
+				\ ' -file-line-error-style'
 if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-	let s:bld_cmd .= '-output-directory='.g:Tex_OutputDir
+	let s:bld_cmd .= ' -output-directory='.g:Tex_OutputDir
+endif
+if exists('g:Tex_JobName') && len(g:Tex_JobName) > 0
+	let s:bld_cmd .= ' -jobname='.g:Tex_JobName
 endif
 TexLet g:Tex_CompileRule_pdf = s:bld_cmd.' "$*"'
 
