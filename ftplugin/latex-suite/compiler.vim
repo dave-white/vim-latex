@@ -193,6 +193,9 @@ function! Tex_RunLaTeX()
 	let l:origdir = fnameescape(getcwd())
 	call Tex_CD(expand("%:p:h"))
 
+	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
+		call mkdir(g:Tex_OutputDir, "p")
+	endif
 	let initTarget = s:target
 
 	" first get the dependency chain of this format.
@@ -578,7 +581,8 @@ endfunction " }}}
 " Tex_CompileMultipleTimes: The main function {{{
 " Description: compiles a file multiple times to get cross-references right.
 function! Tex_CompileMultipleTimes()
-	" Just extract the root without any extension because we want to construct
+	" Just extract the root without any extension because we want to 
+	" construct
 	" the log file names etc from it.
 	let l:origdir = fnameescape(getcwd())
 	let mainFileName_root = Tex_GetMainFileName(':p:t:r')
