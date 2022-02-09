@@ -111,10 +111,10 @@ let s:bld_cmd =
 				\ ' -interaction=nonstopmode'.
 				\ ' -file-line-error-style'
 if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-	let s:bld_cmd .= ' -output-directory='.g:Tex_OutputDir
+	let s:bld_cmd .= ' -output-directory="'.g:Tex_OutputDir.'"'
 endif
 if exists('g:Tex_JobName') && len(g:Tex_JobName) > 0
-	let s:bld_cmd .= ' -jobname='.g:Tex_JobName
+	let s:bld_cmd .= ' -jobname="'.g:Tex_JobName.'"'
 endif
 TexLet g:Tex_CompileRule_pdf = s:bld_cmd.' "$*"'
 
