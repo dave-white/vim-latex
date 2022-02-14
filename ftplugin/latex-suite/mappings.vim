@@ -15,7 +15,7 @@ call IMAP("\\item\<cr>", "\\begin{itemize}\n\\item <++>\n\\end{itemize}", "tex")
 
 call IMAP('\i ', '\item <++>', "tex")
 
-call IMAP('\b ', '\boldsymbol', "tex")
+call IMAP('\b ', '\boldsymbol ', "tex")
 call IMAP('\mb ', '\mathbf{<++>} <++>', "tex")
 call IMAP('\mr ', '\mathrm{<++>} <++>', "tex")
 call IMAP('\ms ', '\mathscr{<++>} <++>', "tex")

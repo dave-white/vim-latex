@@ -209,7 +209,7 @@ if !exists('s:doneMappings')
 	exec 'xnoremap <silent> '.g:Tex_Leader."$ \<C-\\>\<C-N>:call VEnclose('$', '$', '\\[', '\\]')\<CR>"
 	" }}}
 	"
-	source 'mappings.vim'
+	exe 'source '.s:path.'/mappings.vim'
 endif
 
 " }}}
