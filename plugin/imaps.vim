@@ -621,6 +621,9 @@ function! s:IMAP_add_imap( lastLHSChar, buffer )
 		for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
 			call s:IMAP_add_imap( lastLHSChar, a:buffer )
 		endfor
+	elseif a:lastLHSChar == "\<cr>"
+		exe 'inoremap <silent>' . a:buffer . '<cr> '.
+					\ '<C-r>=<SID>LookupCharacter("<C-v><cr>")<CR>'
 	else
 		if a:buffer =~# '<buffer>'
 			if !exists('b:IMAP_imaps')
