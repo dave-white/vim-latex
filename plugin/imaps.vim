@@ -91,6 +91,8 @@ endif
 let s:save_cpo = &cpo
 set cpo&vim
 
+let g:macro_on = 1
+
 " ==============================================================================
 " Script Options / Variables
 " ============================================================================== 
@@ -332,9 +334,19 @@ endfunction
 " corresponding rhs saved in s:Map_{ft}_{lhs} .
 " The place-holder variables are passed to IMAP_PutTextWithMovement() .
 function! s:LookupCharacter(char)
+	if index(["\<space>", "\<s-space>", "\<c-space>", "\<cs-space>",
+				\ "\<cr>"], a:char) >= 0
+		if ! g:macro_on
+			return a:char
+		else
+			let g:macro_on = 0
+		endif
+	endif
+
 	if IMAP_GetVal('Imap_FreezeImap', 0) == 1
 		return a:char
 	endif
+
 	let charHash = s:Hash(a:char)
 
 	" The line so far, including the character that triggered this function:
@@ -405,6 +417,7 @@ function! s:LookupCharacter(char)
 		let result = "\<c-v>" . result
 	endif
 
+	let g:macro_on = 0
 	return result
 endfunction
 
