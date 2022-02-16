@@ -1,3 +1,19 @@
+" inoremap __ <c-r>='_{<++>}<++>'<cr>
+" inoremap () <c-r>='(<++>)<++>'<cr>
+" inoremap [] <c-r>='[<++>]<++>'<cr>
+" inoremap {} <c-r>='{<++>}<++>'<cr>
+" inoremap ^^ <c-r>='^{<++>}<++>'<cr>
+" inoremap $$ <c-r>='$<++>$<++>'<cr>
+" inoremap (( <c-r>='\left( <++> \right)<++>'<cr>
+" inoremap [[ <c-r>='\left[ <++> \right]<++>'<cr>
+" inoremap {{ <c-r>='\left\{ <++> \right\}<++>'<cr>
+inoremap == <c-r>='&= '<cr>
+inoremap ~~ <c-r>='&\approx '<cr>
+inoremap =~ <c-r>='\approx'<cr>
+inoremap :: <c-r>='\dots'<cr>
+inoremap .. <c-r>='\dotsc'<cr>
+inoremap ** <c-r>='\dotsb'<cr>
+
 let s:imapDictSC = {
 	    \ 'a': '\alpha',
 	    \ 'b': '\beta',
