@@ -1007,7 +1007,6 @@ else
 	exe 'source '.fnameescape(s:path.'/mathmacros.vim')
 endif
 
-exe 'source '.fnameescape(s:path.'/multicompile.vim')
 exe 'source '.fnameescape(s:path.'/compiler.vim')
 exe 'source '.fnameescape(s:path.'/folding.vim')
 exe 'source '.fnameescape(s:path.'/templates.vim')
