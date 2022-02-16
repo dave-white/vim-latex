@@ -87,13 +87,13 @@ let s:imapDictSp = {
 
 let s:imapDictCR = {
 	    \ "document": "\\begin{document}\n<++>\n\\end{document}",
-	    \ "math": "\\begin{displaymath}\n<++>\n\\end{displaymath}",
-	    \ "equation": "\\begin{equation}\n<++>\n\\end{equation}",
-	    \ "eqs": "\\begin{equation*}\n<++>\n\\end{equation*}",
-	    \ "align": "\\begin{align}\n<++>\n\\end{align}",
-	    \ "als": "\\begin{align*}\n<++>\n\\end{align*}",
-	    \ "enumerate": "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}",
-	    \ "itemize": "\\begin{itemize}\n\\item <++>\n\\end{itemize}",
+	    \ "math": "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
+	    \ "equation": "\\begin{equation}\n<++>\n\\end{equation}\n<++>",
+	    \ "eqs": "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
+	    \ "align": "\\begin{align}\n<++>\n\\end{align}\n<++>",
+	    \ "als": "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
+	    \ "enumerate": "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
+	    \ "itemize": "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
 	    \ "frame": "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
 	    \ }
 
@@ -122,7 +122,7 @@ function! GetMapping(trigger)
 	    endif
 
 	    for [l:macro, l:result] in items(l:imapDict)
-		if l:macro =~ "^".l:token.'\w*'
+		if l:macro =~ '\C^'.l:token.'\w*'
 		    let l:backspaces = ""
 		    let l:idx = 0
 		    while l:idx <= strcharlen(l:token)
