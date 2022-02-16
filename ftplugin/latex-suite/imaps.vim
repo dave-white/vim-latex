@@ -97,20 +97,30 @@ let s:imapDictCR = {
 	    \ "frame": "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
 	    \ }
 
+" GetMapping: TODO
+" args:
+" 	trigger = imapped keystroke that fires the macro lookup
 function! GetMapping(trigger)
     let l:line = getline(".")
     let l:col = col(".")
     let l:leaderIdx = l:col - 1
 
+    " Search backward for the leader character, the text following which 
+    " forms the token we try to match with a macro in one of the 
+    " dictionaries above.
     while l:leaderIdx >= 0
 	if l:line[l:leaderIdx] == '\' || l:line[l:leaderIdx] == ';'
 	    let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
-	    if l:token =~ '\W' || strlen(l:token) == 0
+		  " \ escape(slice(l:line, l:leaderIdx + 1, l:col - 1),
+		  " \ '*^@:\$/?=+-()&.')
+	    " Abort if token empty or whitespace.
+	    if l:token =~ '\s' || strlen(l:token) == 0
 		return a:trigger
 	    endif
 
 	    let l:leader = l:line[l:leaderIdx]
 
+	    " Choose dictionary based on leader and trigger
 	    if l:leader == ';'
 		let l:imapDict = s:imapDictSC
 	    else
@@ -137,6 +147,7 @@ function! GetMapping(trigger)
 	let l:leaderIdx -= 1
     endwhile
 
+    " Never found the a leader character.
     return a:trigger
 endfunction
 
