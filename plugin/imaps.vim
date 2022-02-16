@@ -91,8 +91,6 @@ endif
 let s:save_cpo = &cpo
 set cpo&vim
 
-let g:macro_on = 1
-
 " ==============================================================================
 " Script Options / Variables
 " ============================================================================== 
@@ -158,7 +156,6 @@ endif
 "   [bg]:Imap_PlaceHolderStart and [bg]:Imap_PlaceHolderEnd settings.
 "
 function! IMAP(lhs, rhs, ft, ...)
-
 	" Find the place holders to save for IMAP_PutTextWithMovement() .
 	if a:0 < 2
 		let phs = '<+'
@@ -175,6 +172,9 @@ function! IMAP(lhs, rhs, ft, ...)
 
 	" Add a:lhs to the list of left-hand sides that end with lastLHSChar:
 	let lastLHSChar = s:MultiByteLastCharacter(a:lhs)
+	if lastLHSChar =~ "\\s"
+		return
+	endif
 	let hash = s:Hash(lastLHSChar)
 	if !exists("s:LHS_" . a:ft . "_" . hash)
 		let s:LHS_{a:ft}_{hash} = escape(a:lhs, '\')
@@ -334,15 +334,6 @@ endfunction
 " corresponding rhs saved in s:Map_{ft}_{lhs} .
 " The place-holder variables are passed to IMAP_PutTextWithMovement() .
 function! s:LookupCharacter(char)
-	if index(["\<space>", "\<s-space>", "\<c-space>", "\<cs-space>",
-				\ "\<cr>"], a:char) >= 0
-		if ! g:macro_on
-			return a:char
-		else
-			let g:macro_on = 0
-		endif
-	endif
-
 	if IMAP_GetVal('Imap_FreezeImap', 0) == 1
 		return a:char
 	endif
@@ -417,7 +408,6 @@ function! s:LookupCharacter(char)
 		let result = "\<c-v>" . result
 	endif
 
-	let g:macro_on = 0
 	return result
 endfunction
 
@@ -634,9 +624,6 @@ function! s:IMAP_add_imap( lastLHSChar, buffer )
 		for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
 			call s:IMAP_add_imap( lastLHSChar, a:buffer )
 		endfor
-	elseif a:lastLHSChar == "\<cr>"
-		exe 'inoremap <silent>' . a:buffer . '<cr> '.
-					\ '<C-r>=<SID>LookupCharacter("<C-v><cr>")<CR>'
 	else
 		if a:buffer =~# '<buffer>'
 			if !exists('b:IMAP_imaps')
