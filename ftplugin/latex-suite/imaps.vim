@@ -119,7 +119,7 @@ let s:imapDictCR = {
 function! GetMapping(trigger)
     let l:line = getline(".")
     let l:col = col(".")
-    let l:leaderIdx = l:col - 1
+    let l:leaderIdx = l:col - 2
 
     " Search backward for the leader character, the text following which 
     " forms the token we try to match with a macro in one of the 
