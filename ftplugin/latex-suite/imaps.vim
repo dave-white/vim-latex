@@ -1,12 +1,19 @@
-" inoremap __ <c-r>='_{<++>}<++>'<cr>
-" inoremap () <c-r>='(<++>)<++>'<cr>
-" inoremap [] <c-r>='[<++>]<++>'<cr>
-" inoremap {} <c-r>='{<++>}<++>'<cr>
-" inoremap ^^ <c-r>='^{<++>}<++>'<cr>
-" inoremap $$ <c-r>='$<++>$<++>'<cr>
-" inoremap (( <c-r>='\left( <++> \right)<++>'<cr>
-" inoremap [[ <c-r>='\left[ <++> \right]<++>'<cr>
-" inoremap {{ <c-r>='\left\{ <++> \right\}<++>'<cr>
+"===========================================================================
+" vim:ft=vim:sw=4:sts=4:commentstring=\"\ %s:ff=unix
+" 	 File: imaps.vim
+"      Author: David G. White
+"     Created: Sat. 19 Feb. 2022, 14:30 UTC-5
+"
+" Description: 
+"
+"    Requires: vim-latex/plugin/imaps.vim#IMAP_PutTextWithMovement()
+" 
+"        NOTE: This file is best viewed with Vim-6.0+ with folding turned 
+"        on.
+"===========================================================================
+
+let g:runImapLeaderList = ['\', ';']
+
 inoremap == <c-r>='&= '<cr>
 inoremap ~~ <c-r>='&\approx '<cr>
 inoremap =~ <c-r>='\approx'<cr>
@@ -14,158 +21,247 @@ inoremap :: <c-r>='\dots'<cr>
 inoremap .. <c-r>='\dotsc'<cr>
 inoremap ** <c-r>='\dotsb'<cr>
 
-let s:imapDictSC = {
-	    \ 'a': '\alpha',
-	    \ 'b': '\beta',
-	    \ 'c': '\varsigma',
-	    \ 'd': '\delta',
-	    \ 'e': '\epsilon',
-	    \ 'f': '\phi',
-	    \ 'g': '\gamma',
-	    \ 'h': '\eta',
-	    \ 'i': '\iota',
-	    \ 'j': '\varepsilon',
-	    \ 'k': '\kappa',
-	    \ 'l': '\lambda',
-	    \ 'm': '\mu',
-	    \ 'n': '\nu',
-	    \ 'o': '\omicron',
-	    \ 'p': '\pi',
-	    \ 'q': '\theta',
-	    \ 'r': '\rho',
-	    \ 's': '\sigma',
-	    \ 't': '\tau',
-	    \ 'u': '\upsilon',
-	    \ 'v': '\varphi',
-	    \ 'w': '\omega',
-	    \ 'x': '\chi',
-	    \ 'y': '\psi',
-	    \ 'z': '\zeta',
-	    \ 'D': '\Delta',
-	    \ 'F': '\Phi',
-	    \ 'G': '\Gamma',
-	    \ 'L': '\Lambda',
-	    \ 'P': '\Pi',
-	    \ 'Q': '\Theta',
-	    \ 'S': '\Sigma',
-	    \ 'U': '\Upsilon',
-	    \ 'W': '\Omega',
-	    \ 'Y': '\Psi',
-	    \ '^': '\hat{<++>}<++>',
-	    \ '_': '\bar{<++>}<++>',
-	    \ '6': '\partial',
-	    \ '8': '\infty',
-	    \ '/': '\setminus',
-	    \ '%': '\frac{<++>}{<++>}<++>',
-	    \ '@': '\circ',
-	    \ '0': '^\circ',
-	    \ '=': '\equiv',
-	    \ '\.': '\cdot',
-	    \ '\*': '\times',
-	    \ '&': '\cap',
-	    \ '+': '\cup',
-	    \ '(': '\subset',
-	    \ ')': '\supset',
-	    \ '$': "\\int_{<++>}^{<++>}<++>",
-	    \ '2': '\sqrt{<++>}<++>',
-	    \ ':': '\dot{<++>}<++>',
-	    \ '~': '\tilde{<++>}<++>',
-	    \ 'M': '\sum_{<++>}^{<++>}<++>',
-	    \ 'V': '\wedge',
-	    \ '<': '\le',
-	    \ '>': '\ge',
-	    \ ',': '\nonumber',
+" Leader 59 = ";"
+" Trigger 9 = "\<tab>"
+let s:imapDict_59_9 = {
+	    \ 'a' : '\alpha',
+	    \ 'b' : '\beta',
+	    \ 'c' : '\varsigma',
+	    \ 'd' : '\delta',
+	    \ 'e' : '\epsilon',
+	    \ 'f' : '\phi',
+	    \ 'g' : '\gamma',
+	    \ 'h' : '\eta',
+	    \ 'i' : '\iota',
+	    \ 'j' : '\varepsilon',
+	    \ 'k' : '\kappa',
+	    \ 'l' : '\lambda',
+	    \ 'm' : '\mu',
+	    \ 'n' : '\nu',
+	    \ 'o' : '\omicron',
+	    \ 'p' : '\pi',
+	    \ 'q' : '\theta',
+	    \ 'r' : '\rho',
+	    \ 's' : '\sigma',
+	    \ 't' : '\tau',
+	    \ 'u' : '\upsilon',
+	    \ 'v' : '\varphi',
+	    \ 'w' : '\omega',
+	    \ 'x' : '\chi',
+	    \ 'y' : '\psi',
+	    \ 'z' : '\zeta',
+	    \ 'D' : '\Delta',
+	    \ 'F' : '\Phi',
+	    \ 'G' : '\Gamma',
+	    \ 'L' : '\Lambda',
+	    \ 'P' : '\Pi',
+	    \ 'Q' : '\Theta',
+	    \ 'S' : '\Sigma',
+	    \ 'U' : '\Upsilon',
+	    \ 'W' : '\Omega',
+	    \ 'Y' : '\Psi',
+	    \ '^' : '\hat{<++>}<++>',
+	    \ '_' : '\bar{<++>}<++>',
+	    \ '6' : '\partial',
+	    \ '8' : '\infty',
+	    \ '/' : '\setminus',
+	    \ '%' : '\frac{<++>}{<++>}<++>',
+	    \ '@' : '\circ',
+	    \ '0' : '^\circ',
+	    \ '=' : '\equiv',
+	    \ '.' : '\cdot',
+	    \ '*' : '\times',
+	    \ '&' : '\cap',
+	    \ '+' : '\cup',
+	    \ '(' : '\subset',
+	    \ ')' : '\supset',
+	    \ '$' : "\\int_{<++>}^{<++>}<++>",
+	    \ '2' : '\sqrt{<++>}<++>',
+	    \ ':' : '\dot{<++>}<++>',
+	    \ '~' : '\tilde{<++>}<++>',
+	    \ 'M' : '\sum_{<++>}^{<++>}<++>',
+	    \ 'V' : '\wedge',
+	    \ '<' : '\le',
+	    \ '>' : '\ge',
+	    \ ',' : '\nonumber',
 	    \ }
 " call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
 " call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
 " call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
 " call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
 
-let s:imapDictSp = {
-	    \ "section": "\\section{<++>}\n<++>",
-	    \ "ssection": "\\subsection{<++>}\n<++>",
-	    \ "sssection": "\\subsubsection{<++>}\n<++>",
-	    \ "paragraph": "\\paragraph{<++>} <++>",
-	    \ "item": "\\item <++>",
-	    \ "frametitle": "\\frametitle{<++>}\n<++>",
-	    \ "boldsymbol": "\\boldsymbol <++>",
-	    \ "text": "\\text{<++>}<++>",
-	    \ "mb": "\\mathbf{<++>}<++>", 
-	    \ "mr": "\\mathrm{<++>}<++>", 
-	    \ "ms": "\\mathscr{<++>}<++>", 
-	    \ "tb": "\\textbf{<++>}<++>", 
-	    \ "ti": "\\textit{<++>}<++>", 
-	    \ "emph": "\\emph{<++>}<++>", 
-	    \ "cite": "\\cite{<++>}<++>", 
-	    \ "ref": "\\ref{<++>}<++>", 
-	    \ "hyperref": "\\hyperref{<++>}<++>", 
+" Leader 59 = ";"
+" Trigger 32 = "\<space>"
+" let s:imapDict_59_32 = s:imapDict_59_9
+
+" Leader 92 = '\'
+" Trigger 9 = "\<tab>"
+let s:imapDict_92_9 = {
+	    \ "section"	      : "\\section{<++>}\n<++>",
+	    \ "subsection"    : "\\subsection{<++>}\n<++>",
+	    \ "ssection"      : "\\subsection{<++>}\n<++>",
+	    \ "subsubsection" : "\\subsubsection{<++>}\n<++>",
+	    \ "sssection"     : "\\subsubsection{<++>}\n<++>",
+	    \ "paragraph"     : "\\paragraph{<++>} <++>",
+	    \ "item"	      : "\\item <++>",
+	    \ "frametitle"    : "\\frametitle{<++>}\n<++>",
+	    \ "boldsymbol"    : "\\boldsymbol <++>",
+	    \ "text"	      : "\\text{<++>}<++>",
+	    \ "mathbf"	      : "\\mathbf{<++>}<++>",
+	    \ "mb"	      : "\\mathbf{<++>}<++>",
+	    \ "mathrm"	      : "\\mathrm{<++>}<++>",
+	    \ "mr"	      : "\\mathrm{<++>}<++>",
+	    \ "mathcal"	      : "\\mathcal{<++>}<++>",
+	    \ "mc"	      : "\\mathcal{<++>}<++>",
+	    \ "mathscr"	      : "\\mathscr{<++>}<++>",
+	    \ "ms"	      : "\\mathscr{<++>}<++>",
+	    \ "textbf"	      : "\\textbf{<++>}<++>",
+	    \ "tb"	      : "\\textbf{<++>}<++>",
+	    \ "textit"	      : "\\textit{<++>}<++>",
+	    \ "ti"	      : "\\textit{<++>}<++>",
+	    \ "emph"	      : "\\emph{<++>}<++>",
+	    \ "cite"	      : "\\cite{<++>}<++>",
+	    \ "ref"	      : "\\ref{<++>}<++>",
+	    \ "hyperref"      : "\\hyperref{<++>}<++>",
+	    \ "hr"	      : "\\hyperref{<++>}<++>",
 	    \ }
 
-let s:imapDictCR = {
-	    \ "document": "\\begin{document}\n<++>\n\\end{document}",
-	    \ "math": "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
-	    \ "equation": "\\begin{equation}\n<++>\n\\end{equation}\n<++>",
-	    \ "eqs": "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
-	    \ "align": "\\begin{align}\n<++>\n\\end{align}\n<++>",
-	    \ "als": "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
-	    \ "enumerate": "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
-	    \ "itemize": "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
-	    \ "frame": "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
+" Leader 92 = '\'
+" Trigger 32 = "\<space>"
+" let s:imapDict_92_32 = s:imapDict_92_9
+
+" Leader 92 = '\'
+" Trigger 13 = "\<cr>"
+let s:imapDict_92_13 = {
+	    \ "document"     : "\\begin{document}\n<++>\n\\end{document}",
+	    \ "displaymath"  :
+	    \ "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
+	    \ "math"	     :
+	    \ "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
+	    \ "equation"     :
+	    \ "\\begin{equation}\n<++>\n\\end{equation}\n<++>",
+	    \ "equationstar" :
+	    \ "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
+	    \ "eqs"	     :
+	    \ "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
+	    \ "align"	     : "\\begin{align}\n<++>\n\\end{align}\n<++>",
+	    \ "alignstar"    : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
+	    \ "als"	     : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
+	    \ "enumerate"    :
+	    \ "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
+	    \ "itemize"	     :
+	    \ "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
+	    \ "frame"	     : "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
 	    \ }
 
-" GetMapping: TODO
+" GetMapping: to be written {{{
 " args:
-" 	trigger = imapped keystroke that fires the macro lookup
-function! GetMapping(trigger)
+" 	trigger = char code of the keystroke imapped to trigger this lookup 
+" 	below.
+function! GetRunningImap(trigger)
     let l:line = getline(".")
+    let l:ln = line(".")
     let l:col = col(".")
     let l:leaderIdx = l:col - 2
+    let l:maxMacroNameLen = 14 " currently comes from "subsubsection"
 
-    " Search backward for the leader character, the text following which 
-    " forms the token we try to match with a macro in one of the 
-    " dictionaries above.
-    while l:leaderIdx >= 0
-	if l:line[l:leaderIdx] == '\' || l:line[l:leaderIdx] == ';'
-	    let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
-		  " \ escape(slice(l:line, l:leaderIdx + 1, l:col - 1),
-		  " \ '*^@:\$/?=+-()&.')
-	    " Abort if token empty or whitespace.
-	    if l:token =~ '\s' || strlen(l:token) == 0
-		return a:trigger
-	    endif
-
-	    let l:leader = l:line[l:leaderIdx]
-
-	    " Choose dictionary based on leader and trigger
-	    if l:leader == ';'
-		let l:imapDict = s:imapDictSC
-	    else
-		if a:trigger == "\<cr>"
-		    let l:imapDict = s:imapDictCR
-		else
-		    let l:imapDict = s:imapDictSp
-		endif
-	    endif
-
-	    for [l:macro, l:result] in items(l:imapDict)
-		if l:macro =~ '\C^'.l:token.'\w*'
-		    let l:backspaces = ""
-		    let l:idx = 0
-		    while l:idx <= strcharlen(l:token)
-			let l:idx += 1
-			let l:backspaces .= "\<bs>"
-		    endwhile
-		    return l:backspaces."\<c-g>u" . IMAP_PutTextWithMovement(l:result, "<+", "+>")
-		endif
-	    endfor
+    " Search backward for a leader character.
+    while l:leaderIdx >= l:col - 2 - l:maxMacroNameLen
+	if index(g:runImapLeaderList, l:line[l:leaderIdx]) >= 0
+	    break
+	else
+	    let l:leaderIdx -= 1
 	endif
-
-	let l:leaderIdx -= 1
     endwhile
 
-    " Never found the a leader character.
-    return a:trigger
-endfunction
+    " No leader char found.
+    if l:leaderIdx < l:col - 2 - l:maxMacroNameLen
+	return nr2char(a:trigger)
+    endif
 
-inoremap <space> <c-r>=GetMapping("<c-v><space>")<cr>
-inoremap <cr> <c-r>=GetMapping("<c-v><cr>")<cr>
+    let l:leader = l:line[l:leaderIdx]
+
+    " Get user-typed token: text between last leader char and pos of cursor 
+    " at which trigger was inserted.
+    let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
+    " Abort if token is empty or just whitespace.
+    if l:token =~ '\s' || strlen(l:token) == 0
+	return nr2char(a:trigger)
+    endif
+
+    " Choose dictionary based on leader and trigger
+    let l:imapDict = s:imapDict_{char2nr(l:leader)}_{a:trigger}
+
+    let l:expansion = ''
+    if has_key(l:imapDict, l:token)
+	let l:expansion = l:imapDict[l:token]
+    else
+	let l:macroMatchList = []
+	for l:macro in keys(l:imapDict)
+	    if l:macro =~ '\C^'.l:token.'\w*'
+		let l:macroMatchList = add(l:macroMatchList, l:macro)
+	    endif
+	endfor
+	if len(l:macroMatchList) > 0
+	    if len(l:macroMatchList) == 1
+		let l:expansion = l:imapDict[l:macroMatchList[0]]
+	    else
+		let l:macroMatchList = sort(l:macroMatchList)
+		let l:selMacroList = ['Select macro:']
+		for l:selection in l:macroMatchList
+		    let l:selMacroList = add(l:selMacroList,
+				\ index(l:macroMatchList, l:selection) + 1
+				\ . '. ' . l:selection)
+		endfor
+		let l:selMacroNum = inputlist(l:selMacroList)
+		let l:selMacro = l:macroMatchList[l:selMacroNum - 1]
+		let l:expansion = l:imapDict[l:selMacro]
+	    endif
+	endif
+    endif
+
+    " Did not find a macro key matching user-typed token.
+    if strlen(l:expansion) == 0
+	return nr2char(a:trigger)
+    endif
+
+    " The following does not fix the problem:
+    " inputlist() dialog above will have moved the cursor, so 
+    " reposition it to where it was when this got triggered.
+    " let l:cursor = cursor(l:ln, l:col)
+
+    " Return the expanded macro to be printed, preceded by:
+    " first, enough backspaces to wipe out the user-typed token;
+    " second, an undo mark.
+    return repeat("\<bs>", strcharlen(l:token) + 1) . "\<c-g>u"
+		\ . IMAP_PutTextWithMovement(l:expansion, "<+", "+>")
+endfunction
+" }}}
+
+" Raw imaps {{{
+" let g:runImapTriggerList = ["\<tab>", "\<cr>"]
+" let s:asciiCd = 1
+" while s:asciiCd < 100
+"     let s:trigger = nr2char(s:asciiCd)
+"     if index(g:runImapTriggerList, s:trigger) >= 0
+" 	exe 'inoremap ' . s:trigger . '<c-r>=GetRunningImap('
+" 		    \ . s:asciiCd . ')<cr>'
+"     endif
+"     let s:asciiCd += 1
+" endwhile
+
+inoremap <buffer> <tab> <c-r>=GetRunningImap(9)<cr>
+"inoremap <space> <c-r>=GetRunningImap(32)<cr>
+inoremap <buffer> <cr> <c-r>=GetRunningImap(13)<cr>
+
+inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>', "<+", "+>")<cr>
+inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>', "<+", "+>")<cr>
+inoremap <buffer> () <c-r>=IMAP_PutTextWithMovement('(<++>)<++>', "<+", "+>")<cr>
+inoremap <buffer> [] <c-r>=IMAP_PutTextWithMovement('[<++>]<++>', "<+", "+>")<cr>
+inoremap <buffer> {} <c-r>=IMAP_PutTextWithMovement('{<++>}<++>', "<+", "+>")<cr>
+inoremap <buffer> $$ <c-r>=IMAP_PutTextWithMovement('$<++>$<++>', "<+", "+>")<cr>
+inoremap <buffer> (( <c-r>=IMAP_PutTextWithMovement('\left( <++> \right)<++>', "<+", "+>")<cr>
+inoremap <buffer> [[ <c-r>=IMAP_PutTextWithMovement('\left[ <++> \right]<++>', "<+", "+>")<cr>
+inoremap <buffer> {{ <c-r>=IMAP_PutTextWithMovement('\left\{ <++> \right\}<++>', "<+", "+>")<cr>
+" }}}
+
