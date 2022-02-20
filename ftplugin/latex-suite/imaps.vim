@@ -160,7 +160,6 @@ let s:imapDict_92_13 = {
 " 	below.
 function! GetRunningImap(trigger)
     let l:line = getline(".")
-    let l:ln = line(".")
     let l:col = col(".")
     let l:leaderIdx = l:col - 2
     let l:maxMacroNameLen = 14 " currently comes from "subsubsection"
@@ -185,7 +184,7 @@ function! GetRunningImap(trigger)
     " at which trigger was inserted.
     let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
     " Abort if token is empty or just whitespace.
-    if l:token =~ '\s' || strlen(l:token) == 0
+    if l:token =~ '\s' || empty(l:token)
 	return nr2char(a:trigger)
     endif
 
@@ -198,37 +197,34 @@ function! GetRunningImap(trigger)
     else
 	let l:macroMatchList = []
 	for l:macro in keys(l:imapDict)
-	    if l:macro =~ '\C^'.l:token.'\w*'
+	    if l:macro =~ '\C'.l:token
 		let l:macroMatchList = add(l:macroMatchList, l:macro)
 	    endif
 	endfor
-	if len(l:macroMatchList) > 0
-	    if len(l:macroMatchList) == 1
-		let l:expansion = l:imapDict[l:macroMatchList[0]]
-	    else
-		let l:macroMatchList = sort(l:macroMatchList)
-		let l:selMacroList = ['Select macro:']
-		for l:selection in l:macroMatchList
-		    let l:selMacroList = add(l:selMacroList,
-				\ index(l:macroMatchList, l:selection) + 1
-				\ . '. ' . l:selection)
-		endfor
-		let l:selMacroNum = inputlist(l:selMacroList)
-		let l:selMacro = l:macroMatchList[l:selMacroNum - 1]
-		let l:expansion = l:imapDict[l:selMacro]
-	    endif
+	if empty(l:macroMatchList)
+	    " Did not find a macro key matching user-typed token.
+	    return nr2char(a:trigger)
+	elseif len(l:macroMatchList) == 1
+	    let l:expansion = l:imapDict[l:macroMatchList[0]]
+	else
+	    " Ask user which macro they want.
+	    call sort(l:macroMatchList)
+	    let l:selMacroList = ['Select macro:']
+	    for l:selection in l:macroMatchList
+		call add(l:selMacroList,
+			    \ index(l:macroMatchList, l:selection) + 1
+			    \ . '. ' . l:selection)
+	    endfor
+	    let l:selMacro = l:macroMatchList[
+			\ inputlist(l:selMacroList) - 1 ]
+	    let l:expansion = l:imapDict[l:selMacro]
 	endif
     endif
 
-    " Did not find a macro key matching user-typed token.
-    if strlen(l:expansion) == 0
+    " Don't paste in a blank.
+    if empty(l:expansion)
 	return nr2char(a:trigger)
     endif
-
-    " The following does not fix the problem:
-    " inputlist() dialog above will have moved the cursor, so 
-    " reposition it to where it was when this got triggered.
-    " let l:cursor = cursor(l:ln, l:col)
 
     " Return the expanded macro to be printed, preceded by:
     " first, enough backspaces to wipe out the user-typed token;
