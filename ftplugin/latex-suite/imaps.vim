@@ -276,23 +276,17 @@ func GetRunningImap(trigger)
     endif
 
     " Experiment with mark / jump.
-    let l:firstPhIdx = stridx(l:expansion, "<++>")
-    let l:firstPhLn = l:ln + count(slice(l:expansion, 0, l:firstPhIdx + 1), "\n")
     let l:printText = repeat("\<bs>", strcharlen(l:token) + 1)
-		\ . "\<c-g>u"
-		\ . l:expansion
-		\ . "\<c-o>:call cursor(".l:ln.", 0) \<cr>"
-		\ . "\<c-o>:call search(\"<++>\") \<cr>"
-		\ . repeat("x", 4) . "\<esc>"
-		" \ . "\<c-o>:".l:firstPhLn."s/<++>/ / 1 \<cr>"
-		" \ . "\<c-r>\<del>\<del>\<del> \<cr>"
+		    \ . "\<c-g>u"
+		    \ . l:expansion
+    let l:firstPhIdx = stridx(l:expansion, "<++>")
+    if l:firstPhIdx >= 0
+	let l:printText = l:printText
+		    \ . "\<c-o>:call cursor(".l:ln.", 1) | "
+		    \ . "call search(\"<++>\")\<cr>"
+		    \ . repeat("\<Del>", 4)
+    endif
     return l:printText
-
-    " Return the expanded macro to be printed, preceded by:
-    " first, enough backspaces to wipe out the user-typed token;
-    " second, an undo mark.
-    return repeat("\<bs>", strcharlen(l:token) + 1) . "\<c-g>u"
-		\ . IMAP_PutTextWithMovement(l:expansion)
 endfunc
 " }}}
 
