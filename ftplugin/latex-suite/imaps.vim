@@ -235,6 +235,7 @@ endfunc
 func GetRunningImap(trigger)
     " Set current pos, parameters.
     let l:line = getline(".")
+    let l:ln = line(".")
     let l:col = col(".")
     let l:leaderIdx = l:col - 2
     let l:maxMacroNameLen = 14 " currently comes from "subsubsection"
@@ -273,6 +274,19 @@ func GetRunningImap(trigger)
     if empty(l:expansion)
 	return nr2char(a:trigger)
     endif
+
+    " Experiment with mark / jump.
+    let l:firstPhIdx = stridx(l:expansion, "<++>")
+    let l:firstPhLn = l:ln + count(slice(l:expansion, 0, l:firstPhIdx + 1), "\n")
+    let l:printText = repeat("\<bs>", strcharlen(l:token) + 1)
+		\ . "\<c-g>u"
+		\ . l:expansion
+		\ . "\<c-o>:call cursor(".l:ln.", 0) \<cr>"
+		\ . "\<c-o>:call search(\"<++>\") \<cr>"
+		\ . repeat("x", 4) . "\<esc>"
+		" \ . "\<c-o>:".l:firstPhLn."s/<++>/ / 1 \<cr>"
+		" \ . "\<c-r>\<del>\<del>\<del> \<cr>"
+    return l:printText
 
     " Return the expanded macro to be printed, preceded by:
     " first, enough backspaces to wipe out the user-typed token;
