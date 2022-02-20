@@ -1,4 +1,4 @@
-"===========================================================================
+" HEADER ==================================================================
 " vim:ft=vim:sw=4:sts=4:commentstring=\"\ %s:ff=unix
 " 	 File: imaps.vim
 "      Author: David G. White
@@ -10,17 +10,25 @@
 " 
 "        NOTE: This file is best viewed with Vim-6.0+ with folding turned 
 "        on.
-"===========================================================================
+"==========================================================================
 
 let g:runImapLeaderList = ['\', ';']
 
-inoremap == <c-r>='&= '<cr>
-inoremap ~~ <c-r>='&\approx '<cr>
-inoremap =~ <c-r>='\approx'<cr>
-inoremap :: <c-r>='\dots'<cr>
-inoremap .. <c-r>='\dotsc'<cr>
-inoremap ** <c-r>='\dotsb'<cr>
+" Imap Dictionaries: {{{
+" Form: { [ key = macro name, value = expansion text ], ... }
+" Description: Each dictionary has a name of the form 
+" `s:imapDict_{nr1}_{nr2}`. Here {nr1} is the UTF-8 / ASCII code for the 
+" leader character, and {nr2} that of the triggering keystroke character, 
+" to which the pairs `[{macro name}, {macro expansion text}]` in the 
+" dictionary are to be associated. (This allows similar / identical macro 
+" name patterns to be used with different leader + trigger pairs so that 
+" they do not clobber each other.) A particular dictionary is chosen for 
+" the expansion text lookup in `func GetRunningImap()` below based on that 
+" leader + trigger pair typed by the user. The token checked against the 
+" dictionary keys is that text lying between the leader, on the left, and 
+" one column left of the cursor position when the trigger was typed.
 
+" imap dictionary: ;...<tab> {{{
 " Leader 59 = ";"
 " Trigger 9 = "\<tab>"
 let s:imapDict_59_9 = {
@@ -85,15 +93,22 @@ let s:imapDict_59_9 = {
 	    \ '>' : '\ge',
 	    \ ',' : '\nonumber',
 	    \ }
+" }}}
+
+" Unincorporated IMAPs {{{
 " call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
 " call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
 " call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
 " call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
+" }}}
 
+" imap dictionary: ;...<tab> {{{
 " Leader 59 = ";"
 " Trigger 32 = "\<space>"
 " let s:imapDict_59_32 = s:imapDict_59_9
+" }}}
 
+" imap dictionary: \...<tab> {{{
 " Leader 92 = '\'
 " Trigger 9 = "\<tab>"
 let s:imapDict_92_9 = {
@@ -125,11 +140,15 @@ let s:imapDict_92_9 = {
 	    \ "hyperref"      : "\\hyperref{<++>}<++>",
 	    \ "hr"	      : "\\hyperref{<++>}<++>",
 	    \ }
+" }}}
 
+" imap dictionary: \...<space> {{{
 " Leader 92 = '\'
 " Trigger 32 = "\<space>"
 " let s:imapDict_92_32 = s:imapDict_92_9
+" }}}
 
+" imap dictionary: \...<cr> {{{
 " Leader 92 = '\'
 " Trigger 13 = "\<cr>"
 let s:imapDict_92_13 = {
@@ -153,12 +172,68 @@ let s:imapDict_92_13 = {
 	    \ "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
 	    \ "frame"	     : "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
 	    \ }
+" }}}
 
-" GetMapping: to be written {{{
+" }}}
+
+" s:ExpansionLookup: {{{
+" Description: {{{ Look up expansion text corresponding to the user-typed 
+" token, or to a macro name matching it, in selected dictionary above.
+" }}}
+func s:ExpansionLookup(dict, token)
+    let l:expansion = ''
+
+    " User-typed token matches a macro name (dict key) exactly, so return 
+    " corresponding expansion text immediately.
+    if has_key(a:dict, a:token)
+	let l:expansion = a:dict[a:token]
+	return l:expansion
+    endif
+
+    " User-typed token does not match a macro name exactly, so build a list 
+    " of those it pattern-matches.
+    let l:macroMatchList = []
+    for l:macro in keys(a:dict)
+	if l:macro =~ '\C'.a:token
+	    let l:macroMatchList = add(l:macroMatchList, l:macro)
+	endif
+    endfor
+
+    " Found no macro name matching user-typed token, so return blank 
+    " string.
+    if empty(l:macroMatchList)
+	return l:expansion
+    endif
+
+    if len(l:macroMatchList) == 1
+	" Unique macro key matching token, so just grab that one's 
+	" corresponding expansion text.
+	let l:expansion = a:dict[l:macroMatchList[0]]
+    else " Ask user which macro they want.
+	call sort(l:macroMatchList)
+	let l:selMacroList = ['Select macro:']
+	for l:selection in l:macroMatchList
+	    call add(l:selMacroList,
+			\ index(l:macroMatchList, l:selection) + 1
+			\ . '. ' . l:selection)
+	endfor
+	let l:selMacro = l:macroMatchList[
+		    \ inputlist(l:selMacroList) - 1 ]
+	let l:expansion = a:dict[l:selMacro]
+    endif
+
+    return l:expansion
+endfunc
+" }}}
+
+" GetRunningImap: to be written {{{
+" Description: to be written {{{
 " args:
 " 	trigger = char code of the keystroke imapped to trigger this lookup 
 " 	below.
-function! GetRunningImap(trigger)
+" }}}
+func GetRunningImap(trigger)
+    " Set current pos, parameters.
     let l:line = getline(".")
     let l:col = col(".")
     let l:leaderIdx = l:col - 2
@@ -178,10 +253,9 @@ function! GetRunningImap(trigger)
 	return nr2char(a:trigger)
     endif
 
-    let l:leader = l:line[l:leaderIdx]
-
     " Get user-typed token: text between last leader char and pos of cursor 
     " at which trigger was inserted.
+    let l:leader = l:line[l:leaderIdx]
     let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
     " Abort if token is empty or just whitespace.
     if l:token =~ '\s' || empty(l:token)
@@ -191,37 +265,11 @@ function! GetRunningImap(trigger)
     " Choose dictionary based on leader and trigger
     let l:imapDict = s:imapDict_{char2nr(l:leader)}_{a:trigger}
 
-    let l:expansion = ''
-    if has_key(l:imapDict, l:token)
-	let l:expansion = l:imapDict[l:token]
-    else
-	let l:macroMatchList = []
-	for l:macro in keys(l:imapDict)
-	    if l:macro =~ '\C'.l:token
-		let l:macroMatchList = add(l:macroMatchList, l:macro)
-	    endif
-	endfor
-	if empty(l:macroMatchList)
-	    " Did not find a macro key matching user-typed token.
-	    return nr2char(a:trigger)
-	elseif len(l:macroMatchList) == 1
-	    let l:expansion = l:imapDict[l:macroMatchList[0]]
-	else
-	    " Ask user which macro they want.
-	    call sort(l:macroMatchList)
-	    let l:selMacroList = ['Select macro:']
-	    for l:selection in l:macroMatchList
-		call add(l:selMacroList,
-			    \ index(l:macroMatchList, l:selection) + 1
-			    \ . '. ' . l:selection)
-	    endfor
-	    let l:selMacro = l:macroMatchList[
-			\ inputlist(l:selMacroList) - 1 ]
-	    let l:expansion = l:imapDict[l:selMacro]
-	endif
-    endif
+    " Look up expansion text corresponding to the user-typed token, or to a 
+    " macro name matching it, in selected dictionary above.
+    let l:expansion = s:ExpansionLookup(l:imapDict, l:token)
 
-    " Don't paste in a blank.
+    " Don't paste in a blank; just return the trigger.
     if empty(l:expansion)
 	return nr2char(a:trigger)
     endif
@@ -230,8 +278,8 @@ function! GetRunningImap(trigger)
     " first, enough backspaces to wipe out the user-typed token;
     " second, an undo mark.
     return repeat("\<bs>", strcharlen(l:token) + 1) . "\<c-g>u"
-		\ . IMAP_PutTextWithMovement(l:expansion, "<+", "+>")
-endfunction
+		\ . IMAP_PutTextWithMovement(l:expansion)
+endfunc
 " }}}
 
 " Raw imaps {{{
@@ -250,14 +298,24 @@ inoremap <buffer> <tab> <c-r>=GetRunningImap(9)<cr>
 "inoremap <space> <c-r>=GetRunningImap(32)<cr>
 inoremap <buffer> <cr> <c-r>=GetRunningImap(13)<cr>
 
-inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>', "<+", "+>")<cr>
-inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>', "<+", "+>")<cr>
-inoremap <buffer> () <c-r>=IMAP_PutTextWithMovement('(<++>)<++>', "<+", "+>")<cr>
-inoremap <buffer> [] <c-r>=IMAP_PutTextWithMovement('[<++>]<++>', "<+", "+>")<cr>
-inoremap <buffer> {} <c-r>=IMAP_PutTextWithMovement('{<++>}<++>', "<+", "+>")<cr>
-inoremap <buffer> $$ <c-r>=IMAP_PutTextWithMovement('$<++>$<++>', "<+", "+>")<cr>
-inoremap <buffer> (( <c-r>=IMAP_PutTextWithMovement('\left( <++> \right)<++>', "<+", "+>")<cr>
-inoremap <buffer> [[ <c-r>=IMAP_PutTextWithMovement('\left[ <++> \right]<++>', "<+", "+>")<cr>
-inoremap <buffer> {{ <c-r>=IMAP_PutTextWithMovement('\left\{ <++> \right\}<++>', "<+", "+>")<cr>
+inoremap == <c-r>='&= '<cr>
+inoremap ~~ <c-r>='&\approx '<cr>
+inoremap =~ <c-r>='\approx'<cr>
+inoremap :: <c-r>='\dots'<cr>
+inoremap .. <c-r>='\dotsc'<cr>
+inoremap ** <c-r>='\dotsb'<cr>
+
+inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>')<cr>
+inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>')<cr>
+inoremap <buffer> () <c-r>=IMAP_PutTextWithMovement('(<++>)<++>')<cr>
+inoremap <buffer> [] <c-r>=IMAP_PutTextWithMovement('[<++>]<++>')<cr>
+inoremap <buffer> {} <c-r>=IMAP_PutTextWithMovement('{<++>}<++>')<cr>
+inoremap <buffer> $$ <c-r>=IMAP_PutTextWithMovement('$<++>$<++>')<cr>
+inoremap <buffer> (( <c-r>=
+	    \IMAP_PutTextWithMovement('\left( <++> \right)<++>')<cr>
+inoremap <buffer> [[ <c-r>=
+	    \IMAP_PutTextWithMovement('\left[ <++> \right]<++>')<cr>
+inoremap <buffer> {{ <c-r>=
+	    \IMAP_PutTextWithMovement('\left\{ <++> \right\}<++>')<cr>
 " }}}
 
