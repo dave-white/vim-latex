@@ -141,7 +141,6 @@ let s:imapDict_92_9 = {
 	    \ "cite"	      : "\\cite{<++>}<++>",
 	    \ "ref"	      : "\\ref{<++>}<++>",
 	    \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
-	    \ "hr"	      : "\\hyperref{<++>}<++>",
 	    \ }
 " }}}
 
