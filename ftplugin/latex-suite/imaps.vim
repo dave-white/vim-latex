@@ -1,5 +1,5 @@
 " HEADER ==================================================================
-" vim:ft=vim:sw=4:sts=4:commentstring=\"\ %s:ff=unix
+" vim:ft=vim:sw=4:sts=4:foldmethod=manual:commentstring=\"\ %s:ff=unix
 " 	 File: imaps.vim
 "      Author: David G. White
 "     Created: Sat. 19 Feb. 2022, 14:30 UTC-5
@@ -16,7 +16,7 @@ let g:runImapLeaderList = ['\', ';']
 
 " Imap Dictionaries: {{{
 " Form: { [ key = macro name, value = expansion text ], ... }
-" Description: Each dictionary has a name of the form 
+" Description: {{{ Each dictionary has a name of the form 
 " `s:imapDict_{nr1}_{nr2}`. Here {nr1} is the UTF-8 / ASCII code for the 
 " leader character, and {nr2} that of the triggering keystroke character, 
 " to which the pairs `[{macro name}, {macro expansion text}]` in the 
@@ -27,6 +27,7 @@ let g:runImapLeaderList = ['\', ';']
 " leader + trigger pair typed by the user. The token checked against the 
 " dictionary keys is that text lying between the leader, on the left, and 
 " one column left of the cursor position when the trigger was typed.
+" }}}
 
 " imap dictionary: ;...<tab> {{{
 " Leader 59 = ";"
@@ -194,7 +195,7 @@ func s:ExpansionLookup(dict, token)
     " of those it pattern-matches.
     let l:macroMatchList = []
     for l:macro in keys(a:dict)
-	if l:macro =~ '\C'.a:token
+	if l:macro =~ '\C^'.a:token
 	    let l:macroMatchList = add(l:macroMatchList, l:macro)
 	endif
     endfor
