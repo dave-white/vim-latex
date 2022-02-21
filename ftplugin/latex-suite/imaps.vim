@@ -229,7 +229,21 @@ func s:ExpansionLookup(dict, token)
 endfunc
 " }}}
 
-" GetRunningImap: to be written {{{
+" s:AddMovement: {{{
+" Description: Move to and delete first placeholder.
+func s:AddMovement(text, startLn)
+    let l:firstPhIdx = stridx(a:text, "<++>")
+    if l:firstPhIdx >= 0
+	return  a:text . "\<c-o>:call cursor(".a:startLn.", 1) | "
+		    \ . "call search(\"<++>\")\<cr>"
+		    \ . repeat("\<Del>", 4)
+    else
+	return a:text
+    endif
+endfunc
+" }}}
+
+" GetRunningImap: {{{
 " Description: to be written {{{
 " args:
 " 	trigger = char code of the keystroke imapped to trigger this lookup 
@@ -278,18 +292,12 @@ func GetRunningImap(trigger)
 	return nr2char(a:trigger)
     endif
 
-    " Experiment with mark / jump.
+    " Add enough backspaces to overwrite the token and then an undo mark.
     let l:printText = repeat("\<bs>", strcharlen(l:token) + 1)
 		    \ . "\<c-g>u"
 		    \ . l:expansion
-    let l:firstPhIdx = stridx(l:expansion, "<++>")
-    if l:firstPhIdx >= 0
-	let l:printText = l:printText
-		    \ . "\<c-o>:call cursor(".l:ln.", 1) | "
-		    \ . "call search(\"<++>\")\<cr>"
-		    \ . repeat("\<Del>", 4)
-    endif
-    return l:printText
+
+    return s:AddMovement(l:printText, l:ln)
 endfunc
 " }}}
 
