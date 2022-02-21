@@ -161,7 +161,11 @@ let s:imapDict_92_13 = {
 	    \ "math"	     :
 	    \ "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
 	    \ "equation"     :
-	    \ "\\begin{equation}\n<++>\n\\end{equation}\n<++>",
+	    \ "\\begin{equation}"
+	    \ . "\n\\label{eqn:<++>}\n<++>\n\\end{equation}\n<++>",
+	    \ "eqn"     :
+	    \ "\\begin{equation}"
+	    \ . "\n\\label{eqn:<++>}\n<++>\n\\end{equation}\n<++>",
 	    \ "equationstar" :
 	    \ "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
 	    \ "eqs"	     :
@@ -174,6 +178,23 @@ let s:imapDict_92_13 = {
 	    \ "itemize"	     :
 	    \ "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
 	    \ "frame"	     : "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
+	    \ "definition"   :
+	    \ "\\begin{definition}"
+	    \ . "\n\\label{dfn:<++>}\n<++>\n\\end{definition}\n<++>",
+	    \ "theorem"	     :
+	    \ "\\begin{theorem}[<++>]"
+	    \ . "\n\\label{thm:<++>}\n<++>\n\\end{theorem}\n<++>",
+	    \ "thm"	     :
+	    \ "\\begin{theorem}[<++>]"
+	    \ . "\n\\label{thm:<++>}\n<++>\n\\end{theorem}\n<++>",
+	    \ "nthm"	     :
+	    \ "\\begin{nthm}[<++>]"
+	    \ . "\n\\label{thm:<++>}\n<++>\n\\end{nthm}\n<++>",
+	    \ "proposition"  :
+	    \ "\\begin{proposition}"
+	    \ . "\n\\label{prp:<++>}\n<++>\n\\end{proposition}\n<++>",
+	    \ "lemma"	     :
+	    \ "\\begin{lemma}\n\\label{lem:<++>}\n<++>\n\\end{lemma}\n<++>",
 	    \ }
 " }}}
 
