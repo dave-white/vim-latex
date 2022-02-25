@@ -113,6 +113,8 @@ let s:imapDict_59_9 = {
 " Leader 92 = '\'
 " Trigger 9 = "\<tab>"
 let s:imapDict_92_9 = {
+	    \ "tex"	      : "\\TeX{}",
+	    \ "latex"	      : "\\LaTeX{}",
 	    \ "input"	      : "\\input{<++>}\n<++>",
 	    \ "usepackage"    : "\\usepackage[<++>]{<++>,}\n<++>",
 	    \ "section"	      : "\\section{<++>}\n<++>",
