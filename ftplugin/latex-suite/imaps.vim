@@ -113,6 +113,8 @@ let s:imapDict_59_9 = {
 " Leader 92 = '\'
 " Trigger 9 = "\<tab>"
 let s:imapDict_92_9 = {
+	    \ "input"	      : "\\input{<++>}\n<++>",
+	    \ "usepackage"    : "\\usepackage[<++>]{<++>,}\n<++>",
 	    \ "section"	      : "\\section{<++>}\n<++>",
 	    \ "subsection"    : "\\subsection{<++>}\n<++>",
 	    \ "ssection"      : "\\subsection{<++>}\n<++>",
@@ -137,10 +139,15 @@ let s:imapDict_92_9 = {
 	    \ "tb"	      : "\\textbf{<++>}<++>",
 	    \ "textit"	      : "\\textit{<++>}<++>",
 	    \ "ti"	      : "\\textit{<++>}<++>",
+	    \ "textsc"	      : "\\textsc{<++>}<++>",
+	    \ "ts"	      : "\\textsc{<++>}<++>",
+	    \ "texttt"	      : "\\texttt{<++>}<++>",
+	    \ "tt"	      : "\\texttt{<++>}<++>",
 	    \ "emph"	      : "\\emph{<++>}<++>",
 	    \ "cite"	      : "\\cite{<++>}<++>",
 	    \ "ref"	      : "\\ref{<++>}<++>",
 	    \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
+	    \ "label"	      : "\\label{<++>}<++>",
 	    \ }
 " }}}
 
