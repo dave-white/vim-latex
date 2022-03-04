@@ -7,14 +7,35 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-" avoiding re-inclusion {{{
-" the avoiding re-inclusion statement is not provided here because the files
-" which call this file should in the normal course of events handle the
-" re-inclusion stuff.
+" Buffer-specific tex file settings {{{
+if !exists('b:srcdTexbrc') || b:srcdTexbrc != 1
+	let b:srcdTexbrc = 1
+	runtime ftplugin/tex/texbrc
+endif
+" }}}
 
-" we definitely dont want to run through the entire file each and every time.
-" only once to define the functions. for successive latex files, just set up
-" the folding and mappings and quit.
+" Get the place where this plugin resides for setting cpt and dict {{{
+" options. These lines need to be outside the function.
+let s:path = expand('<sfile>:p:h')
+" }}}
+
+" ==============================================================================
+" Mappings -- buffer
+" ==============================================================================
+" {{{
+if !exists('b:doneBufMaps') || b:doneBufMaps != 1
+	let b:doneBufMaps = 1
+	exe 'source '.s:path.'/imaps.vim'
+endif
+" }}}
+
+" avoiding re-inclusion the avoiding re-inclusion statement is not {{{ 
+" provided here because the files which call this file should in the normal 
+" course of events handle the re-inclusion stuff.
+
+" we definitely dont want to run through the entire file each and every 
+" time. only once to define the functions. for successive latex files, just 
+" set up the folding and mappings and quit.
 if exists('s:doneFunctionDefinitions') && !exists('b:forceRedoLocalTex')
 	call s:SetTeXOptions()
 	finish
@@ -49,9 +70,6 @@ if s:loc_texrc != '' && filereadable(s:loc_texrc)
 endif
 " set up personal global settings.
 runtime ftplugin/tex/texrc
-" get the place where this plugin resides for setting cpt and dict options.
-" these lines need to be outside the function.
-let s:path = expand('<sfile>:p:h')
 " set up global default settings.
 exe "so ".fnameescape(s:path.'/texrc')
 
@@ -60,16 +78,15 @@ exe "so ".fnameescape(s:path.'/texrc')
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
-" ==============================================================================
-" mappings
-" ==============================================================================
+" ========================================================================
+" Mappings -- IMAP
+" ========================================================================
 " {{{
 " calculate the mapleader character.
 let s:ml = '<Leader>'
 
-if !exists('s:doneMappings')
+if !exists('s:doneMappings') || s:doneMappings != 1
 	let s:doneMappings = 1
-	exe 'source '.s:path.'/imaps.vim'
 	" short forms for latex formatting and math elements. {{{
 	" taken from auctex.vim or miktexmacros.vim
 	" call IMAP ('__', '_{<++>}<++>', "tex")
@@ -177,19 +194,22 @@ if !exists('s:doneMappings')
 	" " " Description: If we simply do
 	" " 		call IMAP('`a', '\alpha', 'tex')
 	" " then we will never be able to type 'a' after a tex-quotation. Since
-	" " IMAP() always uses the longest map ending in the letter, this problem
+	" " IMAP() always uses the longest map ending in the letter, this 
+	" problem
 	" " can be avoided by creating a fake map for ``a -> ``a.
 	" " This function sets up fake maps of the following forms:
 	" " 	``[aA]  -> ``[aA]    (for writing in quotations)
 	" " 	\`[aA]  -> \`[aA]    (for writing diacritics)
 	" " 	"`[aA]  -> "`[aA]    (for writing german quotations)
-	" " It does this for all printable lower ascii characters just to make sure
+	" " It does this for all printable lower ascii characters just to make 
+	" sure
 	" " we dont let anything slip by.
 	" function! s:ProtectLetters(first, last)
 	" 	for i in range(a:first, a:last)
 	" 		if nr2char(i) =~ '[[:print:]]'
 	" 			if ( g:Tex_SmartKeyDot && nr2char(i) == '.' )
-	" 						\ || ( g:Tex_SmartKeyQuote && nr2char(i) == '"' )
+	" 						\ || ( g:Tex_SmartKeyQuote && nr2char(i) == '"' 
+	" 						)
 	" 				continue
 	" 			endif
 	" 			call IMAP('``'.nr2char(i), '``'.nr2char(i), 'tex')
@@ -197,19 +217,31 @@ if !exists('s:doneMappings')
 	" 			call IMAP('"`'.nr2char(i), '"`'.nr2char(i), 'tex')
 	" 		endif
 	" 	endfor
-	" endfunction 
-	" call s:ProtectLetters(32, 127)
+	" endfunction call s:ProtectLetters(32, 127)
 	" " }}}
-	" " vmaps: enclose selected region in brackets, environments {{{ 
-	" " The action changes depending on whether the selection is character-wise
+	" " vmaps: enclose selected region in brackets, environments {{{ " The 
+	" action changes depending on whether the selection is character-wise
 	" " or line wise. for example, selecting linewise and pressing \v will
-	" " result in the region being enclosed in \begin{verbatim}, \end{verbatim},
-	" " whereas in characterise visual mode, the thingie is enclosed in \verb|
+	" " result in the region being enclosed in \begin{verbatim}, 
+	" \end{verbatim},
+	" " whereas in characterise visual mode, the thingie is enclosed in 
+	" \verb|
 	" " and |.
-	exec 'xnoremap <silent> '.g:Tex_Leader."( \<C-\\>\<C-N>:call VEnclose('\\left( ', ' \\right)', '\\left(', '\\right)')\<CR>"
-	exec 'xnoremap <silent> '.g:Tex_Leader."[ \<C-\\>\<C-N>:call VEnclose('\\left[ ', ' \\right]', '\\left[', '\\right]')\<CR>"
-	exec 'xnoremap <silent> '.g:Tex_Leader."{ \<C-\\>\<C-N>:call VEnclose('\\left\\{ ', ' \\right\\}', '\\left\\{', '\\right\\}')\<CR>"
-	exec 'xnoremap <silent> '.g:Tex_Leader."$ \<C-\\>\<C-N>:call VEnclose('$', '$', '\\[', '\\]')\<CR>"
+	exec 'xnoremap <silent> '
+				\ .g:Tex_Leader."( \<C-\\>\<C-N>:call "
+				\ ."VEnclose('\\left( ', ' \\right)', "
+				\ ."'\\left(', '\\right)')\<CR>"
+	exec 'xnoremap <silent> '
+				\ .g:Tex_Leader."[ \<C-\\>\<C-N>:call "
+				\ ."VEnclose('\\left[ ', ' \\right]', "
+				\ ."'\\left[', '\\right]')\<CR>"
+	exec 'xnoremap <silent> '
+				\ .g:Tex_Leader."{ \<C-\\>\<C-N>:call "
+				\ ."VEnclose('\\left\\{ ', ' \\right\\}', "
+				\ ."'\\left\\{', '\\right\\}')\<CR>"
+	exec 'xnoremap <silent> '
+				\ .g:Tex_Leader."$ \<C-\\>\<C-N>:call "
+				\ ."VEnclose('$', '$', '\\[', '\\]')\<CR>"
 	" }}}
 	"
 endif
@@ -290,7 +322,7 @@ function! Tex_ShowVariableValue(...)
 	while i <= a:0
 		exe 'let arg = a:'.i
 		if exists('s:'.arg) ||
-		\  exists('*s:'.arg)
+					\  exists('*s:'.arg)
 			exe 'let val = s:'.arg
 			echomsg 's:'.arg.' = '.val
 		end
@@ -300,9 +332,9 @@ endfunction
 
 " }}}
 
-" ==============================================================================
+" ========================================================================
 " Helper functions for grepping
-" ============================================================================== 
+" ======================================================================== 
 " Tex_Grep: shorthand for :vimgrep {{{
 function! Tex_Grep(string, where)
 	exec 'silent! vimgrep! /'.a:string.'/ '.a:where
@@ -317,13 +349,14 @@ endfunction
 " }}}
 
 
-" ==============================================================================
+" ========================================================================
 " Uncategorized helper functions
-" ============================================================================== 
+" ======================================================================== 
 " Tex_Strntok: extract the n^th token from a list {{{
 " example: Strntok('1,23,3', ',', 2) = 23
 fun! Tex_Strntok(s, tok, n)
-	return matchstr( a:s.a:tok[0], '\v(\zs([^'.a:tok.']*)\ze['.a:tok.']){'.a:n.'}')
+	return matchstr(a:s . a:tok[0], '\v(\zs([^' . a:tok . ']*)\ze['
+				\ . a:tok . ']){' . a:n . '}')
 endfun
 
 " }}}
@@ -341,8 +374,7 @@ endfun
 
 " }}}
 " Tex_CreatePrompt: creates a prompt string {{{
-" Description: 
-" Arguments:
+" Description: Arguments:
 "     promptList: This is a string of the form:
 "         'item1,item2,item3,item4'
 "     cols: the number of columns in the resultant prompt
@@ -366,8 +398,8 @@ function! Tex_CreatePrompt(promptList, cols, sep)
 		let j = 0
 		while j < a:cols && i + j <= num_common
 			let com = Tex_Strntok(a:promptList, a:sep, i+j)
-			let promptStr = promptStr.'('.(i+j).') '. 
-						\ com."\t".( strlen(com) < 4 ? "\t" : '' )
+			let promptStr = promptStr.'('.(i+j).') '.  \ com."\t".( 
+			strlen(com) < 4 ? "\t" : '' )
 
 			let j = j + 1
 		endwhile
@@ -384,16 +416,17 @@ endfunction
 " Description: This function needs to be globally visible because its
 "              called from outside the script during expansion.
 function! Tex_CleanSearchHistory()
-  call histdel("/", -1)
-  let @/ = histget("/", -1)
+	call histdel("/", -1)
+	let @/ = histget("/", -1)
 endfunction
 nmap <silent> <script> <plug>cleanHistory :call Tex_CleanSearchHistory()<CR>
 
 " }}}
 " Tex_GetVarValue: gets the value of the variable {{{
-" Description: 
-" 	See if a window-local, buffer-local or global variable with the given name
-" 	exists and if so, returns the corresponding value. If none exist, return
+" Description: See if a window-local, buffer-local or global variable with 
+" the given name
+" 	exists and if so, returns the corresponding value. If none exist, 
+" 	return
 " 	an empty string.
 function! Tex_GetVarValue(varname, ...)
 	if exists('w:'.a:varname)
@@ -420,9 +453,8 @@ endfunction " }}}
 "               You can supply an optional "modifier" argument to the
 "               function, which will optionally modify the file name before
 "               returning.
-"               NOTE: From version 1.6 onwards, this function always trims
-"               away the .latexmain part of the file name before applying the
-"               modifier argument.
+" NOTE: From version 1.6 onwards, this function always trims away the 
+" .latexmain part of the file name before applying the modifier argument.
 function! Tex_GetMainFileName(...)
 	if a:0 > 0
 		let modifier = a:1
@@ -440,7 +472,7 @@ function! Tex_GetMainFileName(...)
 			if filereadable(l:main_fname)
 				return fnamemodify(l:main_fname, modifier)
 			endif
-		" rel fname
+			" rel fname
 		else
 			let l:main_fname = Tex_FindFileAbove(l:main_fname_expr)
 			if l:main_fname != ''
@@ -456,8 +488,8 @@ function! Tex_GetMainFileName(...)
 	exe 'cd '.dirLast
 
 	" move up the directory tree until we find a .latexmain file.
-	" TODO: Should we be doing this recursion by default, or should there be a
-	"       setting?
+	" TODO: Should we be doing this recursion by default, or should there 
+	" be a setting?
 	while glob('*.latexmain', 1) == ''
 		let dirmodifier = dirmodifier.':h'
 		let dirNew = fnameescape(expand(dirmodifier))
@@ -471,9 +503,10 @@ function! Tex_GetMainFileName(...)
 
 	let lheadfile = glob('*.latexmain', 1)
 	if lheadfile != ''
-		" Remove the trailing .latexmain part of the filename... We never want
-		" that.
-		let lheadfile = fnamemodify(substitute(lheadfile, '\.latexmain$', '', ''), modifier)
+		" Remove the trailing .latexmain part of the filename... We never 
+		" want that.
+		let lheadfile = fnamemodify(substitute(lheadfile, '\.latexmain$', 
+		'', ''), modifier)
 	else
 		" If we cannot find any main file, just modify the filename of the
 		" current buffer.
@@ -483,9 +516,9 @@ function! Tex_GetMainFileName(...)
 	exe 'cd '.l:origdir
 
 	" NOTE: The caller of this function needs to escape the file name with
-	"       fnameescape() . The reason its not done here is that escaping is not
-	"       safe if this file is to be used as part of an external command on
-	"       certain platforms.
+	"       fnameescape() . The reason its not done here is that escaping 
+	"       is not safe if this file is to be used as part of an external 
+	"       command on certain platforms.
 	return lheadfile
 endfunction 
 
@@ -519,20 +552,20 @@ function! Tex_ResetIncrementNumber(val)
 	let s:incnum = a:val
 endfunction " }}}
 " Tex_FindInDirectory: check if file exists in a directory {{{
-" Description:	Checks if file exists in globpath(directory, ...) and cuts off
-" 				the rest of returned names. This guarantees that sourced file
-" 				is from $HOME.
-"               If the argument a:rtp is set, we interpret a:directory as a
-"               subdirectory of &rtp/ftplugin/latex-suite/.
-"               If an optional argument is given, it specifies how to expand
-"               each filename found. For example, '%:p' will return a list of
-"               the complete paths to the files. By default returns trailing
-"               path-names without extenions.
-"               NOTE: This function is very slow when a large number of
-"                     matches are found because of a while loop which modifies
-"                     each filename found. Some speedup was acheived by using
-"                     a tokenizer approach rather than using Tex_Strntok which
-"                     would have been more obvious.
+" Description:	Checks if file exists in globpath(directory, ...) and cuts
+"				off the rest of returned names. This guarantees that
+"				sourced file is from $HOME.  If the argument a:rtp is set,
+"				we interpret a:directory as a subdirectory of
+"				&rtp/ftplugin/latex-suite/.  If an optional argument is
+"				given, it specifies how to expand each filename found.
+"				For example, '%:p' will return a list of the complete
+"				paths to the files. By default returns trailing path-names
+"				without extenions.
+" NOTE: This function is very slow when a large number of matches are
+"		found because of a while loop which modifies each filename found.
+"		Some speedup was acheived by using a tokenizer approach rather
+"		than using Tex_Strntok which would have been more obvious.
+"
 function! Tex_FindInDirectory(filename, rtp, directory, ...)
 	" how to expand each filename. ':p:t:r' modifies each filename to its
 	" trailing part without extension.
@@ -541,7 +574,8 @@ function! Tex_FindInDirectory(filename, rtp, directory, ...)
 	let pattern = (a:filename != '' ? a:filename : '*')
 
 	if a:rtp
-		let filelist = globpath(&rtp, 'ftplugin/latex-suite/'.a:directory.'/'.pattern)."\n"
+		let filelist = globpath(&rtp, 'ftplugin/latex-suite/'
+					\ . a:directory . '/' . pattern) . "\n"
 	else
 		let filelist = globpath(a:directory, pattern)."\n"
 	endif
@@ -561,8 +595,8 @@ function! Tex_FindInDirectory(filename, rtp, directory, ...)
 	let retfilelist = ''
 	let i = 1
 	while 1
-		" Extract the portion till the next newline. Then shorten the filelist
-		" by removing till the newline.
+		" Extract the portion till the next newline. Then shorten the 
+		" filelist by removing till the newline.
 		let nextnewline = stridx(filelist, "\n")
 		if nextnewline == -1
 			break
@@ -584,13 +618,14 @@ endfunction
 " Tex_FindInRtp: check if file exists in &rtp {{{
 " Description:	Wrapper around Tex_FindInDirectory, using a:rtp
 function! Tex_FindInRtp(filename, directory, ...)
-	return call("Tex_FindInDirectory", [ a:filename, 1, a:directory ] + a:000 )
+	return call("Tex_FindInDirectory",
+				\ [ a:filename, 1, a:directory ] + a:000 )
 endfunction
 
 " }}}
 " Tex_GetErrorList: returns vim's clist {{{
-" Description: returns the contents of the error list available via the :clist
-"              command.
+" Description: returns the contents of the error list available via the 
+"			   :clist command.
 function! Tex_GetErrorList()
 	let _a = @a
 	redir @a | silent! clist | redir END
@@ -603,10 +638,12 @@ function! Tex_GetErrorList()
 
 	return errlist
 endfunction " }}}
-" Tex_GetTempName: get the name of a temporary file in specified directory {{{
-" Description: Unlike vim's native tempname(), this function returns the name
-"              of a temporary file in the directory specified. This enables
-"              us to create temporary files in a specified directory.
+" Tex_GetTempName: get the name of a temporary file in specified directory 
+" {{{
+" Description: Unlike vim's native tempname(), this function returns the 
+"			   name of a temporary file in the directory specified. This
+"			   enables us to create temporary files in a specified
+"			   directory.
 function! Tex_GetTempName(dirname)
 	let prefix = 'latexSuiteTemp'
 	let slash = (a:dirname =~ '\\$\|/$' ? '' : '/')
@@ -621,7 +658,8 @@ function! Tex_GetTempName(dirname)
 	return expand(a:dirname.slash.prefix.i.'.tex', ':p')
 endfunction
 " }}}
-" Tex_MakeMap: creates a mapping from lhs to rhs if rhs is not already mapped {{{
+" Tex_MakeMap: creates a mapping from lhs to rhs if rhs is not already 
+" mapped {{{
 " Description:  
 function! Tex_MakeMap(lhs, rhs, mode, extraargs)
 	if !hasmapto(a:rhs, a:mode)
@@ -685,7 +723,8 @@ function! Tex_SetPos(pos)
 endfunction " }}}
 " s:RemoveLastHistoryItem: removes last search item from search history {{{
 " Description: Execute this string to clean up the search history.
-let s:RemoveLastHistoryItem = ':call histdel("/", -1)|let @/=g:Tex_LastSearchPattern'
+let s:RemoveLastHistoryItem = ':call histdel("/", -1)
+			\|let@/=g:Tex_LastSearchPattern'
 
 " }}}
 " VEnclose: encloses the visually selected region with given arguments {{{
@@ -697,7 +736,8 @@ function! VEnclose(vstart, vend, VStart, VEnd)
 	" 1. characterwise selection and valid values for vstart and vend.
 	" OR
 	" 2. linewise selection and invalid values for VStart and VEnd
-	if (visualmode() ==# 'v' && (a:vstart != '' || a:vend != '')) || (a:VStart == '' && a:VEnd == '')
+	if (visualmode() ==# 'v' && (a:vstart != '' || a:vend != '')) || 
+		(a:VStart == '' && a:VEnd == '')
 
 		let newline = ""
 		let _r = @r
@@ -717,10 +757,12 @@ function! VEnclose(vstart, vend, VStart, VEnd)
 			let movement = 7
 		endif
 		let normcmd = normcmd.
-			\ a:vstart."!!mark!!".a:vend.newline.
-			\ "\<C-\>\<C-N>?!!mark!!\<CR>v".movement."l\"_s\<C-r>r\<C-\>\<C-n>"
+					\ a:vstart."!!mark!!".a:vend.newline.
+					\ 
+		"\<C-\>\<C-N>?!!mark!!\<CR>v".movement."l\"_s\<C-r>r\<C-\>\<C-n>"
 
-		" this little if statement is because till very recently, vim used to
+		" this little if statement is because till very recently, vim used 
+		" to
 		" report col("'>") > length of selected line when `> is $. on some
 		" systems it reports a -ve number.
 		if col("'>") < 0 || col("'>") > strlen(getline("'>"))
@@ -737,8 +779,10 @@ function! VEnclose(vstart, vend, VStart, VEnd)
 		" the next normal! is for restoring the marks.
 		let normcmd = normcmd."`<v".len."l\<C-\>\<C-N>"
 
-		" First remember what the search pattern was. s:RemoveLastHistoryItem
-		" will reset @/ to this pattern so we do not create new highlighting.
+		" First remember what the search pattern was. 
+		" s:RemoveLastHistoryItem
+		" will reset @/ to this pattern so we do not create new 
+		" highlighting.
 		let g:Tex_LastSearchPattern = @/
 
 		silent! exe normcmd
@@ -808,7 +852,8 @@ function! ExecMap(prefix, mode)
 	endwhile
 	if foundMap
 		if a:mode == 'v'
-			" use a plug to select the region instead of using something like
+			" use a plug to select the region instead of using something 
+			" like
 			" `<v`> to avoid problems caused by some of the characters in
 			" '`<v`>' being mapped.
 			let gotoc = "\<plug><+SelectRegion+>"
@@ -821,23 +866,24 @@ function! ExecMap(prefix, mode)
 endfunction
 
 " }}}
-" s:MultiByteWOLastCharacter: Return string without last multibyte character {{{
+" s:MultiByteWOLastCharacter: Return string without last multibyte 
+" character {{{
 function! s:MultiByteWOLastCharacter(str)
 	return substitute(a:str, ".$", "", "")
 endfunction " }}}
 
 
-" ==============================================================================
+" ========================================================================
 " Smart key-mappings
-" ============================================================================== 
+" ======================================================================== 
 " TexQuotes: inserts `` or '' instead of " {{{
 if g:Tex_SmartKeyQuote
 
 	" TexQuotes: inserts `` or '' instead of "
 	" Taken from texmacro.vim by Benji Fisher <benji@e-math.AMS.org>
 	" TODO:  Deal with nested quotes.
-	" The :imap that calls this function should insert a ", move the cursor to
-	" the left of that character, then call this with <C-R>= .
+	" The :imap that calls this function should insert a ", move the cursor 
+	" to the left of that character, then call this with <C-R>= .
 	function! s:TexQuotes()
 		let l = line(".")
 		let c = col(".")
@@ -845,10 +891,11 @@ if g:Tex_SmartKeyQuote
 		normal! H
 		let restore_cursor = "normal!" . line(".") . "Gzt" . restore_cursor
 		execute restore_cursor
-		" In math mode, or when preceded by a \, just move the cursor past the
+		" In math mode, or when preceded by a \, just move the cursor past 
+		" the
 		" already-inserted " character.
 		if synIDattr(synID(l, c, 1), "name") =~ "^texMath"
-			\ || (c > 1 && getline(l)[c-2] == '\')
+					\ || (c > 1 && getline(l)[c-2] == '\')
 			return "\<Right>"
 		endif
 		" Find the appropriate open-quote and close-quote strings.
@@ -867,40 +914,44 @@ if g:Tex_SmartKeyQuote
 			let close = "''"
 		endif
 		let boundary = '\|'
-		" This code seems to be obsolete, since this script variable is never
-		" set. The idea is that some languages use ",," as an open- or
-		" close-quote string, and we want to avoid confusing ordinary ","
-		" with a quote boundary.
+		" This code seems to be obsolete, since this script variable is 
+		" never set. The idea is that some languages use ",," as an open-
+		" or close-quote string, and we want to avoid confusing ordinary
+		" "," with a quote boundary.
 		if exists("s:TeX_strictquote")
-			if( s:TeX_strictquote == "open" || s:TeX_strictquote == "both" )
+			if( s:TeX_strictquote == "open" || s:TeX_strictquote == "both" 
+				)
 				let boundary = '\<' . boundary
 			endif
-			if( s:TeX_strictquote == "close" || s:TeX_strictquote == "both" )
+			if( s:TeX_strictquote == "close" || s:TeX_strictquote == "both" 
+				)
 				let boundary = boundary . '\>'
 			endif
 		endif
 
 		" Eventually return q; set it to the default value now.
 		let q = open
-		let pattern = 
-			\ escape(open, '\~') .
-			\ boundary .
-			\ escape(close, '\~') .
-			\ '\|^$\|"'
+		let pattern = \ escape(open, '\~') .
+					\ boundary .
+					\ escape(close, '\~') .
+					\ '\|^$\|"'
 
 		while 1	" Look for preceding quote (open or close), ignoring
 			" math mode and '\"' .
 			call search(pattern, "bw")
-			if synIDattr(synID(line("."), col("."), 1), "name") !~ "^texMath"
-				\ && strpart(getline('.'), col('.')-2, 2) != '\"'
+			if synIDattr(synID(line("."), col("."), 1), "name") !~ 
+				"^texMath"
+							\ && strpart(getline('.'), col('.')-2, 2) != 
+				'\"'
 				break
 			endif
 		endwhile
 		
-		" Now, test whether we actually found a _preceding_ quote; if so, is it
-		" an open quote?
+		" Now, test whether we actually found a _preceding_ quote; if so, 
+		" is it an open quote?
 		if ( line(".") < l || line(".") == l && col(".") < c )
-			if strpart(getline("."), col(".")-1) =~ '\V\^' . escape(open, '\')
+			if strpart(getline("."), col(".")-1) =~ '\V\^' . escape(open, 
+				'\')
 				if line(".") == l && col(".") + strlen(open) == c
 					" Insert "<++>''<++>" instead of just "''".
 					let q = IMAP_PutTextWithMovement("<++>".close."<++>")
@@ -923,13 +974,18 @@ endif
 if g:Tex_SmartKeyBS 
 
 	" SmartBS: smart backspacing
-	" SmartBS lets you treat diacritic characters (those \'{a} thingies) as a
-	" single character. This is useful for example in the following situation:
+	" SmartBS lets you treat diacritic characters (those \'{a} thingies) as 
+	" a
+	" single character. This is useful for example in the following 
+	" situation:
 	"
 	" \v{s}\v{t}astn\'{y}    ('happy' in Slovak language :-) )
-	" If you will delete this normally (without using smartBS() function), you
-	" must press <BS> about 19x. With function smartBS() you must press <BS> only
-	" 7x. Strings like "\v{s}", "\'{y}" are considered like one character and are
+	" If you will delete this normally (without using smartBS() function), 
+	" you
+	" must press <BS> about 19x. With function smartBS() you must press 
+	" <BS> only
+	" 7x. Strings like "\v{s}", "\'{y}" are considered like one character 
+	" and are
 	" deleted with one <BS>.
 	let s:smartBS_pat = Tex_GetVarValue('Tex_SmartBSPattern')
 
@@ -939,7 +995,8 @@ if g:Tex_SmartKeyBS
 
 	" This function comes from Benji Fisher <benji@e-math.AMS.org>
 	" http://vim.sourceforge.net/scripts/download.php?src_id=409 
-	" (modified/patched by Lubomir Host 'rajo' <host8 AT keplerDOTfmphDOTuniba.sk>)
+	" (modified/patched by Lubomir Host 'rajo' <host8 AT 
+	" keplerDOTfmphDOTuniba.sk>)
 	function! s:SmartBS(pat)
 		let init = strpart(getline("."), 0, col(".")-1)
 		let matchtxt = matchstr(init, a:pat)
@@ -952,20 +1009,23 @@ if g:Tex_SmartKeyBS
 	endfun
 	
 endif " }}}
-" SmartDots: inserts \cdots instead of ... in math mode otherwise \ldots {{{
-" if amsmath package is detected then just use \dots and let amsmath take care
+" SmartDots: inserts \cdots instead of ... in math mode otherwise \ldots 
+" {{{
+" if amsmath package is detected then just use \dots and let amsmath take 
+" care
 " of it.
 if g:Tex_SmartKeyDot
 
 	function! <SID>SmartDots()
-		if strpart(getline('.'), col('.')-3, 2) == '..' && 
-			\ g:Tex_package_detected =~ '\<amsmath\|ellipsis\>'
+		if strpart(getline('.'), col('.')-3, 2) == '..' && \ 
+			g:Tex_package_detected =~ '\<amsmath\|ellipsis\>'
 			return "\<bs>\<bs>\\dots"
-		elseif synIDattr(synID(line('.'),col('.')-1,0),"name") =~ '^texMath'
-			\&& strpart(getline('.'), col('.')-3, 2) == '..' 
+		elseif synIDattr(synID(line('.'),col('.')-1,0),"name") =~ 
+			'^texMath'
+						\&& strpart(getline('.'), col('.')-3, 2) == '..' 
 			return "\<bs>\<bs>\\cdots"
-		elseif strpart(getline('.'), col('.')-3, 2) == '..' 
-			return "\<bs>\<bs>\\ldots"
+		elseif strpart(getline('.'), col('.')-3, 2) == '..' return 
+			"\<bs>\<bs>\\ldots"
 		else
 			return '.'
 		endif
@@ -1001,7 +1061,9 @@ exe 'source '.fnameescape(s:path.'/envmacros.vim')
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 
 " source utf-8 or plain math menus
-if exists("g:Tex_UseUtfMenus") && g:Tex_UseUtfMenus != 0 && has("gui_running")
+if exists("g:Tex_UseUtfMenus")
+			\ && g:Tex_UseUtfMenus != 0
+			\ && has("gui_running")
 	exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
 else
 	exe 'source '.fnameescape(s:path.'/mathmacros.vim')
@@ -1025,9 +1087,9 @@ endif
 exe 'source '.fnameescape(s:path.'/texviewer.vim')
 exe 'source '.fnameescape(s:path.'/version.vim')
 
-" ==============================================================================
+" ========================================================================
 " Finally set up the folding, options, mappings and quit.
-" ============================================================================== 
+" ======================================================================== 
 " SetTeXOptions: sets options/mappings for this file. {{{
 function! <SID>SetTeXOptions()
 	" Avoid reinclusion.
@@ -1040,27 +1102,29 @@ function! <SID>SetTeXOptions()
 
 	call Tex_Debug('SetTeXOptions: sourcing maps', 'main')
 	" smart functions
-	if g:Tex_SmartKeyQuote 
-		inoremap <buffer> <silent> " "<Left><C-R>=<SID>TexQuotes()<CR>
+	if g:Tex_SmartKeyQuote inoremap <buffer> <silent> " 
+		"<Left><C-R>=<SID>TexQuotes()<CR>
 	endif
 	if g:Tex_SmartKeyBS
-		inoremap <buffer> <silent> <BS> <C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
+		inoremap <buffer> <silent> <BS> 
+		<C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
 	endif
 	if g:Tex_SmartKeyDot
 		inoremap <buffer> <silent> . <C-R>=<SID>SmartDots()<CR>
 	endif
 
 	" This line seems to be necessary to source our compiler/tex.vim file.
-	" The docs are unclear why this needs to be done even though this file is
-	" the first compiler plugin in 'runtimepath'.
+	" The docs are unclear why this needs to be done even though this file 
+	" is the first compiler plugin in 'runtimepath'.
 	runtime compiler/tex.vim
 
 endfunction
 
 augroup LatexSuite
-	au LatexSuite User LatexSuiteFileType 
-		\ call Tex_Debug('main.vim: Catching LatexSuiteFileType event', 'main') | 
-		\ call <SID>SetTeXOptions()
+	au LatexSuite User LatexSuiteFileType
+				\ \ call Tex_Debug('main.vim: '
+				\ . 'Catching LatexSuiteFileType event', 'main') |
+				\ \ call <SID>SetTeXOptions()
 augroup END
 
 " }}}
@@ -1069,8 +1133,8 @@ augroup END
 " Settings for taglist.vim plugin
 " ============================================================================== 
 " Sets Tlist_Ctags_Cmd for taglist.vim and regexps for ctags {{{
-if exists("g:Tex_TaglistSupport") && g:Tex_TaglistSupport == 1 
-	if !exists("g:tlist_tex_settings") 
+if exists("g:Tex_TaglistSupport") && g:Tex_TaglistSupport == 1
+	if !exists("g:tlist_tex_settings")
 		let g:tlist_tex_settings = 'tex;s:section;c:chapter;l:label;r:ref'
 	endif
 
@@ -1080,24 +1144,27 @@ if exists("g:Tex_TaglistSupport") && g:Tex_TaglistSupport == 1
 		let s:tex_ctags = 'ctags' " Configurable in texrc?
 	endif
 
-	if exists("g:Tex_InternalTagsDefinitions") && g:Tex_InternalTagsDefinitions == 1
-		let Tlist_Ctags_Cmd = s:tex_ctags ." --langdef=tex --langmap=tex:.tex.ltx.latex"
-		\.' --regex-tex="/\\\\begin{abstract}/Abstract/s,abstract/"'
-		\.' --regex-tex="/\\\\part[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,part/"'
-		\.' --regex-tex="/\\\\chapter[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,chapter/"'
-		\.' --regex-tex="/\\\\section[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,section/"'
-		\.' --regex-tex="/\\\\subsection[ \t]*\*?\{[ \t]*([^}]*)\}/+ \1/s,subsection/"'
-		\.' --regex-tex="/\\\\subsubsection[ \t]*\*?\{[ \t]*([^}]*)\}/+  \1/s,subsubsection/"'
-		\.' --regex-tex="/\\\\paragraph[ \t]*\*?\{[ \t]*([^}]*)\}/+   \1/s,paragraph/"'
-		\.' --regex-tex="/\\\\subparagraph[ \t]*\*?\{[ \t]*([^}]*)\}/+    \1/s,subparagraph/"'
-		\.' --regex-tex="/\\\\begin{thebibliography}/BIBLIOGRAPHY/s,thebibliography/"'
-		\.' --regex-tex="/\\\\tableofcontents/TABLE OF CONTENTS/s,tableofcontents/"'
-		\.' --regex-tex="/\\\\frontmatter/FRONTMATTER/s,frontmatter/"'
-		\.' --regex-tex="/\\\\mainmatter/MAINMATTER/s,mainmatter/"'
-		\.' --regex-tex="/\\\\backmatter/BACKMATTER/s,backmatter/"'
-		\.' --regex-tex="/\\\\appendix/APPENDIX/s,appendix/"'
-		\.' --regex-tex="/\\\\label[ \t]*\*?\{[ \t]*([^}]*)\}/\1/l,label/"'
-		\.' --regex-tex="/\\\\ref[ \t]*\*?\{[ \t]*([^}]*)\}/\1/r,ref/"'
+	if exists("g:Tex_InternalTagsDefinitions")
+				\ && g:Tex_InternalTagsDefinitions == 1
+		let Tlist_Ctags_Cmd = s:tex_ctags
+					\." --langdef=tex --langmap=tex:.tex.ltx.latex"
+					\.' --regex-tex="/\\\\begin{abstract}'
+					\.'/Abstract/s,abstract/"'
+					\.' --regex-tex="/\\\\part[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,part/"'
+					\.' --regex-tex="/\\\\chapter[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,chapter/"'
+					\.' --regex-tex="/\\\\section[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,section/"'
+					\.' --regex-tex="/\\\\subsection[ \t]*\*?\{[ \t]*([^}]*)\}/+ \1/s,subsection/"'
+					\.' --regex-tex="/\\\\subsubsection[ \t]*\*?\{[ \t]*([^}]*)\}/+  \1/s,subsubsection/"'
+					\.' --regex-tex="/\\\\paragraph[ \t]*\*?\{[ \t]*([^}]*)\}/+   \1/s,paragraph/"'
+					\.' --regex-tex="/\\\\subparagraph[ \t]*\*?\{[ \t]*([^}]*)\}/+    \1/s,subparagraph/"'
+					\.' --regex-tex="/\\\\begin{thebibliography}/BIBLIOGRAPHY/s,thebibliography/"'
+					\.' --regex-tex="/\\\\tableofcontents/TABLE OF CONTENTS/s,tableofcontents/"'
+					\.' --regex-tex="/\\\\frontmatter/FRONTMATTER/s,frontmatter/"'
+					\.' --regex-tex="/\\\\mainmatter/MAINMATTER/s,mainmatter/"'
+					\.' --regex-tex="/\\\\backmatter/BACKMATTER/s,backmatter/"'
+					\.' --regex-tex="/\\\\appendix/APPENDIX/s,appendix/"'
+					\.' --regex-tex="/\\\\label[ \t]*\*?\{[ \t]*([^}]*)\}/\1/l,label/"'
+					\.' --regex-tex="/\\\\ref[ \t]*\*?\{[ \t]*([^}]*)\}/\1/r,ref/"'
 	endif
 endif
 
@@ -1110,11 +1177,11 @@ let g:Tex_completion_explorer = ','
 exe 'source '.fnameescape(s:path.'/packages.vim')
 
 " ==============================================================================
-" These functions are used to immitate certain operating system type functions
-" (like reading the contents of a file), which are not available in vim. For
-" example, in Vim, its not possible to read the contents of a file without
-" opening a buffer on it, which means that over time, lots of buffers can open
-" up needlessly.
+" These functions are used to immitate certain operating system type 
+" functions (like reading the contents of a file), which are not available 
+" in vim.  For example, in Vim, its not possible to read the contents of a 
+" file without opening a buffer on it, which means that over time, lots of 
+" buffers can open up needlessly.
 "
 " If python is available (and allowed), then these functions utilize python
 " library functions without making calls to external programs.
@@ -1129,7 +1196,8 @@ endfunction " }}}
 " Tex_IsPresentInFile: finds if a regexp, is present in filename {{{
 if Tex_UsePython()
 	function! Tex_IsPresentInFile(regexp, filename)
-		exec g:Tex_PythonCmd . ' isPresentInFile(r"'.a:regexp.'", r"'.a:filename.'")'
+		exec g:Tex_PythonCmd . ' isPresentInFile(r"'.a:regexp.'", 
+		r"'.a:filename.'")'
 
 		return retval
 	endfunction
@@ -1156,7 +1224,8 @@ else
 		return retval
 	endfunction
 endif " }}}
-" Tex_CatFile: returns the contents of a file in a <NL> seperated string {{{
+" Tex_CatFile: returns the contents of a file in a <NL> seperated string 
+" {{{
 if exists('*readfile')
 	function! Tex_CatFile(filename)
 		if glob(a:filename) == ''
@@ -1208,8 +1277,7 @@ if Tex_UsePython()
 		if exists('retval')
 			return retval
 		endif
-	endfunction 
-else
+	endfunction else
 	function! Tex_DeleteFile(filename)
 		if filereadable(a:filename)
 			exec '! '.g:Tex_RmCmd.' '.a:filename
@@ -1223,7 +1291,8 @@ let &cpo = s:save_cpo
 
 " Define the functions in python if available.
 if Tex_UsePython()
-	exec g:Tex_PythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h')).'/pytools.py'
+	exec g:Tex_PythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h'))
+				\ . '/pytools.py'
 endif
 
 " vim:fdm=marker:ff=unix:noet:ts=4:sw=4:nowrap

@@ -1,5 +1,5 @@
 " HEADER ==================================================================
-" vim:ft=vim:sw=4:sts=4:foldmethod=manual:commentstring=\"\ %s:ff=unix
+" vim:ft=vim:sw=4:sts=4:fdm=marker:commentstring=\"\ %s:ff=unix
 " 	 File: imaps.vim
 "      Author: David G. White
 "     Created: Sat. 19 Feb. 2022, 14:30 UTC-5
@@ -12,7 +12,14 @@
 "        on.
 "==========================================================================
 
-let g:runImapLeaderList = ['\', ';']
+let g:runImapLeaderList = ['\'] ", ';']
+
+" Unincorporated IMAPs {{{
+" call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
+" call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
+" call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
+" call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
+" }}}
 
 " Imap Dictionaries: {{{
 " Form: { [ key = macro name, value = expansion text ], ... }
@@ -32,7 +39,112 @@ let g:runImapLeaderList = ['\', ';']
 " imap dictionary: ;...<tab> {{{
 " Leader 59 = ";"
 " Trigger 9 = "\<tab>"
-let s:imapDict_59_9 = {
+" let s:imapDict_59_9 = {
+" 	    \ 'a' : '\alpha',
+" 	    \ 'b' : '\beta',
+" 	    \ 'c' : '\varsigma',
+" 	    \ 'd' : '\delta',
+" 	    \ 'e' : '\epsilon',
+" 	    \ 'f' : '\phi',
+" 	    \ 'g' : '\gamma',
+" 	    \ 'h' : '\eta',
+" 	    \ 'i' : '\iota',
+" 	    \ 'j' : '\varepsilon',
+" 	    \ 'k' : '\kappa',
+" 	    \ 'l' : '\lambda',
+" 	    \ 'm' : '\mu',
+" 	    \ 'n' : '\nu',
+" 	    \ 'o' : '\omicron',
+" 	    \ 'p' : '\pi',
+" 	    \ 'q' : '\theta',
+" 	    \ 'r' : '\rho',
+" 	    \ 's' : '\sigma',
+" 	    \ 't' : '\tau',
+" 	    \ 'u' : '\upsilon',
+" 	    \ 'v' : '\varphi',
+" 	    \ 'w' : '\omega',
+" 	    \ 'x' : '\chi',
+" 	    \ 'y' : '\psi',
+" 	    \ 'z' : '\zeta',
+" 	    \ 'D' : '\Delta',
+" 	    \ 'F' : '\Phi',
+" 	    \ 'G' : '\Gamma',
+" 	    \ 'L' : '\Lambda',
+" 	    \ 'P' : '\Pi',
+" 	    \ 'Q' : '\Theta',
+" 	    \ 'S' : '\Sigma',
+" 	    \ 'U' : '\Upsilon',
+" 	    \ 'W' : '\Omega',
+" 	    \ 'Y' : '\Psi',
+" 	    \ '^' : '\hat{<++>}<++>',
+" 	    \ '_' : '\bar{<++>}<++>',
+" 	    \ '6' : '\partial',
+" 	    \ '8' : '\infty',
+" 	    \ '/' : '\setminus',
+" 	    \ '%' : '\frac{<++>}{<++>}<++>',
+" 	    \ '@' : '\circ',
+" 	    \ '0' : '^\circ',
+" 	    \ '=' : '\equiv',
+" 	    \ '.' : '\cdot',
+" 	    \ '*' : '\times',
+" 	    \ '&' : '\cap',
+" 	    \ '+' : '\cup',
+" 	    \ '(' : '\subset',
+" 	    \ ')' : '\supset',
+" 	    \ '$' : "\\int_{<++>}^{<++>}<++>",
+" 	    \ '2' : '\sqrt{<++>}<++>',
+" 	    \ ':' : '\dot{<++>}<++>',
+" 	    \ '~' : '\tilde{<++>}<++>',
+" 	    \ 'M' : '\sum_{<++>}^{<++>}<++>',
+" 	    \ 'V' : '\wedge',
+" 	    \ '<' : '\le',
+" 	    \ '>' : '\ge',
+" 	    \ ',' : '\nonumber',
+" 	    \ }
+" }}}
+
+" imap dictionary: \...<tab> {{{
+" Leader 92 = '\'
+" Trigger 9 = "\<tab>"
+let s:imapDict_92_9 = {
+	    \ "tex"	      : "\\TeX{}",
+	    \ "latex"	      : "\\LaTeX{}",
+	    \ "input"	      : "\\input{<++>}\n<++>",
+	    \ "usepackage"    : "\\usepackage[<++>]{<++>,}\n<++>",
+	    \ "section"	      : "\\section{<++>}\n<++>",
+	    \ "subsection"    : "\\subsection{<++>}\n<++>",
+	    \ "ssection"      : "\\subsection{<++>}\n<++>",
+	    \ "subsubsection" : "\\subsubsection{<++>}\n<++>",
+	    \ "sssection"     : "\\subsubsection{<++>}\n<++>",
+	    \ "paragraph"     : "\\paragraph{<++>} <++>",
+	    \ "item"	      : "\\item <++>",
+	    \ "frametitle"    : "\\frametitle{<++>}\n<++>",
+	    \ "boldsymbol"    : "\\boldsymbol{<++>}<++>",
+	    \ "text"	      : "\\text{<++>}<++>",
+	    \ "tx"	      : "\\text{<++>}<++>",
+	    \ "mathbf"	      : "\\mathbf{<++>}<++>",
+	    \ "mbf"	      : "\\mathbf{<++>}<++>",
+	    \ "mathbb"	      : "\\mathbb{<++>}<++>",
+	    \ "mbb"	      : "\\mathbb{<++>}<++>",
+	    \ "mathrm"	      : "\\mathrm{<++>}<++>",
+	    \ "mr"	      : "\\mathrm{<++>}<++>",
+	    \ "mathcal"	      : "\\mathcal{<++>}<++>",
+	    \ "mc"	      : "\\mathcal{<++>}<++>",
+	    \ "mathscr"	      : "\\mathscr{<++>}<++>",
+	    \ "ms"	      : "\\mathscr{<++>}<++>",
+	    \ "textbf"	      : "\\textbf{<++>}<++>",
+	    \ "tb"	      : "\\textbf{<++>}<++>",
+	    \ "textit"	      : "\\textit{<++>}<++>",
+	    \ "ti"	      : "\\textit{<++>}<++>",
+	    \ "textsc"	      : "\\textsc{<++>}<++>",
+	    \ "ts"	      : "\\textsc{<++>}<++>",
+	    \ "texttt"	      : "\\texttt{<++>}<++>",
+	    \ "tt"	      : "\\texttt{<++>}<++>",
+	    \ "emph"	      : "\\emph{<++>}<++>",
+	    \ "cite"	      : "\\cite{<++>}<++>",
+	    \ "ref"	      : "\\ref{<++>}<++>",
+	    \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
+	    \ "label"	      : "\\label{<++>}<++>",
 	    \ 'a' : '\alpha',
 	    \ 'b' : '\beta',
 	    \ 'c' : '\varsigma',
@@ -96,67 +208,150 @@ let s:imapDict_59_9 = {
 	    \ }
 " }}}
 
-" Unincorporated IMAPs {{{
-" call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
-" call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
-" call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
-" call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
-" }}}
-
-" imap dictionary: ;...<tab> {{{
-" Leader 59 = ";"
-" Trigger 32 = "\<space>"
-" let s:imapDict_59_32 = s:imapDict_59_9
-" }}}
-
-" imap dictionary: \...<tab> {{{
-" Leader 92 = '\'
-" Trigger 9 = "\<tab>"
-let s:imapDict_92_9 = {
-	    \ "tex"	      : "\\TeX{}",
-	    \ "latex"	      : "\\LaTeX{}",
-	    \ "input"	      : "\\input{<++>}\n<++>",
-	    \ "usepackage"    : "\\usepackage[<++>]{<++>,}\n<++>",
-	    \ "section"	      : "\\section{<++>}\n<++>",
-	    \ "subsection"    : "\\subsection{<++>}\n<++>",
-	    \ "ssection"      : "\\subsection{<++>}\n<++>",
-	    \ "subsubsection" : "\\subsubsection{<++>}\n<++>",
-	    \ "sssection"     : "\\subsubsection{<++>}\n<++>",
-	    \ "paragraph"     : "\\paragraph{<++>} <++>",
-	    \ "item"	      : "\\item <++>",
-	    \ "frametitle"    : "\\frametitle{<++>}\n<++>",
-	    \ "boldsymbol"    : "\\boldsymbol <++>",
-	    \ "text"	      : "\\text{<++>}<++>",
-	    \ "mathbf"	      : "\\mathbf{<++>}<++>",
-	    \ "mbf"	      : "\\mathbf{<++>}<++>",
-	    \ "mathbb"	      : "\\mathbb{<++>}<++>",
-	    \ "mbb"	      : "\\mathbb{<++>}<++>",
-	    \ "mathrm"	      : "\\mathrm{<++>}<++>",
-	    \ "mr"	      : "\\mathrm{<++>}<++>",
-	    \ "mathcal"	      : "\\mathcal{<++>}<++>",
-	    \ "mc"	      : "\\mathcal{<++>}<++>",
-	    \ "mathscr"	      : "\\mathscr{<++>}<++>",
-	    \ "ms"	      : "\\mathscr{<++>}<++>",
-	    \ "textbf"	      : "\\textbf{<++>}<++>",
-	    \ "tb"	      : "\\textbf{<++>}<++>",
-	    \ "textit"	      : "\\textit{<++>}<++>",
-	    \ "ti"	      : "\\textit{<++>}<++>",
-	    \ "textsc"	      : "\\textsc{<++>}<++>",
-	    \ "ts"	      : "\\textsc{<++>}<++>",
-	    \ "texttt"	      : "\\texttt{<++>}<++>",
-	    \ "tt"	      : "\\texttt{<++>}<++>",
-	    \ "emph"	      : "\\emph{<++>}<++>",
-	    \ "cite"	      : "\\cite{<++>}<++>",
-	    \ "ref"	      : "\\ref{<++>}<++>",
-	    \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
-	    \ "label"	      : "\\label{<++>}<++>",
-	    \ }
-" }}}
-
 " imap dictionary: \...<space> {{{
 " Leader 92 = '\'
 " Trigger 32 = "\<space>"
-" let s:imapDict_92_32 = s:imapDict_92_9
+let s:imapDict_92_32 = {
+	    \ "item"	      : "\\item ",
+	    \ "boldsymbol"    : "\\boldsymbol ",
+	    \ "mathbf"	      : "\\mathbf ",
+	    \ "mbf"	      : "\\mathbf ",
+	    \ "mathbb"	      : "\\mathbb ",
+	    \ "mbb"	      : "\\mathbb ",
+	    \ "mathrm"	      : "\\mathrm ",
+	    \ "mr"	      : "\\mathrm ",
+	    \ "mathcal"	      : "\\mathcal ",
+	    \ "mc"	      : "\\mathcal ",
+	    \ "mathscr"	      : "\\mathscr ",
+	    \ "ms"	      : "\\mathscr ",
+	    \ "a" : "\\alpha ",
+	    \ 'b' : '\beta ',
+	    \ 'c' : '\varsigma ',
+	    \ 'd' : '\delta ',
+	    \ 'e' : '\epsilon ',
+	    \ 'f' : '\phi ',
+	    \ 'g' : '\gamma ',
+	    \ 'h' : '\eta ',
+	    \ 'i' : '\iota ',
+	    \ 'j' : '\varepsilon ',
+	    \ 'k' : '\kappa ',
+	    \ 'l' : '\lambda ',
+	    \ 'm' : '\mu ',
+	    \ 'n' : '\nu ',
+	    \ 'o' : '\omicron ',
+	    \ 'p' : '\pi ',
+	    \ 'q' : '\theta ',
+	    \ 'r' : '\rho ',
+	    \ 's' : '\sigma ',
+	    \ 't' : '\tau ',
+	    \ 'u' : '\upsilon ',
+	    \ 'v' : '\varphi ',
+	    \ 'w' : '\omega ',
+	    \ 'x' : '\chi ',
+	    \ 'y' : '\psi ',
+	    \ 'z' : '\zeta ',
+	    \ 'D' : '\Delta ',
+	    \ 'F' : '\Phi ',
+	    \ 'G' : '\Gamma ',
+	    \ 'L' : '\Lambda ',
+	    \ 'P' : '\Pi ',
+	    \ 'Q' : '\Theta ',
+	    \ 'S' : '\Sigma ',
+	    \ 'U' : '\Upsilon ',
+	    \ 'W' : '\Omega ',
+	    \ 'Y' : '\Psi ',
+	    \ '^' : '\hat ',
+	    \ '_' : '\bar ',
+	    \ '6' : '\partial ',
+	    \ '8' : '\infty ',
+	    \ '/' : '\setminus ',
+	    \ '%' : '\frac ',
+	    \ '@' : '\circ ',
+	    \ '0' : '^\circ ',
+	    \ '=' : '\equiv ',
+	    \ '.' : '\cdot ',
+	    \ '*' : '\times ',
+	    \ '&' : '\cap ',
+	    \ '+' : '\cup ',
+	    \ '(' : '\subset ',
+	    \ ')' : '\supset ',
+	    \ '$' : "\\int ",
+	    \ '2' : '\sqrt ',
+	    \ ':' : '\dot ',
+	    \ '~' : '\tilde ',
+	    \ 'M' : '\sum ',
+	    \ 'V' : '\wedge ',
+	    \ '<' : '\le ',
+	    \ '>' : '\ge ',
+	    \  ',' : '\nonumber ',
+	    \ }
+" }}}
+
+" imap dictionary: ;...<space> {{{
+" Leader 59 = ";"
+" Trigger 32 = "\<space>"
+" let s:imapDict_59_32 = {
+" 	    \ 'a' : '\alpha ',
+" 	    \ 'b' : '\beta ',
+" 	    \ 'c' : '\varsigma ',
+" 	    \ 'd' : '\delta ',
+" 	    \ 'e' : '\epsilon ',
+" 	    \ 'f' : '\phi ',
+" 	    \ 'g' : '\gamma ',
+" 	    \ 'h' : '\eta ',
+" 	    \ 'i' : '\iota ',
+" 	    \ 'j' : '\varepsilon ',
+" 	    \ 'k' : '\kappa ',
+" 	    \ 'l' : '\lambda ',
+" 	    \ 'm' : '\mu ',
+" 	    \ 'n' : '\nu ',
+" 	    \ 'o' : '\omicron ',
+" 	    \ 'p' : '\pi ',
+" 	    \ 'q' : '\theta ',
+" 	    \ 'r' : '\rho ',
+" 	    \ 's' : '\sigma ',
+" 	    \ 't' : '\tau ',
+" 	    \ 'u' : '\upsilon ',
+" 	    \ 'v' : '\varphi ',
+" 	    \ 'w' : '\omega ',
+" 	    \ 'x' : '\chi ',
+" 	    \ 'y' : '\psi ',
+" 	    \ 'z' : '\zeta ',
+" 	    \ 'D' : '\Delta ',
+" 	    \ 'F' : '\Phi ',
+" 	    \ 'G' : '\Gamma ',
+" 	    \ 'L' : '\Lambda ',
+" 	    \ 'P' : '\Pi ',
+" 	    \ 'Q' : '\Theta ',
+" 	    \ 'S' : '\Sigma ',
+" 	    \ 'U' : '\Upsilon ',
+" 	    \ 'W' : '\Omega ',
+" 	    \ 'Y' : '\Psi ',
+" 	    \ '^' : '\hat ',
+" 	    \ '_' : '\bar ',
+" 	    \ '6' : '\partial ',
+" 	    \ '8' : '\infty ',
+" 	    \ '/' : '\setminus ',
+" 	    \ '%' : '\frac ',
+" 	    \ '@' : '\circ ',
+" 	    \ '0' : '^\circ ',
+" 	    \ '=' : '\equiv ',
+" 	    \ '.' : '\cdot ',
+" 	    \ '*' : '\times ',
+" 	    \ '&' : '\cap ',
+" 	    \ '+' : '\cup ',
+" 	    \ '(' : '\subset ',
+" 	    \ ')' : '\supset ',
+" 	    \ '$' : "\\int ",
+" 	    \ '2' : '\sqrt ',
+" 	    \ ':' : '\dot ',
+" 	    \ '~' : '\tilde ',
+" 	    \ 'M' : '\sum ',
+" 	    \ 'V' : '\wedge ',
+" 	    \ '<' : '\le ',
+" 	    \ '>' : '\ge ',
+" 	    \  ',' : '\nonumber ',
+" 	    \ }
 " }}}
 
 " imap dictionary: \...<cr> {{{
@@ -288,13 +483,16 @@ func GetRunningImap(trigger)
 
     " Search backward for a leader character.
     while l:leaderIdx >= l:col - 2 - l:maxMacroNameLen
-	if index(g:runImapLeaderList, l:line[l:leaderIdx]) >= 0
+	if l:line[l:leaderIdx] =~ '\s'
+	    " No whitespace allowed in macro names/tokens for the moment, 
+	    " so return immediately if we encounter whitespace.
+	    return nr2char(a:trigger)
+	elseif index(g:runImapLeaderList, l:line[l:leaderIdx]) >= 0
 	    break
 	else
 	    let l:leaderIdx -= 1
 	endif
     endwhile
-
     " No leader char found.
     if l:leaderIdx < l:col - 2 - l:maxMacroNameLen
 	return nr2char(a:trigger)
@@ -343,7 +541,7 @@ endfunc
 " endwhile
 
 inoremap <buffer> <tab> <c-r>=GetRunningImap(9)<cr>
-"inoremap <space> <c-r>=GetRunningImap(32)<cr>
+inoremap <buffer> <space> <c-r>=GetRunningImap(32)<cr>
 inoremap <buffer> <cr> <c-r>=GetRunningImap(13)<cr>
 
 inoremap == <c-r>='&= '<cr>
