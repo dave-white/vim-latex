@@ -24,8 +24,8 @@ let s:path = expand('<sfile>:p:h')
 " ==============================================================================
 " {{{
 if !exists('b:doneBufMaps') || b:doneBufMaps != 1
-	let b:doneBufMaps = 1
 	exe 'source '.s:path.'/imaps.vim'
+	let b:doneBufMaps = 1
 endif
 " }}}
 
@@ -43,7 +43,8 @@ endif
 
 let s:doneFunctionDefinitions = 1
 
-" Search up the path from current file's directory for file matching expr.
+" Tex_FindFileAbove: Search up the path from current file's directory {{{ 
+" for file matching expr.
 " Return str = absolute path to file matching expr
 function! Tex_FindFileAbove(expr)
 	let l:max_depth = 12
@@ -62,6 +63,7 @@ function! Tex_FindFileAbove(expr)
 	endwhile
 	return ''
 endfunction
+" }}}
 
 " Establish personal settings for current tex file.
 let s:loc_texrc = Tex_FindFileAbove('texrc')
@@ -398,8 +400,8 @@ function! Tex_CreatePrompt(promptList, cols, sep)
 		let j = 0
 		while j < a:cols && i + j <= num_common
 			let com = Tex_Strntok(a:promptList, a:sep, i+j)
-			let promptStr = promptStr.'('.(i+j).') '.  \ com."\t".( 
-			strlen(com) < 4 ? "\t" : '' )
+			let promptStr = promptStr.'('.(i+j).') '.  \ com."\t"
+						\.(strlen(com) < 4 ? "\t" : '' )
 
 			let j = j + 1
 		endwhile
@@ -419,7 +421,8 @@ function! Tex_CleanSearchHistory()
 	call histdel("/", -1)
 	let @/ = histget("/", -1)
 endfunction
-nmap <silent> <script> <plug>cleanHistory :call Tex_CleanSearchHistory()<CR>
+nmap <silent> <script> <plug>cleanHistory
+			\ :call Tex_CleanSearchHistory()<CR>
 
 " }}}
 " Tex_GetVarValue: gets the value of the variable {{{
@@ -505,8 +508,8 @@ function! Tex_GetMainFileName(...)
 	if lheadfile != ''
 		" Remove the trailing .latexmain part of the filename... We never 
 		" want that.
-		let lheadfile = fnamemodify(substitute(lheadfile, '\.latexmain$', 
-		'', ''), modifier)
+		let lheadfile = fnamemodify(substitute(lheadfile,
+					\ '\.latexmain$', '', ''), modifier)
 	else
 		" If we cannot find any main file, just modify the filename of the
 		" current buffer.
@@ -606,7 +609,8 @@ function! Tex_FindInDirectory(filename, rtp, directory, ...)
 
 		" The actual modification.
 		if fnamemodify(filename, expand) != ''
-			let retfilelist = retfilelist.fnamemodify(filename, expand).","
+			let retfilelist = retfilelist.fnamemodify(filename, expand)
+						\.","
 		endif
 		let i = i + 1
 	endwhile
@@ -723,8 +727,8 @@ function! Tex_SetPos(pos)
 endfunction " }}}
 " s:RemoveLastHistoryItem: removes last search item from search history {{{
 " Description: Execute this string to clean up the search history.
-let s:RemoveLastHistoryItem = ':call histdel("/", -1)
-			\|let@/=g:Tex_LastSearchPattern'
+let s:RemoveLastHistoryItem = ':call histdel("/", -1)'
+			\.'|let@/=g:Tex_LastSearchPattern'
 
 " }}}
 " VEnclose: encloses the visually selected region with given arguments {{{
@@ -736,8 +740,8 @@ function! VEnclose(vstart, vend, VStart, VEnd)
 	" 1. characterwise selection and valid values for vstart and vend.
 	" OR
 	" 2. linewise selection and invalid values for VStart and VEnd
-	if (visualmode() ==# 'v' && (a:vstart != '' || a:vend != '')) || 
-		(a:VStart == '' && a:VEnd == '')
+	if (visualmode() ==# 'v' && (a:vstart != '' || a:vend != ''))
+				\ || (a:VStart == '' && a:VEnd == '')
 
 		let newline = ""
 		let _r = @r
@@ -758,13 +762,13 @@ function! VEnclose(vstart, vend, VStart, VEnd)
 		endif
 		let normcmd = normcmd.
 					\ a:vstart."!!mark!!".a:vend.newline.
-					\ 
-		"\<C-\>\<C-N>?!!mark!!\<CR>v".movement."l\"_s\<C-r>r\<C-\>\<C-n>"
+					\ "\<C-\>\<C-N>?!!mark!!\<CR>v"
+					\ . movement .
+					\ . "l\"_s\<C-r>r\<C-\>\<C-n>"
 
 		" this little if statement is because till very recently, vim used 
-		" to
-		" report col("'>") > length of selected line when `> is $. on some
-		" systems it reports a -ve number.
+		" to report col("'>") > length of selected line when `> is $. on 
+		" some systems it reports a -ve number.
 		if col("'>") < 0 || col("'>") > strlen(getline("'>"))
 			let lastcol = strlen(getline("'>"))
 		else
@@ -853,9 +857,8 @@ function! ExecMap(prefix, mode)
 	if foundMap
 		if a:mode == 'v'
 			" use a plug to select the region instead of using something 
-			" like
-			" `<v`> to avoid problems caused by some of the characters in
-			" '`<v`>' being mapped.
+			" like `<v`> to avoid problems caused by some of the characters 
+			" in '`<v`>' being mapped.
 			let gotoc = "\<plug><+SelectRegion+>"
 		else
 			let gotoc = ''
@@ -889,7 +892,8 @@ if g:Tex_SmartKeyQuote
 		let c = col(".")
 		let restore_cursor = l . "G" . virtcol(".") . "|"
 		normal! H
-		let restore_cursor = "normal!" . line(".") . "Gzt" . restore_cursor
+		let restore_cursor = "normal!" . line(".") . "Gzt"
+					\ . restore_cursor
 		execute restore_cursor
 		" In math mode, or when preceded by a \, just move the cursor past 
 		" the
@@ -919,19 +923,19 @@ if g:Tex_SmartKeyQuote
 		" or close-quote string, and we want to avoid confusing ordinary
 		" "," with a quote boundary.
 		if exists("s:TeX_strictquote")
-			if( s:TeX_strictquote == "open" || s:TeX_strictquote == "both" 
-				)
+			if (s:TeX_strictquote == "open"
+						\ || s:TeX_strictquote == "both")
 				let boundary = '\<' . boundary
 			endif
-			if( s:TeX_strictquote == "close" || s:TeX_strictquote == "both" 
-				)
+			if (s:TeX_strictquote == "close"
+						\ || s:TeX_strictquote == "both")
 				let boundary = boundary . '\>'
 			endif
 		endif
 
 		" Eventually return q; set it to the default value now.
 		let q = open
-		let pattern = \ escape(open, '\~') .
+		let pattern = escape(open, '\~') .
 					\ boundary .
 					\ escape(close, '\~') .
 					\ '\|^$\|"'
@@ -939,10 +943,9 @@ if g:Tex_SmartKeyQuote
 		while 1	" Look for preceding quote (open or close), ignoring
 			" math mode and '\"' .
 			call search(pattern, "bw")
-			if synIDattr(synID(line("."), col("."), 1), "name") !~ 
-				"^texMath"
-							\ && strpart(getline('.'), col('.')-2, 2) != 
-				'\"'
+			if synIDattr(synID(line("."), col("."), 1), "name")
+						\ !~ "^texMath"
+						\ && strpart(getline('.'), col('.')-2, 2) != '\"'
 				break
 			endif
 		endwhile
@@ -950,8 +953,8 @@ if g:Tex_SmartKeyQuote
 		" Now, test whether we actually found a _preceding_ quote; if so, 
 		" is it an open quote?
 		if ( line(".") < l || line(".") == l && col(".") < c )
-			if strpart(getline("."), col(".")-1) =~ '\V\^' . escape(open, 
-				'\')
+			if strpart(getline("."), col(".")-1)
+						\ =~ '\V\^' . escape(open, '\')
 				if line(".") == l && col(".") + strlen(open) == c
 					" Insert "<++>''<++>" instead of just "''".
 					let q = IMAP_PutTextWithMovement("<++>".close."<++>")
@@ -1017,15 +1020,15 @@ endif " }}}
 if g:Tex_SmartKeyDot
 
 	function! <SID>SmartDots()
-		if strpart(getline('.'), col('.')-3, 2) == '..' && \ 
-			g:Tex_package_detected =~ '\<amsmath\|ellipsis\>'
+		if strpart(getline('.'), col('.')-3, 2) == '..'
+					\ && g:Tex_package_detected =~ '\<amsmath\|ellipsis\>'
 			return "\<bs>\<bs>\\dots"
-		elseif synIDattr(synID(line('.'),col('.')-1,0),"name") =~ 
-			'^texMath'
-						\&& strpart(getline('.'), col('.')-3, 2) == '..' 
+		elseif synIDattr(synID(line('.'),col('.')-1,0),"name")
+					\ =~ '^texMath'
+					\ && strpart(getline('.'), col('.')-3, 2) == '..' 
 			return "\<bs>\<bs>\\cdots"
-		elseif strpart(getline('.'), col('.')-3, 2) == '..' return 
-			"\<bs>\<bs>\\ldots"
+		elseif strpart(getline('.'), col('.')-3, 2) == '..'
+			return "\<bs>\<bs>\\ldots"
 		else
 			return '.'
 		endif
@@ -1061,8 +1064,7 @@ exe 'source '.fnameescape(s:path.'/envmacros.vim')
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 
 " source utf-8 or plain math menus
-if exists("g:Tex_UseUtfMenus")
-			\ && g:Tex_UseUtfMenus != 0
+if exists("g:Tex_UseUtfMenus") && g:Tex_UseUtfMenus != 0
 			\ && has("gui_running")
 	exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
 else
@@ -1102,12 +1104,12 @@ function! <SID>SetTeXOptions()
 
 	call Tex_Debug('SetTeXOptions: sourcing maps', 'main')
 	" smart functions
-	if g:Tex_SmartKeyQuote inoremap <buffer> <silent> " 
-		"<Left><C-R>=<SID>TexQuotes()<CR>
+	if g:Tex_SmartKeyQuote
+		inoremap <buffer> <silent> " "<Left><C-R>=<SID>TexQuotes()<CR>
 	endif
 	if g:Tex_SmartKeyBS
-		inoremap <buffer> <silent> <BS> 
-		<C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
+		inoremap <buffer> <silent> <BS>
+					\ <C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
 	endif
 	if g:Tex_SmartKeyDot
 		inoremap <buffer> <silent> . <C-R>=<SID>SmartDots()<CR>
@@ -1120,11 +1122,11 @@ function! <SID>SetTeXOptions()
 
 endfunction
 
+let s:texOptDebugMsg = 'main.vim: Catching LatexSuiteFileType event'
 augroup LatexSuite
 	au LatexSuite User LatexSuiteFileType
-				\ \ call Tex_Debug('main.vim: '
-				\ . 'Catching LatexSuiteFileType event', 'main') |
-				\ \ call <SID>SetTeXOptions()
+				\ call Tex_Debug(s:texOptDebugMsg, 'main') |
+				\ call <SID>SetTeXOptions()
 augroup END
 
 " }}}
@@ -1196,8 +1198,8 @@ endfunction " }}}
 " Tex_IsPresentInFile: finds if a regexp, is present in filename {{{
 if Tex_UsePython()
 	function! Tex_IsPresentInFile(regexp, filename)
-		exec g:Tex_PythonCmd . ' isPresentInFile(r"'.a:regexp.'", 
-		r"'.a:filename.'")'
+		exec g:Tex_PythonCmd . ' isPresentInFile(r"'.a:regexp.'", r"'
+					\.a:filename.'")'
 
 		return retval
 	endfunction

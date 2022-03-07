@@ -10,15 +10,16 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! Tex_GetJobName()
+function! Tex_GetJobName() " {{{
 	if exists('g:Tex_JobName') && len(g:Tex_JobName) > 0
 		return g:Tex_JobName
 	else
 		return Tex_GetMainFileName(':t:r')
 	endif
 endfunction
+" }}}
 
-function! Tex_GetOutputDir(...)
+function! Tex_GetOutputDir(...) " {{{
 	if a:0 > 0
 		let l:mod = a:1
 	else
@@ -36,6 +37,7 @@ function! Tex_GetOutputDir(...)
 		return fnamemodify(l:main_fdir, l:mod)
 	endif
 endfunction
+" }}}
 
 " Tex_SetTeXCompilerTarget: sets the 'target' for the next call to Tex_RunLaTeX() {{{
 function! Tex_SetTeXCompilerTarget(type, target)
@@ -657,7 +659,9 @@ function! Tex_CompileMultipleTimes()
 		" The first time we see if we need to generate the bibliography and if the .bbl file
 		" changes, we will rerun latex.
 		" We use '\\bibdata' as a check for BibTeX and '\\abx' as a check for biber.
-		if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', l:aux_fname)
+		if runCount == 0
+					\ && Tex_IsPresentInFile('\\bibdata|\\abx',
+					\ l:aux_fname)
 			let bibFileName = Tex_GetJobName().'.bbl'
 
 			let biblinesBefore = Tex_CatFile(bibFileName)
