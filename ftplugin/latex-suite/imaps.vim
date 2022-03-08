@@ -141,7 +141,7 @@ let s:imapDict_92_9 = {
       \ "texttt"	      : "\\texttt{<++>}<++>",
       \ "tt"	      : "\\texttt{<++>}<++>",
       \ "emph"	      : "\\emph{<++>}<++>",
-      \ "cite"	      : "\\cite{<++>}<++>",
+      \ "cite"	      : "\\cite[<++>]{<++>}<++>",
       \ "ref"	      : "\\ref{<++>}<++>",
       \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
       \ "label"	      : "\\label{<++>}<++>",
