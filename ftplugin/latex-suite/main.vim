@@ -6,6 +6,7 @@
 " line continuation used here.
 let s:save_cpo = &cpo
 set cpo&vim
+let s:path = expand('<sfile>:p:h')
 
 " Buffer-specific tex file settings {{{
 if !exists('b:srcdTexbrc') || b:srcdTexbrc != 1
@@ -14,37 +15,18 @@ if !exists('b:srcdTexbrc') || b:srcdTexbrc != 1
 endif
 " }}}
 
-" Get the place where this plugin resides for setting cpt and dict {{{
-" options. These lines need to be outside the function.
-let s:path = expand('<sfile>:p:h')
-" }}}
-
-" ==============================================================================
-" Mappings -- buffer
-" ==============================================================================
-" {{{
-if !exists('b:doneBufMaps') || b:doneBufMaps != 1
-	exe 'source '.s:path.'/imaps.vim'
-	let b:doneBufMaps = 1
-endif
-" }}}
-
-" avoiding re-inclusion the avoiding re-inclusion statement is not {{{ 
-" provided here because the files which call this file should in the normal 
-" course of events handle the re-inclusion stuff.
-
-" we definitely dont want to run through the entire file each and every 
-" time. only once to define the functions. for successive latex files, just 
-" set up the folding and mappings and quit.
+" Re-execution skip: If already sourced run only what's needed to set {{{ 
+" key mappings and compiler config and terminate, unless forced otherwise.
 if exists('s:doneFunctionDefinitions') && !exists('b:forceRedoLocalTex')
 	call s:SetTeXOptions()
 	finish
 endif
 
 let s:doneFunctionDefinitions = 1
+" }}}
 
-" Tex_FindFileAbove: Search up the path from current file's directory {{{ 
-" for file matching expr.
+" Tex_FindFileAbove: {{{
+" Search up the path from current file's directory for file matching expr.
 " Return str = absolute path to file matching expr
 function! Tex_FindFileAbove(expr)
 	let l:max_depth = 12
@@ -65,170 +47,174 @@ function! Tex_FindFileAbove(expr)
 endfunction
 " }}}
 
-" Establish personal settings for current tex file.
+" TEXRC: Source the various texrc files in a hierarchical fashion. {{{
+" Set personal settings for current tex file.
 let s:loc_texrc = Tex_FindFileAbove('texrc')
 if s:loc_texrc != '' && filereadable(s:loc_texrc)
 	exe 'source '.s:loc_texrc
 endif
-" set up personal global settings.
+" Set personal default global settings.
 runtime ftplugin/tex/texrc
-" set up global default settings.
+" Set latex-suite default global settings.
 exe "so ".fnameescape(s:path.'/texrc')
-
 " }}}
 
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
 " ========================================================================
-" Mappings -- IMAP
+" Mappings
 " ========================================================================
 " {{{
-" calculate the mapleader character.
+
+" Buffer-specific 'running' imaps.
+if b:tex_useRunningImap
+ \ && (!exists('b:tex_doneBufMaps') || b:tex_doneBufMaps != 1)
+	exe 'source '.s:path.'/imaps.vim'
+	let b:tex_doneBufMaps = 1
+endif
+
+" Set the mapping leader character symbol.
 let s:ml = '<Leader>'
 
 if !exists('s:doneMappings') || s:doneMappings != 1
-	let s:doneMappings = 1
-	" short forms for latex formatting and math elements. {{{
-	" taken from auctex.vim or miktexmacros.vim
-	" call IMAP ('__', '_{<++>}<++>', "tex")
-	" call IMAP ('()', '(<++>)<++>', "tex")
-	" call IMAP ('[]', '[<++>]<++>', "tex")
-	" call IMAP ('{}', '{<++>}<++>', "tex")
-	" call IMAP ('^^', '^{<++>}<++>', "tex")
-	" call IMAP ('$$', '$<++>$<++>', "tex")
-	" call IMAP ('((', '\left( <++> \right)<++>', "tex")
-	" call IMAP ('[[', '\left[ <++> \right]<++>', "tex")
-	" call IMAP ('{{', '\left\{ <++> \right\}<++>', "tex")
-	" call IMAP ('==', '&= ', "tex")
-	" call IMAP ('~~', '&\approx ', "tex")
-	" call IMAP ('=~', '\approx', "tex")
-	" call IMAP ('::', '\dots', "tex")
-	" call IMAP ('..', '\dotsc', "tex")
-	" call IMAP ('**', '\dotsb', "tex")
-	" call IMAP (g:Tex_Leader.'^', '\hat{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'_', '\bar{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'6', '\partial', "tex")
-	" call IMAP (g:Tex_Leader.'8', '\infty', "tex")
-	" call IMAP (g:Tex_Leader.'/', '\frac{<++>}{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'%', '\frac{<++>}{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'@', '\circ', "tex")
-	" call IMAP (g:Tex_Leader.'0', '^\circ', "tex")
-	" call IMAP (g:Tex_Leader.'=', '\equiv', "tex")
-	" call IMAP (g:Tex_Leader."\\",'\setminus', "tex")
-	" if !g:Tex_SmartKeyDot
-	" 	call IMAP (g:Tex_Leader.'.', '\cdot', "tex")
-	" end
-	" call IMAP (g:Tex_Leader.'*', '\times', "tex")
-	" call IMAP (g:Tex_Leader.'&', '\wedge', "tex")
-	" call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
-	" call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
-	" call IMAP (g:Tex_Leader.'M', '\sum_{<++>}^{<++>}<++>', 'tex')
-	" call IMAP (g:Tex_Leader.'S', '\sum_{<++>}^{<++>}<++>', 'tex')
-	" call IMAP (g:Tex_Leader.'(', '\subset', "tex")
-	" call IMAP (g:Tex_Leader.')', '\supset', "tex")
-	" call IMAP (g:Tex_Leader.'<', '\le', "tex")
-	" call IMAP (g:Tex_Leader.'>', '\ge', "tex")
-	" call IMAP (g:Tex_Leader.',', '\nonumber', "tex")
-	" call IMAP (g:Tex_Leader.'~', '\tilde{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.';', '\dot{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'2', '\sqrt{<++>}<++>', "tex")
-	" call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
-	" call IMAP (g:Tex_Leader.'I', "\\int_{<++>}^{<++>}<++>", 'tex')
-	" " }}}
-	" " Greek Letters {{{
-	" call IMAP(g:Tex_Leader.'a', '\alpha', 'tex')
-	" call IMAP(g:Tex_Leader.'b', '\beta', 'tex')
-	" call IMAP(g:Tex_Leader.'c', '\chi', 'tex')
-	" call IMAP(g:Tex_Leader.'d', '\delta', 'tex')
-	" call IMAP(g:Tex_Leader.'e', '\varepsilon', 'tex')
-	" call IMAP(g:Tex_Leader.'f', '\varphi', 'tex')
-	" call IMAP(g:Tex_Leader.'g', '\gamma', 'tex')
-	" call IMAP(g:Tex_Leader.'h', '\eta', 'tex')
-	" call IMAP(g:Tex_Leader.'i', '\iota', 'tex')
-	" call IMAP(g:Tex_Leader.'k', '\kappa', 'tex')
-	" call IMAP(g:Tex_Leader.'l', '\lambda', 'tex')
-	" call IMAP(g:Tex_Leader.'m', '\mu', 'tex')
-	" call IMAP(g:Tex_Leader.'n', '\nu', 'tex')
-	" call IMAP(g:Tex_Leader.'o', '\omicron', 'tex')
-	" call IMAP(g:Tex_Leader.'p', '\pi', 'tex')
-	" call IMAP(g:Tex_Leader.'q', '\theta', 'tex')
-	" call IMAP(g:Tex_Leader.'r', '\rho', 'tex')
-	" call IMAP(g:Tex_Leader.'s', '\sigma', 'tex')
-	" call IMAP(g:Tex_Leader.'t', '\tau', 'tex')
-	" call IMAP(g:Tex_Leader.'u', '\upsilon', 'tex')
-	" call IMAP(g:Tex_Leader.'v', '\varsigma', 'tex')
-	" call IMAP(g:Tex_Leader.'w', '\omega', 'tex')
-	" call IMAP(g:Tex_Leader.'x', '\xi', 'tex')
-	" call IMAP(g:Tex_Leader.'y', '\psi', 'tex')
-	" call IMAP(g:Tex_Leader.'z', '\zeta', 'tex')
-	" " not all capital greek letters exist in LaTeX!
-	" " reference: http://www.giss.nasa.gov/latex/ltx-405.html
-	" " But we still expand all the letters and give choices to users
-	" call IMAP(g:Tex_Leader.'A', '\Alpha', 'tex')
-	" call IMAP(g:Tex_Leader.'B', '\Beta', 'tex')
-	" call IMAP(g:Tex_Leader.'C', '\Chi', 'tex')
-	" call IMAP(g:Tex_Leader.'D', '\Delta', 'tex')
-	" call IMAP(g:Tex_Leader.'E', '\Varepsilon', 'tex')
-	" call IMAP(g:Tex_Leader.'F', '\Varphi', 'tex')
-	" call IMAP(g:Tex_Leader.'G', '\Gamma', 'tex')
-	" call IMAP(g:Tex_Leader.'H', '\Eta', 'tex')
-	" call IMAP(g:Tex_Leader.'I', '\Iota', 'tex')
-	" call IMAP(g:Tex_Leader.'K', '\Kappa', 'tex')
-	" call IMAP(g:Tex_Leader.'L', '\Lambda', 'tex')
-	" call IMAP(g:Tex_Leader.'M', '\Mu', 'tex')
-	" call IMAP(g:Tex_Leader.'N', '\Nu', 'tex')
-	" call IMAP(g:Tex_Leader.'O', '\Omicron', 'tex')
-	" call IMAP(g:Tex_Leader.'P', '\Pi', 'tex')
-	" call IMAP(g:Tex_Leader.'Q', '\Theta', 'tex')
-	" call IMAP(g:Tex_Leader.'R', '\Rho', 'tex')
-	" call IMAP(g:Tex_Leader.'S', '\Sigma', 'tex')
-	" call IMAP(g:Tex_Leader.'T', '\Tau', 'tex')
-	" call IMAP(g:Tex_Leader.'U', '\Upsilon', 'tex')
-	" call IMAP(g:Tex_Leader.'V', '\Varsigma', 'tex')
-	" call IMAP(g:Tex_Leader.'W', '\Omega', 'tex')
-	" call IMAP(g:Tex_Leader.'X', '\Xi', 'tex')
-	" call IMAP(g:Tex_Leader.'Y', '\Psi', 'tex')
-	" call IMAP(g:Tex_Leader.'Z', '\Zeta', 'tex')
-	" " }}}
-	" " ProtectLetters: sets up identity maps for things like ``a {{{
-	" " " Description: If we simply do
-	" " 		call IMAP('`a', '\alpha', 'tex')
-	" " then we will never be able to type 'a' after a tex-quotation. Since
-	" " IMAP() always uses the longest map ending in the letter, this 
-	" problem
-	" " can be avoided by creating a fake map for ``a -> ``a.
-	" " This function sets up fake maps of the following forms:
-	" " 	``[aA]  -> ``[aA]    (for writing in quotations)
-	" " 	\`[aA]  -> \`[aA]    (for writing diacritics)
-	" " 	"`[aA]  -> "`[aA]    (for writing german quotations)
-	" " It does this for all printable lower ascii characters just to make 
-	" sure
-	" " we dont let anything slip by.
-	" function! s:ProtectLetters(first, last)
-	" 	for i in range(a:first, a:last)
-	" 		if nr2char(i) =~ '[[:print:]]'
-	" 			if ( g:Tex_SmartKeyDot && nr2char(i) == '.' )
-	" 						\ || ( g:Tex_SmartKeyQuote && nr2char(i) == '"' 
-	" 						)
-	" 				continue
-	" 			endif
-	" 			call IMAP('``'.nr2char(i), '``'.nr2char(i), 'tex')
-	" 			call IMAP('\`'.nr2char(i), '\`'.nr2char(i), 'tex')
-	" 			call IMAP('"`'.nr2char(i), '"`'.nr2char(i), 'tex')
-	" 		endif
-	" 	endfor
-	" endfunction call s:ProtectLetters(32, 127)
-	" " }}}
-	" " vmaps: enclose selected region in brackets, environments {{{ " The 
-	" action changes depending on whether the selection is character-wise
-	" " or line wise. for example, selecting linewise and pressing \v will
-	" " result in the region being enclosed in \begin{verbatim}, 
-	" \end{verbatim},
-	" " whereas in characterise visual mode, the thingie is enclosed in 
-	" \verb|
-	" " and |.
+	if b:tex_useIMAP
+		" short forms for latex formatting and math elements. {{{
+		" taken from auctex.vim or miktexmacros.vim
+		call IMAP ('__', '_{<++>}<++>', "tex")
+		call IMAP ('()', '(<++>)<++>', "tex")
+		call IMAP ('[]', '[<++>]<++>', "tex")
+		call IMAP ('{}', '{<++>}<++>', "tex")
+		call IMAP ('^^', '^{<++>}<++>', "tex")
+		call IMAP ('$$', '$<++>$<++>', "tex")
+		call IMAP ('((', '\left( <++> \right)<++>', "tex")
+		call IMAP ('[[', '\left[ <++> \right]<++>', "tex")
+		call IMAP ('{{', '\left\{ <++> \right\}<++>', "tex")
+		call IMAP ('==', '&= ', "tex")
+		call IMAP ('~~', '&\approx ', "tex")
+		call IMAP ('=~', '\approx', "tex")
+		call IMAP ('::', '\dots', "tex")
+		call IMAP ('..', '\dotsc', "tex")
+		call IMAP ('**', '\dotsb', "tex")
+		call IMAP (g:Tex_Leader.'^', '\hat{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'_', '\bar{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'6', '\partial', "tex")
+		call IMAP (g:Tex_Leader.'8', '\infty', "tex")
+		call IMAP (g:Tex_Leader.'/', '\frac{<++>}{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'%', '\frac{<++>}{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'@', '\circ', "tex")
+		call IMAP (g:Tex_Leader.'0', '^\circ', "tex")
+		call IMAP (g:Tex_Leader.'=', '\equiv', "tex")
+		call IMAP (g:Tex_Leader."\\",'\setminus', "tex")
+		if !g:Tex_SmartKeyDot
+			call IMAP (g:Tex_Leader.'.', '\cdot', "tex")
+		endif
+		call IMAP (g:Tex_Leader.'*', '\times', "tex")
+		call IMAP (g:Tex_Leader.'&', '\wedge', "tex")
+		call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
+		call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
+		call IMAP (g:Tex_Leader.'M', '\sum_{<++>}^{<++>}<++>', 'tex')
+		call IMAP (g:Tex_Leader.'S', '\sum_{<++>}^{<++>}<++>', 'tex')
+		call IMAP (g:Tex_Leader.'(', '\subset', "tex")
+		call IMAP (g:Tex_Leader.')', '\supset', "tex")
+		call IMAP (g:Tex_Leader.'<', '\le', "tex")
+		call IMAP (g:Tex_Leader.'>', '\ge', "tex")
+		call IMAP (g:Tex_Leader.',', '\nonumber', "tex")
+		call IMAP (g:Tex_Leader.'~', '\tilde{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.';', '\dot{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'2', '\sqrt{<++>}<++>', "tex")
+		call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
+		call IMAP (g:Tex_Leader.'I', "\\int_{<++>}^{<++>}<++>", 'tex')
+		" }}}
+		" Greek Letters {{{
+		call IMAP(g:Tex_Leader.'a', '\alpha', 'tex')
+		call IMAP(g:Tex_Leader.'b', '\beta', 'tex')
+		call IMAP(g:Tex_Leader.'c', '\chi', 'tex')
+		call IMAP(g:Tex_Leader.'d', '\delta', 'tex')
+		call IMAP(g:Tex_Leader.'e', '\varepsilon', 'tex')
+		call IMAP(g:Tex_Leader.'f', '\varphi', 'tex')
+		call IMAP(g:Tex_Leader.'g', '\gamma', 'tex')
+		call IMAP(g:Tex_Leader.'h', '\eta', 'tex')
+		call IMAP(g:Tex_Leader.'i', '\iota', 'tex')
+		call IMAP(g:Tex_Leader.'k', '\kappa', 'tex')
+		call IMAP(g:Tex_Leader.'l', '\lambda', 'tex')
+		call IMAP(g:Tex_Leader.'m', '\mu', 'tex')
+		call IMAP(g:Tex_Leader.'n', '\nu', 'tex')
+		call IMAP(g:Tex_Leader.'o', '\omicron', 'tex')
+		call IMAP(g:Tex_Leader.'p', '\pi', 'tex')
+		call IMAP(g:Tex_Leader.'q', '\theta', 'tex')
+		call IMAP(g:Tex_Leader.'r', '\rho', 'tex')
+		call IMAP(g:Tex_Leader.'s', '\sigma', 'tex')
+		call IMAP(g:Tex_Leader.'t', '\tau', 'tex')
+		call IMAP(g:Tex_Leader.'u', '\upsilon', 'tex')
+		call IMAP(g:Tex_Leader.'v', '\varsigma', 'tex')
+		call IMAP(g:Tex_Leader.'w', '\omega', 'tex')
+		call IMAP(g:Tex_Leader.'x', '\xi', 'tex')
+		call IMAP(g:Tex_Leader.'y', '\psi', 'tex')
+		call IMAP(g:Tex_Leader.'z', '\zeta', 'tex')
+		" not all capital greek letters exist in LaTeX!
+		" reference: http://www.giss.nasa.gov/latex/ltx-405.html
+		" But we still expand all the letters and give choices to users
+		call IMAP(g:Tex_Leader.'A', '\Alpha', 'tex')
+		call IMAP(g:Tex_Leader.'B', '\Beta', 'tex')
+		call IMAP(g:Tex_Leader.'C', '\Chi', 'tex')
+		call IMAP(g:Tex_Leader.'D', '\Delta', 'tex')
+		call IMAP(g:Tex_Leader.'E', '\Varepsilon', 'tex')
+		call IMAP(g:Tex_Leader.'F', '\Varphi', 'tex')
+		call IMAP(g:Tex_Leader.'G', '\Gamma', 'tex')
+		call IMAP(g:Tex_Leader.'H', '\Eta', 'tex')
+		call IMAP(g:Tex_Leader.'I', '\Iota', 'tex')
+		call IMAP(g:Tex_Leader.'K', '\Kappa', 'tex')
+		call IMAP(g:Tex_Leader.'L', '\Lambda', 'tex')
+		call IMAP(g:Tex_Leader.'M', '\Mu', 'tex')
+		call IMAP(g:Tex_Leader.'N', '\Nu', 'tex')
+		call IMAP(g:Tex_Leader.'O', '\Omicron', 'tex')
+		call IMAP(g:Tex_Leader.'P', '\Pi', 'tex')
+		call IMAP(g:Tex_Leader.'Q', '\Theta', 'tex')
+		call IMAP(g:Tex_Leader.'R', '\Rho', 'tex')
+		call IMAP(g:Tex_Leader.'S', '\Sigma', 'tex')
+		call IMAP(g:Tex_Leader.'T', '\Tau', 'tex')
+		call IMAP(g:Tex_Leader.'U', '\Upsilon', 'tex')
+		call IMAP(g:Tex_Leader.'V', '\Varsigma', 'tex')
+		call IMAP(g:Tex_Leader.'W', '\Omega', 'tex')
+		call IMAP(g:Tex_Leader.'X', '\Xi', 'tex')
+		call IMAP(g:Tex_Leader.'Y', '\Psi', 'tex')
+		call IMAP(g:Tex_Leader.'Z', '\Zeta', 'tex')
+		" }}}
+		" ProtectLetters: sets up identity maps for things like ``a {{{
+		" " Description: If we simply do
+		" 		call IMAP('`a', '\alpha', 'tex')
+		" then we will never be able to type 'a' after a tex-quotation. 
+		" Since IMAP() always uses the longest map ending in the letter, 
+		" this problem can be avoided by creating a fake map for ``a -> 
+		" ``a.  This function sets up fake maps of the following forms:
+		" 	``[aA]  -> ``[aA]    (for writing in quotations)
+		" 	\`[aA]  -> \`[aA]    (for writing diacritics)
+		" 	"`[aA]  -> "`[aA]    (for writing german quotations)
+		" It does this for all printable lower ascii characters just to 
+		" make sure we dont let anything slip by.
+		function! s:ProtectLetters(first, last)
+			for i in range(a:first, a:last)
+				let l:char = nr2char(i)
+				if l:char =~ '[[:print:]]'
+				 \ && !((g:Tex_SmartKeyDot && l:char == '.')
+				 \		|| (g:Tex_SmartKeyQuote && l:char == '"'))
+					call IMAP('``'.l:char, '``'.l:char, 'tex')
+					call IMAP('\`'.l:char, '\`'.l:char, 'tex')
+					call IMAP('"`'.l:char, '"`'.l:char, 'tex')
+				endif
+			endfor
+		endfunction
+		call s:ProtectLetters(32, 127)
+	endif
+	" }}}
+	" vmaps: enclose selected region in brackets, environments. The {{{ 
+	" action changes depending on whether the selection is character-wise 
+	" or line wise. for example, selecting linewise and pressing \v will 
+	" result in the region being enclosed in \begin{verbatim}, 
+	" \end{verbatim}, whereas in characterise visual mode, the thingie is 
+	" enclosed in \verb| and |.
 	exec 'xnoremap <silent> '
 				\ .g:Tex_Leader."( \<C-\\>\<C-N>:call "
 				\ ."VEnclose('\\left( ', ' \\right)', "
@@ -245,7 +231,7 @@ if !exists('s:doneMappings') || s:doneMappings != 1
 				\ .g:Tex_Leader."$ \<C-\\>\<C-N>:call "
 				\ ."VEnclose('$', '$', '\\[', '\\]')\<CR>"
 	" }}}
-	"
+	let s:doneMappings = 1
 endif
 
 " }}}

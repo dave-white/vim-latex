@@ -1,24 +1,23 @@
-"=============================================================================
+"===========================================================================
 "        File: compiler.vim
 "      Author: Srinath Avadhanula
 "     Created: Tue Apr 23 05:00 PM 2002 PST
 "
 "  Description: functions for compiling/viewing/searching latex documents
-"=============================================================================
+"===========================================================================
 
 " line continuation used here.
 let s:save_cpo = &cpo
 set cpo&vim
 
 function! Tex_GetJobName() " {{{
-	if exists('g:Tex_JobName') && len(g:Tex_JobName) > 0
-		return g:Tex_JobName
+	if exists('b:tex_jobNm') && strlen(g:Tex_JobName) > 0
+		return b:tex_jobNm
 	else
 		return Tex_GetMainFileName(':t:r')
 	endif
 endfunction
 " }}}
-
 function! Tex_GetOutputDir(...) " {{{
 	if a:0 > 0
 		let l:mod = a:1
@@ -27,8 +26,8 @@ function! Tex_GetOutputDir(...) " {{{
 	endif
 
 	let l:main_fdir = Tex_GetMainFileName(':p:h')
-	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-		let l:out_dir = fnameescape(l:main_fdir.'/'.g:Tex_OutputDir)
+	if exists('b:tex_outpDir') && len(g:Tex_OutputDir) > 0
+		let l:out_dir = fnameescape(l:main_fdir.'/'.b:tex_outpDir)
 		if glob(l:out_dir) != ''
 			return fnamemodify(l:out_dir, l:mod)
 		else
@@ -38,8 +37,8 @@ function! Tex_GetOutputDir(...) " {{{
 	endif
 endfunction
 " }}}
-
-" Tex_SetTeXCompilerTarget: sets the 'target' for the next call to Tex_RunLaTeX() {{{
+" Tex_SetTeXCompilerTarget: sets the 'target' for the next call to {{{
+" Tex_RunLaTeX()
 function! Tex_SetTeXCompilerTarget(type, target)
 	call Tex_Debug("+Tex_SetTeXCompilerTarget: setting target to [".a:target."] for ".a:type."r", "comp")
 
@@ -128,55 +127,44 @@ com! -nargs=1 TVTarget :call Tex_SetTeXCompilerTarget('View', <f-args>)
 com! -nargs=? TTarget :call SetTeXTarget(<f-args>)
 
 " }}}
+" Tex_BldCmd: {{{
+func! Tex_BldCmd(cmd, optDict)
+  let l:rslt = a:cmd
+  for [l:opt, l:val] in items(a:argDict)
+	let l:rslt .= ' '.l:opt
+	if strlen(l:val) > 0
+	  let l:rslt .= '="'.l:val.'"'
+	endif
+  endfor
+endfunc
+" }}}
 " Tex_CompileLatex: compiles the present file. {{{
 " Description:
-function! Tex_CompileLatex()
+function! Tex_Compile(targ, file)
 	if &ft != 'tex'
-		echo "calling Tex_RunLaTeX from a non-tex file"
+		echo "calling Tex_Compile from a non-tex file"
 		return
 	end
-
 	" close any preview windows left open.
 	pclose!
 
-	let l:origdir = fnameescape(getcwd())
-
-	" Find the main file corresponding to this file. Always cd to the
-	" directory containing the file to avoid problems with the directory
-	" containing spaces.
-	" Latex on linux seems to be unable to handle file names with spaces at
-	" all! Therefore for the moment, do not attempt to handle spaces in the
-	" file name.
-	if exists('b:fragmentFile')
-		let mainfname = expand('%:p:t')
-		call Tex_CD(expand('%:p:h'))
+	if b:tex_useMake
+	  exec 'make!'
 	else
-		let mainfname = Tex_GetMainFileName(':p:t')
-		call Tex_CD(Tex_GetMainFileName(':p:h'))
-	end
-
-	call Tex_Debug('Tex_CompileLatex: getting mainfname = ['.mainfname.'] from Tex_GetMainFileName', 'comp')
-
-	" if a makefile exists and the user wants to use it, then use that
-	" irrespective of whether *.latexmain exists or not. mainfname is still
-	" extracted from *.latexmain (if possible) log file name depends on the
-	" main file which will be compiled.
-	if Tex_GetVarValue('Tex_UseMakefile') && (glob('makefile') != '' || glob('Makefile') != '')
-		" makeprg is already set by Tex_SetTeXCompilerTarget
-		call Tex_Debug('Tex_CompileLatex: execing [make!]', 'comp')
-		exec 'make!'
-	else
-		" If &makeprg has something like "$*.ps", it means that it wants the
-		" file-name without the extension... Therefore remove it.
-		if &makeprg =~ '\$\*\.\w\+'
-			let mainfname = fnamemodify(mainfname, ':r')
-		endif
-		call Tex_Debug('Tex_CompileLatex: execing [make! "'.mainfname.'"]', 'comp')
-		exec 'make! "'.mainfname.'"'
+	  let l:optDict = b:compileCmdOptDict_{a:targ}
+	  if has_key(l:optDict, '-output-directory')
+		call mkdir(l:optDict['-output-directory'], "p")
+	  endif
+	  let l:compileCmd = Tex_BldCmd(b:compileCmd_{a:targ}, l:optDict)
+	  exec 'silent! '.l:compileCmd." ".a:file
+	  if b:enableMultCompile
+		while sed(&out, "\\bibdata" || "\\abx")
+		  exec 'silent! '.b:bibCmd.' "'.Tex_GetJobName.'"'
+		  exec 'silent! '.l:compileCmd." ".a:file
+		endwhile
+	  endif
 	endif
 	redraw!
-
-	exe 'cd '.l:origdir
 endfunction " }}}
 " Tex_RunLaTeX: compilation function {{{
 " this function runs the latex command on the currently open file. often times
@@ -195,9 +183,6 @@ function! Tex_RunLaTeX()
 	let l:origdir = fnameescape(getcwd())
 	call Tex_CD(expand("%:p:h"))
 
-	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-		call mkdir(g:Tex_OutputDir, "p")
-	endif
 	let initTarget = s:target
 
 	" first get the dependency chain of this format.
@@ -268,13 +253,13 @@ function! Tex_ViewLaTeX()
 	" using Tex_PartCompile, which means that we want to ignore any
 	" *.latexmain or makefile's.
 	if exists('b:fragmentFile')
-		if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-			let l:output_file = expand('%:p:h').'/'.g:Tex_OutputDir.'/'.expand('%:t:r')
+		if exists('b:tex_outpDir') && len(g:Tex_OutputDir) > 0
+			let l:outpFile = expand('%:p:h').'/'.b:tex_outpDir.'/'.expand('%:t:r')
 		else
-			let l:output_file = expand('%:p:t:r')
+			let l:outpFile = expand('%:p:t:r')
 		endif
 	else
-		let l:output_file = Tex_GetOutputDir(':p').'/'.Tex_GetJobName()
+		let l:outpFile = Tex_GetOutputDir(':p').'/'.Tex_GetJobName()
 	endif
 
 	if Tex_GetVarValue('Tex_ViewRuleComplete_'.s:target) != ''
@@ -344,7 +329,7 @@ function! Tex_ViewLaTeX()
 
 	end
 
-	let execString = substitute(execString, '\V$*', l:output_file, 'g')
+	let execString = substitute(execString, '\V$*', l:outpFile, 'g')
 	call Tex_Debug("Tex_ViewLaTeX: execString = ".execString, "comp")
 
 	exec 'silent! !'.execString
@@ -504,9 +489,9 @@ endfunction
 
 " }}}
 
-" ==============================================================================
+" ==========================================================================
 " Functions for compiling parts of a file.
-" ==============================================================================
+" ==========================================================================
 " Tex_PartCompile: compiles selected fragment {{{
 " Description: creates a temporary file from the selected fragment of text
 "       prepending the preamble and \end{document} and then asks Tex_RunLaTeX() to
@@ -581,135 +566,131 @@ function! Tex_RemoveTempFiles()
 	endwhile
 endfunction " }}}
 
-" ==============================================================================
+" ==========================================================================
 " Compiling a file multiple times to resolve references/citations etc.
-" ==============================================================================
+" ==========================================================================
 " Tex_CompileMultipleTimes: The main function {{{
 " Description: compiles a file multiple times to get cross-references right.
 function! Tex_CompileMultipleTimes()
-	" Just extract the root without any extension because we want to 
-	" construct
-	" the log file names etc from it.
-	let l:origdir = fnameescape(getcwd())
-	let mainFileName_root = Tex_GetMainFileName(':p:t:r')
-	"let l:cwd = Tex_GetMainFileName(':p:h')
-	let l:main_fname = Tex_GetMainFileName(':t:r')
-	call Tex_CD(Tex_GetMainFileName(':p:h'))
+  " Just extract the root without any extension because we want to 
+  " construct the log file names etc from it.
+  let l:origdir = fnameescape(getcwd())
+  let mainFileName_root = Tex_GetMainFileName(':p:t:r')
+  "let l:cwd = Tex_GetMainFileName(':p:h')
+  let l:main_fname = Tex_GetMainFileName(':t:r')
+  call Tex_CD(Tex_GetMainFileName(':p:h'))
 
-	" First ignore undefined references and the
-	" "rerun to get cross-references right" message from
-	" the compiler output.
-	let origlevel = Tex_GetVarValue('Tex_IgnoreLevel')
-	let origpats = Tex_GetVarValue('Tex_IgnoredWarnings')
+  " First ignore undefined references and the
+  " 'rerun to get cross-references right' message from
+  " the compiler output.
+  let origlevel = Tex_GetVarValue('Tex_IgnoreLevel')
+  let origpats = Tex_GetVarValue('Tex_IgnoredWarnings')
 
-	let g:Tex_IgnoredWarnings = g:Tex_IgnoredWarnings."\n"
+  let g:Tex_IgnoredWarnings = g:Tex_IgnoredWarnings."\n"
 		\ . 'Reference %.%# undefined'."\n"
 		\ . 'Rerun to get cross-references right'
-	TCLevel 1000
+  TCLevel 1000
 
-	let idx_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.idx'
-	let aux_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.aux'
+  let idx_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.idx'
+  let aux_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.aux'
 
-	let l:bib_cmd = Tex_GetVarValue('Tex_BibtexFlavor')
-	if exists('g:Tex_OutputDir') && len(g:Tex_OutputDir) > 0
-		let l:bib_cmd .= ' --input-directory='.g:Tex_OutputDir
-					\ . ' --output-directory='.g:Tex_OutputDir
+  let runCount = 0
+  let needToRerun = 1
+  while needToRerun == 1 && runCount < 5
+	" assume we need to run only once.
+	let needToRerun = 0
+
+	let idxlinesBefore = Tex_CatFile(l:idx_fname)
+	let auxlinesBefore = Tex_GetAuxFile(l:aux_fname)
+
+	" first run latex.
+	echomsg "latex run number : ".(runCount+1)
+	call Tex_Debug("Tex_CompileMultipleTimes: "
+		  \ ."latex run number is ".(runCount+1), "comp")
+	silent! call Tex_CompileLatex()
+
+	" If there are errors in any latex compilation step, immediately 
+	" return. For now, do not bother with warnings because those might go 
+	" away after compiling again or after bibtex is run etc.
+	let errlist = Tex_GetErrorList()
+	call Tex_Debug("Tex_CompileMultipleTimes: "
+		  \ ."errors = [".errlist."]", "comp")
+
+	if errlist =~ 'error'
+	  let g:Tex_IgnoredWarnings = origpats
+	  exec 'TCLevel '.origlevel
+
+	  return
 	endif
 
-	let runCount = 0
-	let needToRerun = 1
-	while needToRerun == 1 && runCount < 5
-		" assume we need to run only once.
-		let needToRerun = 0
+	let idxlinesAfter = Tex_CatFile(l:idx_fname)
 
-		let idxlinesBefore = Tex_CatFile(l:idx_fname)
-		let auxlinesBefore = Tex_GetAuxFile(l:aux_fname)
+	" If .idx file changed, then run makeindex to generate the new .ind
+	" file and remember to rerun latex.
+	if runCount == 0 && glob(l:idx_fname) != ''
+	 \ && idxlinesBefore != idxlinesAfter
+	  echomsg "Running makeindex..."
+	  let temp_mp = &mp | let &mp = Tex_GetVarValue('Tex_MakeIndexFlavor')
+	  exec 'silent! make "'.mainFileName_root.'"'
+	  let &mp = temp_mp
 
-		" first run latex.
-		echomsg "latex run number : ".(runCount+1)
-		call Tex_Debug("Tex_CompileMultipleTimes: latex run number : ".(runCount+1), "comp")
-		silent! call Tex_CompileLatex()
+	  let needToRerun = 1
+	endif
 
-		" If there are errors in any latex compilation step, immediately
-		" return. For now, do not bother with warnings because those might go
-		" away after compiling again or after bibtex is run etc.
-		let errlist = Tex_GetErrorList()
-		call Tex_Debug("Tex_CompileMultipleTimes: errors = [".errlist."]", "comp")
+	" The first time we see if we need to generate the bibliography and if 
+	" the .bbl file changes, we will rerun latex.  We use '\\bibdata' as a 
+	" check for BibTeX and '\\abx' as a check for biber.
+	if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', l:aux_fname)
+	  let bibFileName = Tex_GetJobName().'.bbl'
 
-		if errlist =~ 'error'
-			let g:Tex_IgnoredWarnings = origpats
-			exec 'TCLevel '.origlevel
+	  let biblinesBefore = Tex_CatFile(bibFileName)
 
-			return
-		endif
+	  echomsg "Running '".Tex_GetVarValue('Tex_BibtexFlavor')."' ..."
+	  exec 'silent! '.b:bibCmd.' "'.Tex_GetJobName.'"'
 
-		let idxlinesAfter = Tex_CatFile(l:idx_fname)
+	  let biblinesAfter = Tex_CatFile(bibFileName)
 
-		" If .idx file changed, then run makeindex to generate the new .ind
-		" file and remember to rerun latex.
-		if runCount == 0 && glob(l:idx_fname) != '' && idxlinesBefore != idxlinesAfter
-			echomsg "Running makeindex..."
-			let temp_mp = &mp | let &mp = Tex_GetVarValue('Tex_MakeIndexFlavor')
-			exec 'silent! make "'.mainFileName_root.'"'
-			let &mp = temp_mp
+	  " If the .bbl file changed after running bibtex, we need to latex 
+	  " again.
+	  if biblinesAfter != biblinesBefore
+		echomsg 'Need to rerun because bibliography file changed...'
+		call Tex_Debug('Tex_CompileMultipleTimes: '
+			  \ .'Need to rerun because bibliography file changed...',
+			  \ 'comp')
+		let needToRerun = 1
+	  endif
+	endif
 
-			let needToRerun = 1
-		endif
+	" check if latex asks us to rerun
+	let auxlinesAfter = Tex_GetAuxFile(l:aux_fname)
+	if auxlinesAfter != auxlinesBefore
+	  echomsg "Need to rerun because the AUX file changed..."
+	  call Tex_Debug("Tex_CompileMultipleTimes: "
+			\."Need to rerun to get cross-references right...", 'comp')
+	  let needToRerun = 1
+	endif
 
-		" The first time we see if we need to generate the bibliography and if the .bbl file
-		" changes, we will rerun latex.
-		" We use '\\bibdata' as a check for BibTeX and '\\abx' as a check for biber.
-		if runCount == 0
-					\ && Tex_IsPresentInFile('\\bibdata|\\abx',
-					\ l:aux_fname)
-			let bibFileName = Tex_GetJobName().'.bbl'
+	let runCount = runCount + 1
+  endwhile
 
-			let biblinesBefore = Tex_CatFile(bibFileName)
+  redraw!
+  call Tex_Debug("Tex_CompileMultipleTimes: "
+		\ ."Ran latex ".runCount." time(s)", "comp")
+  echomsg "Ran latex ".runCount." time(s)"
 
-			echomsg "Running '".Tex_GetVarValue('Tex_BibtexFlavor')."' ..."
-			let temp_mp = &mp | let &mp = l:bib_cmd
-			exec 'silent! make "'.Tex_GetJobName().'"'
-			let &mp = temp_mp
-
-			let biblinesAfter = Tex_CatFile(bibFileName)
-
-			" If the .bbl file changed after running bibtex, we need to
-			" latex again.
-			if biblinesAfter != biblinesBefore
-				echomsg 'Need to rerun because bibliography file changed...'
-				call Tex_Debug('Tex_CompileMultipleTimes: Need to rerun because bibliography file changed...', 'comp')
-				let needToRerun = 1
-			endif
-		endif
-
-		" check if latex asks us to rerun
-		let auxlinesAfter = Tex_GetAuxFile(l:aux_fname)
-		if auxlinesAfter != auxlinesBefore
-			echomsg "Need to rerun because the AUX file changed..."
-			call Tex_Debug("Tex_CompileMultipleTimes: Need to rerun to get cross-references right...", 'comp')
-			let needToRerun = 1
-		endif
-
-		let runCount = runCount + 1
-	endwhile
-
-	redraw!
-	call Tex_Debug("Tex_CompileMultipleTimes: Ran latex ".runCount." time(s)", "comp")
-	echomsg "Ran latex ".runCount." time(s)"
-
-	let g:Tex_IgnoredWarnings = origpats
-	exec 'TCLevel '.origlevel
-	" After all compiler calls are done, reparse the .log file for
-	" errors/warnings to handle the situation where the clist might have been
-	" emptied because of bibtex/makeindex being run as the last step.
-	if Tex_GetVarValue('Tex_GotoError') == 1
-		exec 'silent! cfile '.Tex_GetJobName().'.log'
-	else
-		exec 'silent! cgetfile '.Tex_GetJobName().'.log'
+  let g:Tex_IgnoredWarnings = origpats
+  exec 'TCLevel '.origlevel
+  " After all compiler calls are done, reparse the .log file for
+  " errors/warnings to handle the situation where the clist might have been
+  " emptied because of bibtex/makeindex being run as the last step.
+  if Tex_GetVarValue('Tex_GotoError') == 1
+	exec 'silent! cfile '.Tex_GetJobName().'.log'
+  else
+	exec 'silent! cgetfile '.Tex_GetJobName().'.log'
 	end
 
 	exe 'cd '.l:origdir
-endfunction " }}}
+  endfunction " }}}
 " Tex_GetAuxFile: get the contents of the AUX file {{{
 " Description: get the contents of the AUX file recursively including any
 " @\input'ted AUX files.
@@ -726,7 +707,7 @@ function! Tex_GetAuxFile(auxFile)
 	return auxContents
 endfunction " }}}
 
-" ==============================================================================
+" ==========================================================================
 " Helper functions for
 " . viewing the log file in preview mode.
 " . syncing the display between the quickfix window and preview window
@@ -975,4 +956,4 @@ command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
 
 let &cpo = s:save_cpo
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4
+" vim:fdm=marker:ff=unix:noet
