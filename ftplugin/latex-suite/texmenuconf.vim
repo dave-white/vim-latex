@@ -9,72 +9,72 @@
 " Paths, crucial for functions
 let s:path = fnameescape(expand("<sfile>:p:h"))
 let s:up_path = fnameescape(expand("<sfile>:p:h:h"))
-let s:mainmenuname = g:Tex_MenuPrefix.'S&uite.'
+let s:mainmenuname = g:tex_menuPrefix.'S&uite.'
 let s:mapleader = exists('mapleader') ? mapleader : "\\"
 
 " This glboal variable is incremented each time a top-level latex-suite menu
 " is created. We should always use this variable for setting the locations of
 " newly created top-level menus.
-let g:Tex_NextMenuLocation = g:Tex_MainMenuLocation
+let g:tex_nextMenuLoc = g:tex_mainMenuLoc
 
 " The templates and macros menus are always nested within the main latex-suit
 " menu.
-let g:Tex_TemplatesMenuLocation = g:Tex_MainMenuLocation.'.20 '.s:mainmenuname.'&Templates.'
-let g:Tex_MacrosMenuLocation = g:Tex_MainMenuLocation.'.20 '.s:mainmenuname.'&Macros.'
+let g:tex_templatesMenuLocation = g:tex_mainMenuLoc.'.20 '.s:mainmenuname.'&Templates.'
+let g:tex_macrosMenuLocation = g:tex_mainMenuLoc.'.20 '.s:mainmenuname.'&Macros.'
 
 " The packages menu can either be a child of the main menu or be a top-level
 " menu by itself.
-if g:Tex_NestPackagesMenu
-	let g:Tex_PackagesMenuLocation = (g:Tex_MainMenuLocation).'.10 '.s:mainmenuname.'&Packages.'
+if g:tex_nestPkgMenu
+	let g:tex_pkgMenuLoc = (g:tex_mainMenuLoc).'.10 '.s:mainmenuname.'&Packages.'
 else
-	let g:Tex_PackagesMenuLocation = (g:Tex_NextMenuLocation).'.10 '.g:Tex_MenuPrefix.'Packages.'
-	let g:Tex_NextMenuLocation = g:Tex_NextMenuLocation + 1
+	let g:tex_pkgMenuLoc = (g:tex_nextMenuLoc).'.10 '.g:tex_menuPrefix.'Packages.'
+	let g:tex_nextMenuLoc = g:tex_nextMenuLoc + 1
 endif
 
 " Environments are always a top-level menu.
-let g:Tex_EnvMenuLocation = (g:Tex_NextMenuLocation).'.20 '.g:Tex_MenuPrefix.'E&nvironments.'
-let g:Tex_NextMenuLocation = g:Tex_NextMenuLocation + 1
+let g:tex_envMenuLoc= (g:tex_nextMenuLoc).'.20 '.g:tex_menuPrefix.'E&nvironments.'
+let g:tex_nextMenuLoc = g:tex_nextMenuLoc + 1
 
 " Elements are always a top-level menu. 
 " If we choose to nest elements, then the top-level &TeX-Elements menu
 " contains <Fonts / Counters / Dimensions>
 " otherwise, the Fonts, Counters and Dimensions menus become top-level menus.
-if g:Tex_NestElementMenus
-	let g:Tex_ElementsMenuLocation = (g:Tex_NextMenuLocation).'.20 '.g:Tex_MenuPrefix.'E&lements.'
+if g:tex_nestEltMenus
+	let g:tex_elementsMenuLocation = (g:tex_nextMenuLoc).'.20 '.g:tex_menuPrefix.'E&lements.'
 else
-	let g:Tex_ElementsMenuLocation = (g:Tex_NextMenuLocation).'.20 '.g:Tex_MenuPrefix
+	let g:tex_elementsMenuLocation = (g:tex_nextMenuLoc).'.20 '.g:tex_menuPrefix
 endif
-let g:Tex_NextMenuLocation = g:Tex_NextMenuLocation + 1
+let g:tex_nextMenuLoc = g:tex_nextMenuLoc + 1
 
 
 " Set up the compiler/viewer menus. {{{
 "
-if has('gui_running') && g:Tex_Menus
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.25 '. s:mainmenuname.'-sepsuite0-  :'
+if has('gui_running') && g:tex_menus
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.25 '. s:mainmenuname.'-sepsuite0-  :'
 
 	" menus for compiling / viewing etc.
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.30 '.s:mainmenuname.'&Compile<tab>'.s:mapleader.'ll'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.30 '.s:mainmenuname.'&Compile<tab>'.s:mapleader.'ll'.
 		\'   :silent! call Tex_RunLaTeX()<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.40 '.s:mainmenuname.'&View<tab>'.s:mapleader.'lv'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.40 '.s:mainmenuname.'&View<tab>'.s:mapleader.'lv'.
 		\'   :silent! call Tex_ViewLaTeX()<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.50 '.s:mainmenuname.'&Search<tab>'.s:mapleader.'ls'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.50 '.s:mainmenuname.'&Search<tab>'.s:mapleader.'ls'.
 		\'   :silent! call ForwardSearchLaTeX()<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.60 '.s:mainmenuname.'&Target\ Format<tab>:TTarget'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.60 '.s:mainmenuname.'&Target\ Format<tab>:TTarget'.
 		\'   :call SetTeXTarget()<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.70 '.s:mainmenuname.'&Compiler\ Target<tab>:TCTarget'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.70 '.s:mainmenuname.'&Compiler\ Target<tab>:TCTarget'.
 		\'   :call Tex_SetTeXCompilerTarget("Compile", "")<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.80 '.s:mainmenuname.'&Viewer\ Target<tab>:TVTarget'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.80 '.s:mainmenuname.'&Viewer\ Target<tab>:TVTarget'.
 		\'   :call Tex_SetTeXCompilerTarget("View", "")<CR>'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.90 '.s:mainmenuname.'Set\ &Ignore\ Level<tab>:TCLevel'.
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.90 '.s:mainmenuname.'Set\ &Ignore\ Level<tab>:TCLevel'.
 		\'   :TCLevel<CR>'
-	exec 'imenu '.g:Tex_MainMenuLocation.'.100 '.s:mainmenuname.'C&omplete\ Ref/Cite'.
+	exec 'imenu '.g:tex_mainMenuLoc.'.100 '.s:mainmenuname.'C&omplete\ Ref/Cite'.
 		\'   <Plug>Tex_Completion'
-	exec 'anoremenu '.g:Tex_MainMenuLocation.'.110 '.s:mainmenuname.'-sepsuite1- :'
+	exec 'anoremenu '.g:tex_mainMenuLoc.'.110 '.s:mainmenuname.'-sepsuite1- :'
 	" refreshing folds
-	if g:Tex_Folding
-		exec 'anoremenu '.g:Tex_MainMenuLocation.'.120 '.s:mainmenuname.'&Refresh\ Folds<tab>'.s:mapleader.'rf'.
+	if g:tex_folding
+		exec 'anoremenu '.g:tex_mainMenuLoc.'.120 '.s:mainmenuname.'&Refresh\ Folds<tab>'.s:mapleader.'rf'.
 			\'   :call MakeTexFolds(1)<CR>'
-		exec 'anoremenu '.g:Tex_MainMenuLocation.'.130 '.s:mainmenuname.'-sepsuite2- :'
+		exec 'anoremenu '.g:tex_mainMenuLoc.'.130 '.s:mainmenuname.'-sepsuite2- :'
 	endif
 endif
 
@@ -87,7 +87,7 @@ function! Tex_MenuConfigure(type, action) " {{{
 	let menuloc = s:mainmenuname.'Configure\ Menu.'
 	if a:type == 'math'
 		if a:action == 1
-			let g:Tex_MathMenus = 1
+			let g:tex_mathMenus = 1
 			exe 'source '.s:path.'/mathmacros.vim'
 			exe 'amenu disable '.menuloc.'Add\ Math\ Menu'
 			exe 'amenu enable '.menuloc.'Remove\ Math\ Menu'
@@ -98,18 +98,18 @@ function! Tex_MenuConfigure(type, action) " {{{
 		endif
 	elseif a:type == 'elements'
 		if a:action == 'expand'
-			let g:Tex_ElementsMenuLocation = '80.20 '.g:Tex_MenuPrefix
+			let g:tex_elementsMenuLocation = '80.20 '.g:tex_menuPrefix
 			exe 'amenu disable '.menuloc.'Expand\ Elements'
 			exe 'amenu enable '.menuloc.'Compress\ Elements'
 		elseif a:action == 'nest'
-			let g:Tex_ElementsMenuLocation = '80.20 '.g:Tex_MenuPrefix.'Elements.'
+			let g:tex_elementsMenuLocation = '80.20 '.g:tex_menuPrefix.'Elements.'
 			exe 'amenu enable '.menuloc.'Expand\ Elements'
 			exe 'amenu disable '.menuloc.'Compress\ Elements'
 		endif
 		exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 	elseif a:type == 'packages'
 		if a:action == 1
-			let g:Tex_PackagesMenu = 1
+			let g:tex_packagesMenu = 1
 			exe 'source '.s:path.'/packages.vim'
 			exe 'amenu disable '.menuloc.'Load\ Packages\ Menu'
 		endif
@@ -119,12 +119,12 @@ endfunction
 " }}}
 
 " configuration menu.
-if g:Tex_Menus
-	exe 'amenu '.g:Tex_MainMenuLocation.'.900 '.s:mainmenuname.'Configure\ Menu.Add\ Math\ Menu         :call Tex_MenuConfigure("math", 1)<cr>'
-	exe 'amenu '.g:Tex_MainMenuLocation.'.900 '.s:mainmenuname.'Configure\ Menu.Remove\ Math\ Menu      :call Tex_MenuConfigure("math", 0)<cr>'
-	exe 'amenu '.g:Tex_MainMenuLocation.'.900 '.s:mainmenuname.'Configure\ Menu.Expand\ Elements        :call Tex_MenuConfigure("elements", "expand")<cr>'
-	exe 'amenu '.g:Tex_MainMenuLocation.'.900 '.s:mainmenuname.'Configure\ Menu.Compress\ Elements      :call Tex_MenuConfigure("elements", "nest")<cr>'
-	exe 'amenu '.g:Tex_MainMenuLocation.'.900 '.s:mainmenuname.'Configure\ Menu.Load\ Packages\ Menu    :call Tex_MenuConfigure("packages", 1)<cr>'
+if g:tex_menus
+	exe 'amenu '.g:tex_mainMenuLoc.'.900 '.s:mainmenuname.'Configure\ Menu.Add\ Math\ Menu         :call Tex_MenuConfigure("math", 1)<cr>'
+	exe 'amenu '.g:tex_mainMenuLoc.'.900 '.s:mainmenuname.'Configure\ Menu.Remove\ Math\ Menu      :call Tex_MenuConfigure("math", 0)<cr>'
+	exe 'amenu '.g:tex_mainMenuLoc.'.900 '.s:mainmenuname.'Configure\ Menu.Expand\ Elements        :call Tex_MenuConfigure("elements", "expand")<cr>'
+	exe 'amenu '.g:tex_mainMenuLoc.'.900 '.s:mainmenuname.'Configure\ Menu.Compress\ Elements      :call Tex_MenuConfigure("elements", "nest")<cr>'
+	exe 'amenu '.g:tex_mainMenuLoc.'.900 '.s:mainmenuname.'Configure\ Menu.Load\ Packages\ Menu    :call Tex_MenuConfigure("packages", 1)<cr>'
 endif
 
 " vim:fdm=marker:ff=unix:noet:ts=4:sw=4

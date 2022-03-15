@@ -10,119 +10,41 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! Tex_GetJobName() " {{{
-  if exists('b:tex_jobNm') && strlen(b:tex_jobNm) > 0
-    return b:tex_jobNm
-  else
-    return Tex_GetMainFileName(':t:r')
-  endif
-endfunction
-" }}}
-function! Tex_GetOutputDir(...) " {{{
+func! Tex_GetJobName(...) " {{{
   if a:0 > 0
-    let l:mod = a:1
+    let l:isForMain = a:1
   else
-    let l:mod = ':p'
+    let l:isForMain = 0
   endif
 
-  let l:main_fdir = Tex_GetMainFileName(':p:h')
-  if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
-    let l:out_dir = fnameescape(l:main_fdir.'/'.b:tex_outpDir)
+  if !empty(b:tex_jobNm)
+    return b:tex_jobNm
+  elseif l:isForMain
+    return fnamemodify(Tex_GetMainFileName(), ':r')
+  else
+    return expand('%:r')
+  endif
+endfunc
+" }}}
+func! Tex_GetOutpDir(...) " {{{
+  if a:0 < 1
+    let l:fpathHead = expand('%:p:h')
+    let l:mod = ':p:h'
+  elseif a:0 < 2
+    let l:fpathHead = a:1
+    let l:mod = ':p:h'
+  else
+    let l:fpathHead = fnamemodify(a:1, ':p:h')
+    let l:mod = a:2
+  endif
+
+  if !empty(b:tex_outpDir)
+    let l:out_dir = fnameescape(l:fpathHead.'/'.b:tex_outpDir)
     return fnamemodify(l:out_dir, l:mod)
   else
-    return fnamemodify(l:main_fdir, l:mod)
+    return fnamemodify(l:fpathHead, l:mod)
   endif
-endfunction
-" }}}
-" Tex_SetTeXCompilerTarget: sets the 'target' for the next call to {{{
-" Tex_RunLaTeX()
-function! Tex_SetTeXCompilerTarget(type, target)
-  call Tex_Debug("+Tex_SetTeXCompilerTarget: setting target to [".a:target."] for ".a:type."r", "comp")
-
-  if a:target == ''
-    let target = Tex_GetVarValue('Tex_DefaultTargetFormat')
-    let target = input('Enter the target format for '.a:type.'r: ', target)
-  else
-    let target = a:target
-  endif
-  if target == ''
-    let target = 'dvi'
-  endif
-
-  let targetRule = Tex_GetVarValue('Tex_'.a:type.'Rule_'.target)
-
-  if a:type == "Compile" && Tex_GetVarValue('Tex_UseMakefile') && (glob('makefile') != '' || glob('Makefile') != '')
-    " if a makefile exists and the user wants to use it, then use that
-    " irrespective of whether *.latexmain exists or not.
-    call Tex_Debug("Tex_SetTeXCompilerTarget: using the makefile in the current directory", "comp")
-    let &l:makeprg = 'make "' . a:target . '"'
-    call Tex_Debug('Tex_SetTeXCompilerTarget: set [makeprg = "' . &l:makeprg . '"]', 'comp')
-  elseif targetRule != ''
-    if a:type == 'Compile'
-      let &l:makeprg = escape(targetRule, Tex_GetVarValue('Tex_EscapeChars'))
-    elseif a:type == 'View'
-      let s:viewer = targetRule
-    endif
-    let s:target = target
-
-  elseif Tex_GetVarValue('Tex_'.a:type.'RuleComplete_'.target) != ''
-    let s:target = target
-    let s:viewer = ''
-
-  elseif a:type == 'View' && (has('osx') || has('macunix'))
-	\ && Tex_GetVarValue('Tex_TreatMacViewerAsUNIX') != 1
-    " On the mac, we can have empty view rules, so do not complain when
-    " both Tex_ViewRule_target and Tex_ViewRuleComplete_target are
-    " empty. On other platforms, we will complain... see below.
-    let s:target = target
-    let s:viewer = ''
-
-  else
-    let l:origdir = fnameescape(getcwd())
-    exe 'cd '.fnameescape(expand('%:p:h'))
-    if !Tex_GetVarValue('Tex_UseMakefile') || (glob('makefile*') == '' && glob('Makefile*') == '')
-      if has('gui_running')
-	call confirm(
-	      \'No '.a:type.' rule defined for target '.target."\n".
-	      \'Please specify a rule in $VIMRUNTIME/ftplugin/tex/texrc'."\n".
-	      \'     :help Tex_'.a:type.'Rule_format'."\n".
-	      \'for more information',
-	      \"&ok", 1, 'Warning')
-      else
-	call input(
-	      \'No '.a:type.' rule defined for target '.target."\n".
-	      \'Please specify a rule in $VIMRUNTIME/ftplugin/tex/texrc'."\n".
-	      \'     :help Tex_'.a:type.'Rule_format'."\n".
-	      \'for more information'
-	      \)
-      endif
-    else
-      echomsg 'Assuming target is for makefile'
-      let s:target = target
-    endif
-    exe 'cd '.l:origdir
-  endif
-endfunction
-
-function! SetTeXTarget(...)
-  if a:0 < 1
-    let target = Tex_GetVarValue('Tex_DefaultTargetFormat')
-    let target = input('Enter the target format for compiler and viewer: ', target)
-  else
-    let target = a:1
-  endif
-  if target == ''
-    let target = 'dvi'
-  endif
-
-  call Tex_SetTeXCompilerTarget('Compile', target)
-  call Tex_SetTeXCompilerTarget('View', target)
-endfunction
-
-com! -nargs=1 TCTarget :call Tex_SetTeXCompilerTarget('Compile', <f-args>)
-com! -nargs=1 TVTarget :call Tex_SetTeXCompilerTarget('View', <f-args>)
-com! -nargs=? TTarget :call SetTeXTarget(<f-args>)
-
+endfunc
 " }}}
 " Tex_BldCmd: {{{
 func! Tex_BldCmd(cmd, optDict)
@@ -136,15 +58,17 @@ func! Tex_BldCmd(cmd, optDict)
   return l:rslt
 endfunc
 " }}}
-" Tex_Compile: compiles the present file. {{{
-" Description:
-function! Tex_Compile(targ, file)
-  if &ft != 'tex'
+" Tex_Compile: compiles the file at a:fpath. {{{
+func! Tex_Compile(fpath, targ)
+  if fnamemodify(a:fpath, ":e") != 'tex'
     echo "calling Tex_Compile from a non-tex file"
     return
-  end
+  endif
   " close any preview windows left open.
   pclose!
+  let l:cwd = getcwd()
+  call chdir(fnameescape(fnamemodify(a:fpath, ":p:h")))
+  let l:fname = fnamemodify(a:fpath, ":t")
 
   if b:tex_useMake
     exec 'make! '
@@ -158,42 +82,47 @@ function! Tex_Compile(targ, file)
     let origlevel = Tex_GetVarValue('Tex_IgnoreLevel')
     let origpats = Tex_GetVarValue('Tex_IgnoredWarnings')
 
-    let g:Tex_IgnoredWarnings = g:Tex_IgnoredWarnings."\n"
+    let gLIgnoredWarnings = gLIgnoredWarnings."\n"
 	  \ . 'Reference %.%# undefined'."\n"
 	  \ . 'Rerun to get cross-references right'
     TCLevel 1000
 
     let l:jobNm = Tex_GetJobName()
-    let l:auxFile = Tex_GetOutputDir(':p').Tex_GetJobName().'.aux'
-    let l:bblFile = Tex_GetOutputDir(':p').Tex_GetJobName().'.bbl'
-    let l:idxFile = Tex_GetOutputDir(':p').Tex_GetJobName().'.idx'
+    let l:outpDir = Tex_GetOutpDir(a:fpath)
+    let l:auxFile = l:outpDir.l:jobNm.'.aux'
+    let l:bblFile = l:outpDir.l:jobNm.'.bbl'
+    let l:idxFile = l:outpDir.l:jobNm.'.idx'
 
+    " Record the 'state' of auxilliary files before compilation.
     let l:auxPreHash = system('md5sum '.l:auxFile)
     let l:idxPreHash = system('md5sum '.l:idxFile)
 
-    let l:optDict = b:tex_compileCmdOptDict_{a:targ}
-    let l:baseCompileCmd = b:tex_compileCmd_{a:targ}
-    let l:compileCmd = Tex_BldCmd(l:baseCompileCmd, l:optDict)
+    " Compose the compiler program with its command line options.
+    let l:compileCmd = Tex_BldCmd(b:tex_compilePrg_{a:targ},
+	  \ b:tex_compilePrgOptDict_{a:targ})
 
-    exec "silent! !".l:compileCmd." ".a:file
+    " Run the composed compiler command
+    exec "silent! !".l:compileCmd." ".l:fname
 
-    if b:tex_enableMultCompile
-	  \ && Tex_GetVarValue('Tex_MultipleCompileFormats') =~ a:targ
-      let l:rerun = 0
+    let l:rerun = 0
+    let l:runCnt = 1
 
-      if Tex_IsPresentInFile('\\bibdata|\\abx', l:auxFile)
-	let l:bblPreHash = system('md5sum '.l:bblFile)
-	exec 'silent! !'.b:tex_bibCmd.' "'.l:jobNm.'"'
-	if system('md5sum '.l:bblFile) != l:bblPreHash
-	  let l:rerun = 1
-	endif
+    if Tex_IsPresentInFile('\\bibdata|\\abx', l:auxFile)
+      let l:bblPreHash = system('md5sum '.l:bblFile)
+      let l:bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
+      exec 'silent! !'.l:bibCmd.' "'.l:jobNm.'"'
+      if system('md5sum '.l:bblFile) != l:bblPreHash
+	let l:rerun = 1
       endif
+    endif
 
-      let l:runCnt = 0
+    if b:tex_doMultCompile
+	  \ && Tex_GetVarValue('Tex_MultipleCompileFormats') =~ a:targ
+      " Recompile up to four times as necessary.
       while l:rerun && (l:runCnt < 5)
 	let l:rerun = 0
 	let l:runCnt += 1
-	exec "silent! !".l:compileCmd." ".a:file
+	exec "silent! !".l:compileCmd." ".l:fname
 	let l:auxPostHash = system('md5sum '.l:auxFile)
 	if l:auxPostHash != l:auxPreHash
 	  let l:rerun = 1
@@ -202,45 +131,42 @@ function! Tex_Compile(targ, file)
       endwhile
     endif
   endif
+  call chdir(l:cwd)
   redraw!
 
   let l:timeWrd = "time"
-  if (l:runCnt+1) != 1
+  if l:runCnt != 1
     let l:timeWrd .= "s"
   endif
-  echomsg "Ran ".l:baseCompileCmd." ".(l:runCnt+1)." ".l:timeWrd."."
-endfunction " }}}
-" Tex_RunLaTeX: compilation function {{{
-" this function runs the latex command on the currently open file. often times
-" the file being currently edited is only a fragment being \input'ed into some
-" master tex file. in this case, make a file called mainfile.latexmain in the
-" directory containig the file. in other words, if the current file is
-" ~/thesis/chapter.tex
-" so that doing "latex chapter.tex" doesnt make sense, then make a file called
-" main.tex.latexmain
-" in the ~/thesis directory. this will then run "latex main.tex" when
-" Tex_RunLaTeX() is called.
-function! Tex_RunLaTeX()
-  call Tex_Debug('+Tex_RunLaTeX, b:fragmentFile = '.exists('b:fragmentFile'), 'comp')
-
-  if exists('b:fragmentFile')
-    let l:mainfname = expand('%:p:t')
-    call Tex_CD(expand('%:p:h'))
+  echomsg "Ran ".b:tex_compilePrg_{a:targ}." ".l:runCnt." ".l:timeWrd
+	\."."
+endfunc
+" }}}
+" Tex_RunLaTeX: compilation function this function runs the latex {{{ 
+" command on the currently open file. often times the file being currently 
+" edited is only a fragment being \input'ed into some master tex file. in 
+" this case, make a file called mainfile.latexmain in the directory 
+" containig the file. in other words, if the current file is 
+" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
+" then make a file called main.tex.latexmain in the ~/thesis directory.  
+" this will then run "latex main.tex" when Tex_RunLaTeX() is called.
+func! Tex_RunLaTeX(...)
+  if a:0 > 0
+    let l:fpath = a:1
+    let l:mainTarg = a:2
   else
-    let l:mainfname = Tex_GetMainFileName(':p:t')
-    call Tex_CD(Tex_GetMainFileName(':p:h'))
+    let l:fpath = expand('%:p')
+    let l:mainTarg = b:tex_dfltTarg
   endif
 
-  let l:origdir = fnameescape(getcwd())
-  call chdir(fnameescape(expand("%:p:h")))
-
-  call Tex_Debug("Tex_RunLaTeX: compiling to target [".s:target."]", "comp")
+  call Tex_Debug("Tex_RunLaTeX: "
+	\."compiling to target [".l:mainTarg."]", "comp")
 
   " first get the dependency chain of this format.
-  let l:depChain = [s:target]
-  if exists('g:Tex_FormatDependency_'.s:target)
-    let l:depChain = extendnew('g:Tex_FormatDependency_'.s:target,
-	  \ [s:target])
+  let l:depChain = [l:mainTarg]
+  if exists('gLFormatDependency_'.l:mainTarg)
+    let l:depChain = extendnew('gLFormatDependency_'.l:mainTarg,
+	  \ [l:mainTarg])
   endif
 
   call Tex_Debug('Tex_RunLaTeX: '
@@ -248,9 +174,9 @@ function! Tex_RunLaTeX()
 
   " now compile to the final target format via each dependency.
   for l:targ in l:depChain
-    call Tex_Debug('Tex_RunLaTeX: setting target to '.s:target, 'comp')
+    call Tex_Debug('Tex_RunLaTeX: setting target to '.l:mainTarg, 'comp')
 
-    call Tex_Compile(l:targ, l:mainfname)
+    call Tex_Compile(l:fpath, l:targ)
 
     let errlist = Tex_GetErrorList()
     call Tex_Debug("Tex_RunLaTeX: errlist = [".errlist."]", "comp")
@@ -263,732 +189,563 @@ function! Tex_RunLaTeX()
     endif
   endfor
 
-  exe 'cd '.l:origdir
-
   let s:origwinnum = winnr()
   call Tex_SetupErrorWindow()
 
   call Tex_Debug("-Tex_RunLaTeX", "comp")
-  endfunction
+endfunc
 
-  " }}}
-  " Tex_ViewLaTeX: opens viewer {{{
-  " Description: opens the DVI viewer for the file being currently edited.
-  " Again, if the current file is a \input in a master file, see text above
-  " Tex_RunLaTeX() to see how to set this information.
-  function! Tex_ViewLaTeX()
-    if &ft != 'tex'
-      echo "calling Tex_ViewLaTeX from a non-tex file"
-      return
-    end
+" }}}
+" Tex_ViewOutp: opens viewer {{{
+" Description: opens the DVI viewer for the file being currently edited.
+" Again, if the current file is a \input in a master file, see text above
+" Tex_RunLaTeX() to see how to set this information.
+func! Tex_ViewOutp(...)
+  if a:0 < 1
+    let l:targ = b:tex_dfltTarg
+    let l:viewer = b:tex_viewPrg_{l:targ}
+  elseif a:0 < 2
+    let l:targ = a:1
+    let l:viewer = b:tex_viewPrg_{l:targ}
+  else
+    let l:targ = a:1
+    let l:viewer = a:2
+  endif
 
-    " If b:fragmentFile is set, it means this file was compiled as a 
-    " fragment
-    " using Tex_PartCompile, which means that we want to ignore any
-    " *.latexmain or makefile's.
-    if exists('b:fragmentFile')
-      if exists('b:tex_outpDir') && len(b:tex_outpDir) > 0
-	let l:outpFile = expand('%:p:h').'/'.b:tex_outpDir.'/'.expand('%:t:r')
-      else
-	let l:outpFile = expand('%:p:t:r')
-      endif
+  if !empty(b:tex_viewPrgComplete_{l:targ})
+    let l:cmd = substitute(b:tex_viewPrgComplete_{l:targ},
+	  \ '{v:servername}', v:servername, 'g')
+  elseif has('win32')
+    " unfortunately, yap does not allow the specification of an external
+    " editor from the command line. that would have really helped ensure
+    " that this particular vim and yap are connected.
+    let l:cmd = 'start '.l:viewer.' "$*.'.l:targ.'"'
+  elseif (has('osx') || has('macunix')) && !g:tex_treatMacViewerAsUNIX
+    if strlen(l:viewer) > 0
+      let appOpt = '-a ' . l:viewer
     else
-      let l:outpFile = Tex_GetOutputDir(':p').'/'.Tex_GetJobName()
+      let appOpt = ''
     endif
-
-    if Tex_GetVarValue('Tex_ViewRuleComplete_'.s:target) != ''
-
-      let execString = Tex_GetVarValue('Tex_ViewRuleComplete_'.s:target)
-      let execString = substitute(execString, '{v:servername}', v:servername, 'g')
-
-    elseif has('win32')
-      " unfortunately, yap does not allow the specification of an external
-      " editor from the command line. that would have really helped ensure
-      " that this particular vim and yap are connected.
-      let execString = 'start '.s:viewer.' "$*.'.s:target.'"'
-
-    elseif ((has('osx') || has('macunix'))
-	  \ && Tex_GetVarValue('Tex_TreatMacViewerAsUNIX') != 1)
-
-      if strlen(s:viewer) > 0
-	let appOpt = '-a ' . s:viewer
-      else
-	let appOpt = ''
-      endif
-      let execString = 'open '.appOpt.' $*.'.s:target
-
-    else
-      " taken from Dimitri Antoniou's tip on vim.sf.net (tip #225).
-      " slight change to actually use the current servername instead of
-      " hardcoding it as xdvi.
-      " Using an option for specifying the editor in the command line
-      " because that seems to not work on older bash'es.
-      if s:target == 'dvi'
-
-	if Tex_GetVarValue('Tex_UseEditorSettingInDVIViewer') == 1 &&
-	      \ v:servername != '' &&
-	      \ s:viewer =~ '^ *xdvik\?\( \|$\)'
-
-	  let execString = s:viewer.' -editor "gvim --servername '.v:servername.
-		\ ' --remote-silent +\%l \%f" $*.dvi'
-
-	elseif Tex_GetVarValue('Tex_UseEditorSettingInDVIViewer') == 1 &&
-	      \ s:viewer =~ '^ *kdvi\( \|$\)'
-
-	  let execString = s:viewer.' --unique $*.dvi'
-
+    let l:cmd = 'open '.appOpt.' $*.'.l:targ
+  else
+    " taken from Dimitri Antoniou's tip on vim.sf.net (tip #225).
+    " slight change to actually use the current servername instead of
+    " hardcoding it as xdvi.
+    " Using an option for specifying the editor in the command line
+    " because that seems to not work on older bash'es.
+    if l:targ == 'dvi'
+      if g:tex_useEditorSettingInDVIViewer
+	if v:servername != '' && l:viewer =~ '^ *xdvik\?\( \|$\)'
+	  let l:cmd = l:viewer.' -editor "gvim --servername '.v:servername
+		\.' --remote-silent +\%l \%f" $*.dvi'
+	elseif \ l:viewer =~ '^ *kdvi\( \|$\)'
+	  let l:cmd = l:viewer.' --unique $*.dvi'
 	else
-
-	  let execString = s:viewer.' $*.dvi'
-
+	  let l:cmd = l:viewer.' $*.dvi'
 	endif
-
       else
-
-	let execString = s:viewer.' $*.'.s:target
-
+	let l:cmd = l:viewer.' $*.dvi'
       endif
-
-      if( Tex_GetVarValue('Tex_ExecuteUNIXViewerInForeground') != 1 )
-	" Redirect output to /dev/null
-	if( stridx( &shellredir, "%s" ) != -1 )
-	  let execString .= " " . substitute( &shellredir, "%s", "/dev/null", '' )
-	else
-	  let execString .= " " . &shellredir . "/dev/null"
-	endif
-
-	" And execute in background
-	let execString = execString.' &'
-      endif
-
-    end
-
-    let execString = substitute(execString, '\V$*', l:outpFile, 'g')
-    call Tex_Debug("Tex_ViewLaTeX: execString = ".execString, "comp")
-
-    exec 'silent! !'.execString
-
-    if !has('gui_running')
-      redraw!
-    endif
-  endfunction
-
-  " }}}
-  " Tex_Stringformat: Build strings from formatstrings. {{{
-  " Descriptions: Build strings from format strings containing %s placeholders
-  function! Tex_Stringformat(fmt, ...)
-    let l:items = split(a:fmt, "%s", 1)
-    let l:index = 0
-    let l:length = len(a:000)
-    while l:index < l:length
-      call insert(l:items, a:000[l:index], 2 * l:index + 1)
-      let l:index += 1
-    endwhile
-    return join(l:items, "")
-  endfunction
-  " }}}
-  " Tex_ForwardSearchLaTeX: searches for current location in dvi file. {{{
-  " Description: if the DVI viewer is compatible, then take the viewer to that
-  "              position in the dvi file. see docs for Tex_RunLaTeX() to set a
-  "              master file if this is an \input'ed file.
-  " Tip: With YAP on Windows, it is possible to do forward and inverse searches
-  "      on DVI files. to do forward search, you'll have to compile the file
-  "      with the --src-specials option. then set the following as the command
-  "      line in the 'view/options/inverse search' dialog box:
-  "           gvim --servername LATEX --remote-silent +%l "%f"
-  "      For inverse search, if you are reading this, then just pressing \ls
-  "      will work.
-  function! Tex_ForwardSearchLaTeX()
-    if &ft != 'tex'
-      echo "calling Tex_ForwardSeachLaTeX from a non-tex file"
-      return
-    end
-
-    if Tex_GetVarValue('Tex_ViewRule_'.s:target) == ''
-      return
-    endif
-    let viewer = Tex_GetVarValue('Tex_ViewRule_'.s:target)
-
-    let l:origdir = fnameescape(getcwd())
-
-    let mainfnameRoot = shellescape(fnamemodify(Tex_GetMainFileName(), ':t:r'), 1)
-    let mainfnameFull = Tex_GetMainFileName(':p:r')
-    let target_file = shellescape(mainfnameFull . "." . s:target, 1)
-    let sourcefile = shellescape(expand('%'), 1)
-    let sourcefileFull = shellescape(expand('%:p'), 1)
-    let linenr = line('.')
-    " cd to the location of the file to avoid problems with directory name
-    " containing spaces.
-    call Tex_CD(Tex_GetMainFileName(':p:h'))
-
-    " inverse search tips taken from Dimitri Antoniou's tip and Benji Fisher's
-    " tips on vim.sf.net (vim.sf.net tip #225)
-    let execString = 'silent! !'
-    if (has('win32'))
-      if (viewer =~? '^ *yap\( \|$\)')
-	let execString .= Tex_Stringformat('start %s -s %s%s %s', viewer, linenr, sourcefile, mainfnameRoot)
-
-	" SumatraPDF forward search support added by Dieter Castel:
-      elseif (viewer =~? "^sumatrapdf")
-	" Forward search in sumatra has these arguments (-reuse-instance is optional):
-	" SumatraPDF -reuse-instance "pdfPath" -forward-search "texPath" lineNumber
-	let execString .= Tex_Stringformat('start %s %s -forward-search %s %s', viewer, target_file, sourcefileFull, linenr)
-      endif	
-
-    elseif ((has('osx') || has('macunix'))
-	  \ && (viewer =~ '\(Skim\|PDFView\|TeXniscope\)'))
-      " We're on a Mac using a traditional Mac viewer
-
-      if viewer =~ 'Skim'
-
-	if executable('displayline')
-	  let execString .= 'displayline '
-	else
-	  let execString .= '/Applications/Skim.app/Contents/SharedSupport/displayline '
-	endif
-	let execString .= join([linenr, target_file, sourcefileFull])
-
-      elseif viewer =~ 'PDFView'
-
-	let execString .= '/Applications/PDFView.app/Contents/MacOS/gotoline.sh '
-	let execString .= join([linenr, target_file, sourcefileFull])
-
-      elseif viewer =~ 'TeXniscope'
-
-	let execString .= '/Applications/TeXniscope.app/Contents/Resources/forward-search.sh '
-	let execString .= join([linenr, sourcefileFull, target_file])
-
-      endif
-
     else
-      " We're either UNIX or Mac and using a UNIX-type viewer
+      let l:cmd = l:viewer.' $*.'.l:targ
+  endif
 
-      " Check for the special DVI viewers first
-      if viewer =~ '^ *\(xdvi\|xdvik\|kdvi\|okular\|zathura\)\( \|$\)'
-	let execString .= viewer." "
 
-	if Tex_GetVarValue('Tex_UseEditorSettingInDVIViewer') == 1 &&
-	      \ exists('v:servername') &&
-	      \ viewer =~ '^ *xdvik\?\( \|$\)'
+  let l:fpath = Tex_GetOutpDir(expand('%:p')).'/'
+  if !empty(b:tex_jobNm) && !b:fragmentFile
+    let l:fpath .= b:tex_jobNm
+  else
+    let l:fpath .= expand('%:r')
+  endif
 
-	  let execString .= Tex_Stringformat('-name xdvi -sourceposition "%s %s" -editor "gvim --servername %s --remote-silent +\%l \%f" %s', linenr, expand('%'), v:servername, target_file)
+  let l:cmd = substitute(l:cmd, '\V$*', l:fpath, 'g')
+  call Tex_Debug("Tex_ViewOutp: l:cmd = ".l:cmd, "comp")
 
-	elseif viewer =~ '^ *kdvi'
+  exec 'silent! !'.l:cmd
 
-	  let execString .= Tex_Stringformat('--unique file:%s\#src:%s%s', target_file, linenr, sourcefile)
-
-	elseif viewer =~ '^ *xdvik\?\( \|$\)'
-
-	  let execString .= Tex_Stringformat('-name xdvi -sourceposition "%s %s" %s', linenr, expand('%'), target_file)
-
-	elseif viewer =~ '^ *okular'
-
-	  let execString .= Tex_Stringformat('--unique %s\#src:%s%s', target_file, linenr, sourcefileFull)
-
-	elseif viewer =~ '^ *zathura'
-
-	  let execString .= Tex_Stringformat('--synctex-forward %s:1:%s %s', linenr, sourcefileFull, target_file)
-
-	endif
-
-      elseif (viewer == "synctex_wrapper" )
-	" Unix + synctex_wrapper
-	" You can add a custom script named 'synctex_wrapper' in your $PATH
-	" syntax is: synctex_wrapper TARGET_FILE LINE_NUMBER COLUMN_NUMBER SOURCE_FILE
-	let execString .= Tex_Stringformat('synctex_wrapper %s %s %s %s', target_file, linenr, col('.'), sourcefile)
-      else
-	" We must be using a generic UNIX viewer
-	" syntax is: viewer TARGET_FILE LINE_NUMBER SOURCE_FILE
-
-	let execString .= join([viewer, target_file, linenr, sourcefile])
-
-      endif
-
-      " See if we should add &. On Mac (at least in MacVim), it seems
-      " like this should NOT be added...
-      if( Tex_GetVarValue('Tex_ExecuteUNIXViewerInForeground') != 1 )
-	let execString = execString.' &'
-      endif
-
-    endif
-
-    call Tex_Debug("Tex_ForwardSearchLaTeX: execString = ".execString, "comp")
-    execute execString
-    if !has('gui_running')
-      redraw!
-    endif
-
-    exe 'cd '.l:origdir
-  endfunction
-
-  " }}}
-
-  " ==========================================================================
-  " Functions for compiling parts of a file.
-  " ==========================================================================
-  " Tex_PartCompile: compiles selected fragment {{{
-  " Description: creates a temporary file from the selected fragment of text
-  "       prepending the preamble and \end{document} and then asks Tex_RunLaTeX() to
-  "       compile it.
-  function! Tex_PartCompile() range
-    call Tex_Debug('+Tex_PartCompile', 'comp')
-
-    " Get a temporary file in the same directory as the file from which
-    " fragment is being extracted. This is to enable the use of relative path
-    " names in the fragment.
-    let tmpfile = Tex_GetTempName(expand('%:p:h'))
-
-    " Remember all the temp files and for each temp file created, remember
-    " where the temp file came from.
-    let s:Tex_NumTempFiles = (exists('s:Tex_NumTempFiles') ? s:Tex_NumTempFiles + 1 : 1)
-    let s:Tex_TempFiles = (exists('s:Tex_TempFiles') ? s:Tex_TempFiles : '')
-	  \ . tmpfile."\n"
-    let s:Tex_TempFile_{s:Tex_NumTempFiles} = tmpfile
-    " TODO: For a function Tex_RestoreFragment which restores a temp file to
-    "       its original location.
-    let s:Tex_TempFileOrig_{s:Tex_NumTempFiles} = expand('%:p')
-    let s:Tex_TempFileRange_{s:Tex_NumTempFiles} = a:firstline.','.a:lastline
-
-    " Set up an autocmd to clean up the temp files when Vim exits.
-    if Tex_GetVarValue('Tex_RemoveTempFiles')
-      augroup RemoveTmpFiles
-	au!
-	au VimLeave * :call Tex_RemoveTempFiles()
-      augroup END
-    endif
-
-    " If mainfile exists open it in tiny window and extract preamble there,
-    " otherwise do it from current file
-    let mainfile = Tex_GetMainFileName(":p")
-    exe 'bot 1 split '.escape(mainfile, ' ')
-    exe '1,/\s*\\begin{document}/w '.tmpfile
-    wincmd q
-
-    exe a:firstline.','.a:lastline."w! >> ".tmpfile
-
-    " edit the temporary file
-    if exists('drop')
-      exec 'drop '.tmpfile
-    else
-      exec 'tabe '.tmpfile
-    endif
-
-    " append the \end{document} line.
-    $ put ='\end{document}'
-    w
-
-    " set this as a fragment file.
-    let b:fragmentFile = 1
-
-    silent! call Tex_RunLaTeX()
-  endfunction " }}}
-  " Tex_RemoveTempFiles: cleans up temporary files created during part compilation {{{
-  " Description: During part compilation, temporary files containing the
-  "              visually selected text are created. These files need to be
-  "              removed when Vim exits to avoid "file leakage".
-  function! Tex_RemoveTempFiles()
-    if !exists('s:Tex_NumTempFiles') || !Tex_GetVarValue('Tex_RemoveTempFiles')
-      return
-    endif
-    let i = 1
-    while i <= s:Tex_NumTempFiles
-      let tmpfile = s:Tex_TempFile_{i}
-      " Remove the tmp file and all other associated files such as the
-      " .log files etc.
-      call Tex_DeleteFile(fnamemodify(tmpfile, ':p:r').'.*')
-      let i = i + 1
-    endwhile
-  endfunction " }}}
-
-  " ==========================================================================
-  " Compiling a file multiple times to resolve references/citations etc.
-  " ==========================================================================
-  " Tex_CompileMultipleTimes: The main function {{{
-  " Description: compiles a file multiple times to get cross-references right.
-  function! Tex_CompileMultipleTimes()
-    " Just extract the root without any extension because we want to 
-    " construct the log file names etc from it.
-    let l:origdir = fnameescape(getcwd())
-    let mainFileName_root = Tex_GetMainFileName(':p:t:r')
-    "let l:cwd = Tex_GetMainFileName(':p:h')
-    let l:main_fname = Tex_GetMainFileName(':t:r')
-    call Tex_CD(Tex_GetMainFileName(':p:h'))
-
-    " First ignore undefined references and the
-    " 'rerun to get cross-references right' message from
-    " the compiler output.
-    let origlevel = Tex_GetVarValue('Tex_IgnoreLevel')
-    let origpats = Tex_GetVarValue('Tex_IgnoredWarnings')
-
-    let g:Tex_IgnoredWarnings = g:Tex_IgnoredWarnings."\n"
-	  \ . 'Reference %.%# undefined'."\n"
-	  \ . 'Rerun to get cross-references right'
-    TCLevel 1000
-
-    let idx_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.idx'
-    let aux_fname = Tex_GetOutputDir(':p').Tex_GetJobName().'.aux'
-
-    let runCount = 0
-    let needToRerun = 1
-    while needToRerun == 1 && runCount < 5
-      " assume we need to run only once.
-      let needToRerun = 0
-
-      let idxlinesBefore = Tex_CatFile(l:idx_fname)
-      let auxlinesBefore = Tex_GetAuxFile(l:aux_fname)
-
-      " first run latex.
-      echomsg "latex run number : ".(runCount+1)
-      call Tex_Debug("Tex_CompileMultipleTimes: "
-	    \ ."latex run number is ".(runCount+1), "comp")
-      silent! call Tex_CompileLatex()
-
-      " If there are errors in any latex compilation step, immediately 
-      " return. For now, do not bother with warnings because those might 
-      " go away after compiling again or after bibtex is run etc.
-      let errlist = Tex_GetErrorList()
-      call Tex_Debug("Tex_CompileMultipleTimes: "
-	    \ ."errors = [".errlist."]", "comp")
-
-      if errlist =~ 'error'
-	let g:Tex_IgnoredWarnings = origpats
-	exec 'TCLevel '.origlevel
-
-	return
-      endif
-
-      let idxlinesAfter = Tex_CatFile(l:idx_fname)
-
-      " If .idx file changed, then run makeindex to generate the new .ind
-      " file and remember to rerun latex.
-      if runCount == 0 && glob(l:idx_fname) != ''
-	    \ && idxlinesBefore != idxlinesAfter
-	echomsg "Running makeindex..."
-	let temp_mp = &mp | let &mp = Tex_GetVarValue('Tex_MakeIndexFlavor')
-	exec 'silent! make "'.mainFileName_root.'"'
-	let &mp = temp_mp
-
-	let needToRerun = 1
-      endif
-
-      " The first time we see if we need to generate the bibliography and 
-      " if the .bbl file changes, we will rerun latex.  We use 
-      " '\\bibdata' as a check for BibTeX and '\\abx' as a check for 
-      " biber.
-      if runCount == 0 && Tex_IsPresentInFile('\\bibdata|\\abx', l:aux_fname)
-	let bibFileName = Tex_GetJobName().'.bbl'
-
-	let biblinesBefore = Tex_CatFile(bibFileName)
-
-	echomsg "Running '".Tex_GetVarValue('Tex_BibtexFlavor')."' ..."
-	exec 'silent! '.b:tex_bibCmd.' "'.Tex_GetJobName.'"'
-
-	let biblinesAfter = Tex_CatFile(bibFileName)
-
-	" If the .bbl file changed after running bibtex, we need to latex 
-	" again.
-	if biblinesAfter != biblinesBefore
-	  echomsg 'Need to rerun because bibliography file changed...'
-	  call Tex_Debug('Tex_CompileMultipleTimes: '
-		\ .'Need to rerun because bibliography file changed...',
-		\ 'comp')
-	  let needToRerun = 1
-	endif
-      endif
-
-      " check if latex asks us to rerun
-      let auxlinesAfter = Tex_GetAuxFile(l:aux_fname)
-      if auxlinesAfter != auxlinesBefore
-	echomsg "Need to rerun because the AUX file changed..."
-	call Tex_Debug("Tex_CompileMultipleTimes: "
-	      \."Need to rerun to get cross-references right...", 'comp')
-	let needToRerun = 1
-      endif
-
-      let runCount = runCount + 1
-    endwhile
-
+  if !has('gui_running')
     redraw!
-    call Tex_Debug("Tex_CompileMultipleTimes: "
-	  \ ."Ran latex ".runCount." time(s)", "comp")
-    echomsg "Ran latex ".runCount." time(s)"
+  endif
+endfunc
 
-    let g:Tex_IgnoredWarnings = origpats
-    exec 'TCLevel '.origlevel
-    " After all compiler calls are done, reparse the .log file for
-    " errors/warnings to handle the situation where the clist might have been
-    " emptied because of bibtex/makeindex being run as the last step.
+" }}}
+" Tex_ForwardSearchLaTeX: searches for current location in dvi file. {{{
+" Description: if the DVI viewer is compatible, then take the viewer to that
+"              position in the dvi file. see docs for Tex_RunLaTeX() to set a
+"              master file if this is an \input'ed file.
+" Tip: With YAP on Windows, it is possible to do forward and inverse searches
+"      on DVI files. to do forward search, you'll have to compile the file
+"      with the --src-specials option. then set the following as the command
+"      line in the 'view/options/inverse search' dialog box:
+"           gvim --servername LATEX --remote-silent +%l "%f"
+"      For inverse search, if you are reading this, then just pressing \ls
+"      will work.
+func! Tex_ForwardSearchLaTeX(...)
+  if &ft != 'tex'
+    echo "calling Tex_ForwardSeachLaTeX from a non-tex file"
+    return
+  endif
+
+  if a:0 > 0
+    let l:targ = a:1
+  else
+    let l:targ = b:tex_dfltTarg
+  endif
+
+  if empty(g:tex_viewPrg_{l:targ})
+    return
+  endif
+  let viewer = g:tex_viewPrg_{l:targ}
+
+  let l:origdir = fnameescape(getcwd())
+
+  let mainfnameRoot = shellescape(fnamemodify(Tex_GetMainFileName(), ':t:r'), 1)
+  let mainfnameFull = Tex_GetMainFileName(':p:r')
+  let target_file = shellescape(mainfnameFull . "." . l:targ, 1)
+  let sourcefile = shellescape(expand('%'), 1)
+  let sourcefileFull = shellescape(expand('%:p'), 1)
+  let linenr = line('.')
+  " cd to the location of the file to avoid problems with directory name
+  " containing spaces.
+  call Tex_CD(Tex_GetMainFileName(':p:h'))
+
+  " inverse search tips taken from Dimitri Antoniou's tip and Benji Fisher's
+  " tips on vim.sf.net (vim.sf.net tip #225)
+  let execString = 'silent! !'
+  if (has('win32'))
+    if (viewer =~? '^ *yap\( \|$\)')
+      let execString .= 'start '.viewer.' -s '.linenr.sourcefile.' '
+	    \.mainfnameRoot
+
+      " SumatraPDF forward search support added by Dieter Castel:
+    elseif (viewer =~? "^sumatrapdf")
+      " Forward search in sumatra has these arguments (-reuse-instance is optional):
+      " SumatraPDF -reuse-instance "pdfPath" -forward-search "texPath" lineNumber
+      let execString .= 'start '.viewer.' '.target_file.' -forward-search '
+	    \.sourcefileFull.' '.linenr
+    endif	
+
+  elseif ((has('osx') || has('macunix'))
+	\ && (viewer =~ '\(Skim\|PDFView\|TeXniscope\)'))
+    " We're on a Mac using a traditional Mac viewer
+
+    if viewer =~ 'Skim'
+
+      if executable('displayline')
+	let execString .= 'displayline '
+      else
+	let execString .= '/Applications/Skim.app/Contents/SharedSupport/displayline '
+      endif
+      let execString .= join([linenr, target_file, sourcefileFull])
+
+    elseif viewer =~ 'PDFView'
+
+      let execString .= '/Applications/PDFView.app/Contents/MacOS/gotoline.sh '
+      let execString .= join([linenr, target_file, sourcefileFull])
+
+    elseif viewer =~ 'TeXniscope'
+
+      let execString .= '/Applications/TeXniscope.app/Contents/Resources/forward-search.sh '
+      let execString .= join([linenr, sourcefileFull, target_file])
+
+    endif
+
+  else
+    " We're either UNIX or Mac and using a UNIX-type viewer
+
+    " Check for the special DVI viewers first
+    if viewer =~ '^ *\(xdvi\|xdvik\|kdvi\|okular\|zathura\)\( \|$\)'
+      let execString .= viewer." "
+
+      if g:tex_UseEditorSettingInDVIViewer &&
+	    \ exists('v:servername') &&
+	    \ viewer =~ '^ *xdvik\?\( \|$\)'
+
+	let execString .= '-name xdvi -sourceposition "'.linenr.' '
+	      \.expand('%').'" -editor "gvim --servername .'
+	      \.v:servername.' --remote-silent +\%l \%f" '.target_file
+
+      elseif viewer =~ '^ *kdvi'
+
+	let execString .= '--unique file:'.target_file.'\#src:.'linenr
+	      \.sourcefile
+
+      elseif viewer =~ '^ *xdvik\?\( \|$\)'
+
+	let execString .= '-name xdvi -sourceposition "'.linenr.' '
+	      \.expand('%').'" '.target_file
+
+      elseif viewer =~ '^ *okular'
+
+	let execString .= '--unique '.target_file.'\#src:'.linenr
+	      \.sourcefileFull
+
+      elseif viewer =~ '^ *zathura'
+
+	let execString .= '--synctex-forward '.linenr.':1:.'sourcefileFull
+	      \.' '.target_file
+
+      endif
+
+    elseif (viewer == "synctex_wrapper" )
+      " Unix + synctex_wrapper
+      " You can add a custom script named 'synctex_wrapper' in your $PATH
+      " syntax is: synctex_wrapper TARGET_FILE LINE_NUMBER COLUMN_NUMBER SOURCE_FILE
+      let execString .= 'synctex_wrapper '.target_file.' '.linenr.' '
+	    \.col('.').' '.sourcefile
+    else
+      " We must be using a generic UNIX viewer
+      " syntax is: viewer TARGET_FILE LINE_NUMBER SOURCE_FILE
+
+      let execString .= join([viewer, target_file, linenr, sourcefile])
+
+    endif
+
+    " See if we should add &. On Mac (at least in MacVim), it seems
+    " like this should NOT be added...
+    if g:tex_execNixViewerInForeground
+      let execString = execString.' &'
+    endif
+
+  endif
+
+  call Tex_Debug("Tex_ForwardSearchLaTeX: execString = ".execString, "comp")
+  execute execString
+  if !has('gui_running')
+    redraw!
+  endif
+
+  exe 'cd '.l:origdir
+endfunc
+
+" }}}
+
+" ==========================================================================
+" Functions for compiling parts of a file.
+" ==========================================================================
+" Tex_PartCompile: compiles selected fragment {{{
+" Description: creates a temporary file from the selected fragment of text
+"       prepending the preamble and \end{document} and then asks Tex_RunLaTeX() to
+"       compile it.
+func! Tex_PartCompile() range
+  call Tex_Debug('+Tex_PartCompile', 'comp')
+
+  " Get a temporary file in the same directory as the file from which
+  " fragment is being extracted. This is to enable the use of relative path
+  " names in the fragment.
+  let tmpfile = Tex_GetTempName(expand('%:p:h'))
+
+  " Remember all the temp files and for each temp file created, remember
+  " where the temp file came from.
+  let sLNumTempFiles = (exists('sLNumTempFiles') ? sLNumTempFiles + 1 : 1)
+  let sLTempFiles = (exists('sLTempFiles') ? sLTempFiles : '')
+	\ . tmpfile."\n"
+  let sLTempFile_{sLNumTempFiles} = tmpfile
+  " TODO: For a function Tex_RestoreFragment which restores a temp file to
+  "       its original location.
+  let sLTempFileOrig_{sLNumTempFiles} = expand('%:p')
+  let sLTempFileRange_{sLNumTempFiles} = a:firstline.','.a:lastline
+
+  " Set up an autocmd to clean up the temp files when Vim exits.
+  if g:tex_removeTempFiles
+    augroup RemoveTmpFiles
+      au!
+      au VimLeave * :call Tex_RemoveTempFiles()
+    augroup END
+  endif
+
+  " If mainfile exists open it in tiny window and extract preamble there,
+  " otherwise do it from current file
+  let mainfile = Tex_GetMainFileName(":p")
+  exe 'bot 1 split '.escape(mainfile, ' ')
+  exe '1,/\s*\\begin{document}/w '.tmpfile
+  wincmd q
+
+  exe a:firstline.','.a:lastline."w! >> ".tmpfile
+
+  " edit the temporary file
+  if exists('drop')
+    exec 'drop '.tmpfile
+  else
+    exec 'tabe '.tmpfile
+  endif
+
+  " append the \end{document} line.
+  $ put ='\end{document}'
+  w
+
+  " set this as a fragment file.
+  let b:fragmentFile = 1
+
+  silent! call Tex_RunLaTeX()
+endfunc " }}}
+" Tex_RemoveTempFiles: cleans up temporary files created during part compilation {{{
+" Description: During part compilation, temporary files containing the
+"              visually selected text are created. These files need to be
+"              removed when Vim exits to avoid "file leakage".
+func! Tex_RemoveTempFiles()
+  if !exists('sLNumTempFiles') || !g:tex_removeTempFiles
+    return
+  endif
+  let i = 1
+  while i <= sLNumTempFiles
+    let tmpfile = sLTempFile_{i}
+    " Remove the tmp file and all other associated files such as the
+    " .log files etc.
+    call Tex_DeleteFile(fnamemodify(tmpfile, ':p:r').'.*')
+    let i = i + 1
+  endwhile
+endfunc " }}}
+
+" ==========================================================================
+" Helper functions for
+" . viewing the log file in preview mode.
+" . syncing the display between the quickfix window and preview window
+" . going to the correct line _and column_ number from from the quick fix
+"   window.
+" ==========================================================================
+" Tex_SetupErrorWindow: sets up the cwindow and preview of the .log file {{{
+" Description:
+func! Tex_SetupErrorWindow()
+  let mainfname = Tex_GetMainFileName()
+
+  let winnum = winnr()
+
+  " close the quickfix window before trying to open it again, otherwise
+  " whether or not we end up in the quickfix window after the :cwindow
+  " command is not fixed.
+  cclose
+  cwindow
+  " create log file name from mainfname
+  let mfnlog = fnamemodify(mainfname, ":t:r").'.log'
+  call Tex_Debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
+  " if we moved to a different window, then it means we had some errors.
+  if winnum != winnr()
+    if g:tex_showErrorContext
+      call Tex_UpdatePreviewWindow(mfnlog)
+      exe 'nnoremap <buffer> <silent> j j:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
+      exe 'nnoremap <buffer> <silent> k k:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
+      exe 'nnoremap <buffer> <silent> <up> <up>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
+      exe 'nnoremap <buffer> <silent> <down> <down>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
+    endif
+    exe 'nnoremap <buffer> <silent> <enter> :call Tex_GotoErrorLocation("'.mfnlog.'")<CR>'
+
+    setlocal nowrap
+
+    " resize the window to just fit in with the number of lines.
+    exec ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
     if Tex_GetVarValue('Tex_GotoError') == 1
-      exec 'silent! cfile '.Tex_GetJobName().'.log'
+      call Tex_GotoErrorLocation(mfnlog)
     else
-      exec 'silent! cgetfile '.Tex_GetJobName().'.log'
-    end
-
-    exe 'cd '.l:origdir
-  endfunction " }}}
-  " Tex_GetAuxFile: get the contents of the AUX file {{{
-  " Description: get the contents of the AUX file recursively including any
-  " @\input'ted AUX files.
-  function! Tex_GetAuxFile(auxFile)
-    if !filereadable(a:auxFile)
-      return ''
+      exec s:origwinnum.' wincmd w'
     endif
+  endif
 
-    let auxContents = Tex_CatFile(a:auxFile)
-    let pattern = '@\input{\(.\{-}\)}'
+endfunc " }}}
+" Tex_PositionPreviewWindow: positions the preview window correctly. {{{
+" Description:
+"   The purpose of this function is to count the number of times an error
+"   occurs on the same line. or in other words, if the current line is
+"   something like |10 error|, then we want to count the number of
+"   lines in the quickfix window before this line which also contain lines
+"   like |10 error|.
+"
+func! Tex_PositionPreviewWindow(filename)
 
-    let auxContents = substitute(auxContents, pattern, '\=Tex_GetAuxFile(submatch(1))', 'g')
-
-    return auxContents
-  endfunction " }}}
-
-  " ==========================================================================
-  " Helper functions for
-  " . viewing the log file in preview mode.
-  " . syncing the display between the quickfix window and preview window
-  " . going to the correct line _and column_ number from from the quick fix
-  "   window.
-  " ==============================================================================
-  " Tex_SetupErrorWindow: sets up the cwindow and preview of the .log file {{{
-  " Description:
-  function! Tex_SetupErrorWindow()
-    let mainfname = Tex_GetMainFileName()
-
-    let winnum = winnr()
-
-    " close the quickfix window before trying to open it again, otherwise
-    " whether or not we end up in the quickfix window after the :cwindow
-    " command is not fixed.
-    cclose
-    cwindow
-    " create log file name from mainfname
-    let mfnlog = fnamemodify(mainfname, ":t:r").'.log'
-    call Tex_Debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
-    " if we moved to a different window, then it means we had some errors.
-    if winnum != winnr()
-      if Tex_GetVarValue('Tex_ShowErrorContext')
-	call Tex_UpdatePreviewWindow(mfnlog)
-	exe 'nnoremap <buffer> <silent> j j:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
-	exe 'nnoremap <buffer> <silent> k k:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
-	exe 'nnoremap <buffer> <silent> <up> <up>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
-	exe 'nnoremap <buffer> <silent> <down> <down>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
-      endif
-      exe 'nnoremap <buffer> <silent> <enter> :call Tex_GotoErrorLocation("'.mfnlog.'")<CR>'
-
-      setlocal nowrap
-
-      " resize the window to just fit in with the number of lines.
-      exec ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
-      if Tex_GetVarValue('Tex_GotoError') == 1
-	call Tex_GotoErrorLocation(mfnlog)
-      else
-	exec s:origwinnum.' wincmd w'
-      endif
-    endif
-
-  endfunction " }}}
-  " Tex_PositionPreviewWindow: positions the preview window correctly. {{{
-  " Description:
-  "   The purpose of this function is to count the number of times an error
-  "   occurs on the same line. or in other words, if the current line is
-  "   something like |10 error|, then we want to count the number of
-  "   lines in the quickfix window before this line which also contain lines
-  "   like |10 error|.
-  "
-  function! Tex_PositionPreviewWindow(filename)
-
-    if getline('.') !~ '|\d\+ \(error\|warning\)|'
-      if !search('|\d\+ \(error\|warning\)|')
-	call Tex_Debug("not finding error pattern anywhere in quickfix window :".bufname(bufnr('%')),
-	      \ 'comp')
-	pclose!
-	return
-      endif
-    endif
-
-    " extract the error pattern (something like 'file.tex|10 error|') on the
-    " current line.
-    let errpat = matchstr(getline('.'), '^\f*|\d\+ \(error\|warning\)|\ze')
-    let errfile = matchstr(getline('.'), '^\f*\ze|\d\+ \(error\|warning\)|')
-    " extract the line number from the error pattern.
-    let linenum = matchstr(getline('.'), '|\zs\d\+\ze \(error\|warning\)|')
-
-    " if we are on an error, then count the number of lines before this in the
-    " quickfix window with an error on the same line.
-    if errpat =~ 'error|$'
-      " our location in the quick fix window.
-      let errline = line('.')
-
-      " goto the beginning of the quickfix window and begin counting the lines
-      " which show an error on the same line.
-      0
-      let numrep = 0
-      while 1
-	" if we are on the same kind of error line, then means we have another
-	" line containing the same error pattern.
-	if getline('.') =~ errpat
-	  let numrep = numrep + 1
-	  normal! 0
-	endif
-	" if we have reached the original location in the quick fix window,
-	" then break.
-	if line('.') == errline
-	  break
-	else
-	  " otherwise, search for the next line which contains the same
-	  " error pattern again. goto the end of the current line so we
-	  " dont count this line again.
-	  normal! $
-	  call search(errpat, 'W')
-	endif
-      endwhile
-    else
-      let numrep = 1
-    endif
-
-    if getline('.') =~ '|\d\+ warning|'
-      let searchpat = escape(matchstr(getline('.'), '|\d\+ warning|\s*\zs.*'), '\ ')
-    else
-      let searchpat = 'l\.'.linenum
-    endif
-
-    " We first need to be in the scope of the correct file in the .log file.
-    " This is important for example, when a.tex and b.tex both have errors on
-    " line 9 of the file and we want to go to the error of b.tex. Merely
-    " searching forward from the beginning of the log file for l.9 will always
-    " land us on the error in a.tex.
-    if errfile != ''
-      exec 'silent! bot pedit +/(\\(\\f\\|\\[\\|\]\\|\\s\\)*'.errfile.'/ '.a:filename
-    else
-      exec 'bot pedit +0 '.a:filename
-    endif
-    " Goto the preview window
-    " TODO: This is not robust enough. Check that a wincmd j actually takes
-    " us to the preview window.
-    wincmd j
-    " now search forward from this position in the preview window for the
-    " numrep^th error of the current line in the quickfix window.
-    while numrep > 0
-      call search(searchpat, 'W')
-      let numrep = numrep - 1
-    endwhile
-    normal! z.
-
-  endfunction " }}}
-  " Tex_UpdatePreviewWindow: updates the view of the log file {{{
-  " Description:
-  "       This function should be called when focus is in a quickfix window.
-  "       It opens the log file in a preview window and makes it display that
-  "       part of the log file which corresponds to the error which the user is
-  "       currently on in the quickfix window. Control returns to the quickfix
-  "       window when the function returns.
-  "
-  function! Tex_UpdatePreviewWindow(filename)
-    call Tex_PositionPreviewWindow(a:filename)
-
-    if &previewwindow
-      6 wincmd _
-      wincmd p
-    endif
-  endfunction " }}}
-  " Tex_GotoErrorLocation: goes to the correct location of error in the tex file {{{
-  " Description:
-  "   This function should be called when focus is in a quickfix window. This
-  "   function will first open the preview window of the log file (if it is not
-  "   already open), position the display of the preview to coincide with the
-  "   current error under the cursor and then take the user to the file in
-  "   which this error has occured.
-  "
-  "   The position is both the correct line number and the column number.
-  function! Tex_GotoErrorLocation(filename)
-
-    " first use vim's functionality to take us to the location of the error
-    " accurate to the line (not column). This lets us go to the correct file
-    " without applying any logic.
-    exec "normal! \<enter>"
-    " If the log file is not found, then going to the correct line number is
-    " all we can do.
-    if glob(a:filename) == ''
-      return
-    endif
-
-    let winnum = winnr()
-    " then come back to the quickfix window
-    wincmd w
-
-    " find out where in the file we had the error.
-    let linenum = matchstr(getline('.'), '|\zs\d\+\ze \(warning\|error\)|')
-    call Tex_PositionPreviewWindow(a:filename)
-
-    if getline('.') =~ 'l.\d\+'
-
-      let brokenline = matchstr(getline('.'), 'l.'.linenum.' \zs.*\ze')
-      " If the line is of the form
-      "   l.10 ...and then there was some error
-      " it means (most probably) that only part of the erroneous line is
-      " shown. In this case, finding the length of the broken line is not
-      " correct.  Instead goto the beginning of the line and search forward
-      " for the part which is displayed and then go to its end.
-      if brokenline =~ '^\M...'
-	let partline = matchstr(brokenline, '^\M...\m\zs.*')
-	let normcmd = "0/\\V".escape(partline, "\\")."/e+1\<CR>"
-      else
-	let column = strlen(brokenline) + 1
-	let normcmd = column.'|'
-      endif
-
-    elseif getline('.') =~ 'LaTeX Warning: \(Citation\|Reference\) `.*'
-
-      let ref = matchstr(getline('.'), "LaTeX Warning: \\(Citation\\|Reference\\) `\\zs[^']\\+\\ze'")
-      let normcmd = '0/'.ref."\<CR>"
-
-    else
-
-      let normcmd = '0'
-
-    endif
-
-    " go back to the window where we came from.
-    exec winnum.' wincmd w'
-    exec 'silent! '.linenum.' | normal! '.normcmd
-
-    if !Tex_GetVarValue('Tex_ShowErrorContext')
+  if getline('.') !~ '|\d\+ \(error\|warning\)|'
+    if !search('|\d\+ \(error\|warning\)|')
+      call Tex_Debug("not finding error pattern anywhere in quickfix window :".bufname(bufnr('%')),
+	    \ 'comp')
       pclose!
-    endif
-  endfunction " }}}
-  " Tex_SetCompilerMaps: sets maps for compiling/viewing/searching {{{
-  " Description:
-  function! <SID>Tex_SetCompilerMaps()
-    if exists('b:Tex_doneCompilerMaps')
       return
     endif
-    let s:ml = '<Leader>'
+  endif
 
-    nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_RunLaTeX()<cr>
-    xnoremap <buffer> <Plug>Tex_Compile :call Tex_PartCompile()<cr>
-    nnoremap <buffer> <Plug>Tex_View :call Tex_ViewLaTeX()<cr>
-    nnoremap <buffer> <Plug>Tex_ForwardSearch :call Tex_ForwardSearchLaTeX()<cr>
+  " extract the error pattern (something like 'file.tex|10 error|') on the
+  " current line.
+  let errpat = matchstr(getline('.'), '^\f*|\d\+ \(error\|warning\)|\ze')
+  let errfile = matchstr(getline('.'), '^\f*\ze|\d\+ \(error\|warning\)|')
+  " extract the line number from the error pattern.
+  let linenum = matchstr(getline('.'), '|\zs\d\+\ze \(error\|warning\)|')
 
-    call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'n', '<buffer>')
-    call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'v', '<buffer>')
-    call Tex_MakeMap(s:ml."v", "<Plug>Tex_View", 'n', '<buffer>')
-    call Tex_MakeMap(s:ml."a", '<Plug>Tex_Compile \| <Plug>Tex_View', 'n', '<buffer>')
-    call Tex_MakeMap(s:ml."s", "<Plug>Tex_ForwardSearch", 'n', '<buffer>')
-  endfunction
-  " }}}
+  " if we are on an error, then count the number of lines before this in the
+  " quickfix window with an error on the same line.
+  if errpat =~ 'error|$'
+    " our location in the quick fix window.
+    let errline = line('.')
 
-  augroup LatexSuite
-    au LatexSuite User LatexSuiteFileType
-	  \ call Tex_Debug('compiler.vim: Catching LatexSuiteFileType event', 'comp') |
-	  \ call <SID>Tex_SetCompilerMaps()
-  augroup END
+    " goto the beginning of the quickfix window and begin counting the lines
+    " which show an error on the same line.
+    0
+    let numrep = 0
+    while 1
+      " if we are on the same kind of error line, then means we have another
+      " line containing the same error pattern.
+      if getline('.') =~ errpat
+	let numrep = numrep + 1
+	normal! 0
+      endif
+      " if we have reached the original location in the quick fix window,
+      " then break.
+      if line('.') == errline
+	break
+      else
+	" otherwise, search for the next line which contains the same
+	" error pattern again. goto the end of the current line so we
+	" dont count this line again.
+	normal! $
+	call search(errpat, 'W')
+      endif
+    endwhile
+  else
+    let numrep = 1
+  endif
 
-  command! -nargs=0 -range=% TPartCompile :<line1>, <line2> silent! call Tex_PartCompile()
-  " Setting b:fragmentFile = 1 makes Tex_CompileLatex consider the present file
-  " the _main_ file irrespective of the presence of a .latexmain file.
-  command! -nargs=0 TCompileThis let b:fragmentFile = 1
-  command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
+  if getline('.') =~ '|\d\+ warning|'
+    let searchpat = escape(matchstr(getline('.'), '|\d\+ warning|\s*\zs.*'), '\ ')
+  else
+    let searchpat = 'l\.'.linenum
+  endif
 
-  let &cpo = s:save_cpo
+  " We first need to be in the scope of the correct file in the .log file.
+  " This is important for example, when a.tex and b.tex both have errors on
+  " line 9 of the file and we want to go to the error of b.tex. Merely
+  " searching forward from the beginning of the log file for l.9 will always
+  " land us on the error in a.tex.
+  if errfile != ''
+    exec 'silent! bot pedit +/(\\(\\f\\|\\[\\|\]\\|\\s\\)*'.errfile.'/ '.a:filename
+  else
+    exec 'bot pedit +0 '.a:filename
+  endif
+  " Goto the preview window
+  " TODO: This is not robust enough. Check that a wincmd j actually takes
+  " us to the preview window.
+  wincmd j
+  " now search forward from this position in the preview window for the
+  " numrep^th error of the current line in the quickfix window.
+  while numrep > 0
+    call search(searchpat, 'W')
+    let numrep = numrep - 1
+  endwhile
+  normal! z.
 
-  " vim:fdm=marker:ff=unix:noet
+endfunc " }}}
+" Tex_UpdatePreviewWindow: updates the view of the log file {{{
+" Description:
+"       This function should be called when focus is in a quickfix window.
+"       It opens the log file in a preview window and makes it display that
+"       part of the log file which corresponds to the error which the user is
+"       currently on in the quickfix window. Control returns to the quickfix
+"       window when the function returns.
+"
+func! Tex_UpdatePreviewWindow(filename)
+  call Tex_PositionPreviewWindow(a:filename)
+
+  if &previewwindow
+    6 wincmd _
+    wincmd p
+  endif
+endfunc " }}}
+" Tex_GotoErrorLocation: goes to the correct location of error in the tex file {{{
+" Description:
+"   This function should be called when focus is in a quickfix window. This
+"   function will first open the preview window of the log file (if it is not
+"   already open), position the display of the preview to coincide with the
+"   current error under the cursor and then take the user to the file in
+"   which this error has occured.
+"
+"   The position is both the correct line number and the column number.
+func! Tex_GotoErrorLocation(filename)
+
+  " first use vim's functionality to take us to the location of the error
+  " accurate to the line (not column). This lets us go to the correct file
+  " without applying any logic.
+  exec "normal! \<enter>"
+  " If the log file is not found, then going to the correct line number is
+  " all we can do.
+  if glob(a:filename) == ''
+    return
+  endif
+
+  let winnum = winnr()
+  " then come back to the quickfix window
+  wincmd w
+
+  " find out where in the file we had the error.
+  let linenum = matchstr(getline('.'), '|\zs\d\+\ze \(warning\|error\)|')
+  call Tex_PositionPreviewWindow(a:filename)
+
+  if getline('.') =~ 'l.\d\+'
+
+    let brokenline = matchstr(getline('.'), 'l.'.linenum.' \zs.*\ze')
+    " If the line is of the form
+    "   l.10 ...and then there was some error
+    " it means (most probably) that only part of the erroneous line is
+    " shown. In this case, finding the length of the broken line is not
+    " correct.  Instead goto the beginning of the line and search forward
+    " for the part which is displayed and then go to its end.
+    if brokenline =~ '^\M...'
+      let partline = matchstr(brokenline, '^\M...\m\zs.*')
+      let normcmd = "0/\\V".escape(partline, "\\")."/e+1\<CR>"
+    else
+      let column = strlen(brokenline) + 1
+      let normcmd = column.'|'
+    endif
+
+  elseif getline('.') =~ 'LaTeX Warning: \(Citation\|Reference\) `.*'
+
+    let ref = matchstr(getline('.'), "LaTeX Warning: \\(Citation\\|Reference\\) `\\zs[^']\\+\\ze'")
+    let normcmd = '0/'.ref."\<CR>"
+
+  else
+
+    let normcmd = '0'
+
+  endif
+
+  " go back to the window where we came from.
+  exec winnum.' wincmd w'
+  exec 'silent! '.linenum.' | normal! '.normcmd
+
+  if !Tex_GetVarValue('Tex_ShowErrorContext')
+    pclose!
+  endif
+endfunc " }}}
+" Tex_SetCompilerMaps: sets maps for compiling/viewing/searching {{{
+" Description:
+func! <SID>Tex_SetCompilerMaps()
+  if exists('b:Tex_doneCompilerMaps')
+    return
+  endif
+  let s:ml = '<Leader>'
+
+  nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_RunLaTeX()<cr>
+  xnoremap <buffer> <Plug>Tex_Compile :call Tex_PartCompile()<cr>
+  nnoremap <buffer> <Plug>Tex_View :call Tex_ViewOutp()<cr>
+  nnoremap <buffer> <Plug>Tex_ForwardSearch :call Tex_ForwardSearchLaTeX()<cr>
+
+  call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'n', '<buffer>')
+  call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'v', '<buffer>')
+  call Tex_MakeMap(s:ml."v", "<Plug>Tex_View", 'n', '<buffer>')
+  call Tex_MakeMap(s:ml."a", '<Plug>Tex_Compile \| <Plug>Tex_View', 'n', '<buffer>')
+  call Tex_MakeMap(s:ml."s", "<Plug>Tex_ForwardSearch", 'n', '<buffer>')
+endfunc
+" }}}
+
+augroup LatexSuite
+  au LatexSuite User LatexSuiteFileType
+   \ call Tex_Debug('compiler.vim: '
+		   \.'Catching LatexSuiteFileType event', 'comp')
+   \ | call <SID>Tex_SetCompilerMaps()
+augroup END
+
+command! -nargs=0 -range=% TPartCompile
+      \ :<line1>, <line2> silent! call Tex_PartCompile()
+" Setting b:fragmentFile = 1 makes Tex_CompileLatex consider the present file
+" the _main_ file irrespective of the presence of a .latexmain file.
+command! -nargs=0 TCompileThis let b:fragmentFile = 1
+command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
+
+let &cpo = s:save_cpo
+
+" vim:fdm=marker:ff=unix:noet

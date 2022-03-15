@@ -10,7 +10,7 @@
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
-if exists('s:lastElementsLocation') && g:Tex_ElementsMenuLocation == s:lastElementsLocation
+if exists('s:lastElementsLocation') && g:tex_elementsMenuLocation == s:lastElementsLocation
 	finish
 endif
 
@@ -21,12 +21,12 @@ if exists('s:lastElementsLocation')
 	exe 'aunmenu '.s:lastElementsLocation.'Various.'
 endif
 
-let s:lastElementsLocation = g:Tex_ElementsMenuLocation
+let s:lastElementsLocation = g:tex_elementsMenuLocation
 
-let s:fontMenuLoc       = g:Tex_ElementsMenuLocation.'Font.'
-let s:dimensionMenuLoc  = g:Tex_ElementsMenuLocation.'Dimension.'
-let s:counterMenuLoc    = g:Tex_ElementsMenuLocation.'Counters.'
-let s:variousMenuLoc    = g:Tex_ElementsMenuLocation.'Various.'
+let s:fontMenuLoc       = g:tex_elementsMenuLocation.'Font.'
+let s:dimensionMenuLoc  = g:tex_elementsMenuLocation.'Dimension.'
+let s:counterMenuLoc    = g:tex_elementsMenuLocation.'Counters.'
+let s:variousMenuLoc    = g:tex_elementsMenuLocation.'Various.'
 
 " ==============================================================================
 " Set up the functions the first time.
@@ -46,15 +46,15 @@ if !exists('s:definedFuncs') " {{{
 		let vislhs = matchstr(tolower(a:font), '^.\zs.*')
 
 		" avoid redoing imaps and vmaps for every reconfiguration of menus.
-		if !exists('s:doneOnce') && g:Tex_FontMaps
-			exe "xnoremap <silent> ".g:Tex_Leader.vislhs.
+		if !exists('s:doneOnce') && g:tex_fontMaps
+			exe "xnoremap <silent> ".g:tex_leader.vislhs.
 				\" \<C-\\>\<C-N>:call VEnclose('\\text".vislhs."{', '}', '{\\".vislhs.a:fam." ', '}')<CR>"
 			exe 'call IMAP ("'.a:font.'", "\\text'.vislhs.'{<++>}<++>", "tex")'
 		endif
 
 		" menu entry.
-		if g:Tex_Menus && g:Tex_FontMenus
-			let location = s:fontMenuLoc.substitute(a:fam, '^.', '\u&', '').'.'.vislhs.a:fam.'<tab>'.a:font.'\ ('.g:Tex_Leader.vislhs.')'
+		if g:tex_menus && g:tex_fontMenus
+			let location = s:fontMenuLoc.substitute(a:fam, '^.', '\u&', '').'.'.vislhs.a:fam.'<tab>'.a:font.'\ ('.g:tex_leader.vislhs.')'
 			exe "amenu ".location.
 				\" <plug><C-r>=IMAP_PutTextWithMovement('\\text".vislhs."{<++>}<++>')<CR>"
 			exe "vmenu ".location.
@@ -121,11 +121,11 @@ call <SID>Tex_FontFamily("FSC","shape")
 call <SID>Tex_FontFamily("FIT","shape")
 
 " the \emph is special.
-if g:Tex_FontMaps | exe "xnoremap <silent> ".g:Tex_Leader."em \<C-\\>\<C-N>:call VEnclose('\\emph{', '}', '{\\em', '\\/}')<CR>" | endif
-if g:Tex_FontMaps | exe 'call IMAP ("FEM", "\\emph{<++>}<++>", "tex")' | endif
+if g:tex_fontMaps | exe "xnoremap <silent> ".g:tex_leader."em \<C-\\>\<C-N>:call VEnclose('\\emph{', '}', '{\\em', '\\/}')<CR>" | endif
+if g:tex_fontMaps | exe 'call IMAP ("FEM", "\\emph{<++>}<++>", "tex")' | endif
 
 " }}}
-if g:Tex_Menus && g:Tex_FontMenus
+if g:tex_menus && g:tex_fontMenus
 	" {{{ diacritics
 	call <SID>Tex_FontDiacritics('Acute',        '"')
 	call <SID>Tex_FontDiacritics('Breve',        'u')
@@ -168,7 +168,7 @@ endif
 " ==============================================================================
 " Dimensions
 " ============================================================================== 
-if g:Tex_Menus
+if g:tex_menus
 	" {{{ Static1
 	call <SID>Tex_DimMenus('Static1', 'arraycolsep')
 	call <SID>Tex_DimMenus('Static1', 'arrayrulewidth')
@@ -245,7 +245,7 @@ endif
 " ==============================================================================
 " Counters
 " ============================================================================== 
-if g:Tex_Menus
+if g:tex_menus
 	" Counters {{{
 	call <SID>Tex_CounterMenus('Counters', 'bottomnumber')
 	call <SID>Tex_CounterMenus('Counters', 'chapter')
@@ -308,7 +308,7 @@ endif
 " ==============================================================================
 " Various
 " ============================================================================== 
-if g:Tex_Menus
+if g:tex_menus
 	" Various {{{
 	call <SID>Tex_VariousMenus('ref{}'         , '\ref{<++>}<++>')
 	call <SID>Tex_VariousMenus('pageref{}'     , '\pageref{<++>}<++>')
@@ -321,8 +321,8 @@ if g:Tex_Menus
 	" }}}
 endif
 
-if g:Tex_CatchVisMapErrors
-	exe "xnoremap ".g:Tex_Leader."   :\<C-u>call ExecMap('".g:Tex_Leader."', 'v')\<CR>"
+if g:tex_catchVisMapErrs
+	exe "xnoremap ".g:tex_leader."   :\<C-u>call ExecMap('".g:tex_leader."', 'v')\<CR>"
 endif
 " this is for avoiding reinclusion of imaps from next time on.
 let s:doneOnce = 1

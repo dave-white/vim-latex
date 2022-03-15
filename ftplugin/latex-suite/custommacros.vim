@@ -25,8 +25,8 @@ endif
 " SetCustomMacrosMenu: sets up the menu for Macros {{{
 function! <SID>SetCustomMacrosMenu()
 	let flist = Tex_FindInRtp('', 'macros')
-	exe 'amenu '.g:Tex_MacrosMenuLocation.'&New :call <SID>NewMacro("FFFromMMMenu")<CR>'
-	exe 'amenu '.g:Tex_MacrosMenuLocation.'&Redraw :call RedrawMacro()<CR>'
+	exe 'amenu '.g:tex_macrosMenuLocation.'&New :call <SID>NewMacro("FFFromMMMenu")<CR>'
+	exe 'amenu '.g:tex_macrosMenuLocation.'&Redraw :call RedrawMacro()<CR>'
 
 	let i = 1
 	while 1
@@ -34,15 +34,15 @@ function! <SID>SetCustomMacrosMenu()
 		if fname == ''
 			break
 		endif
-		exe "amenu ".g:Tex_MacrosMenuLocation."&Delete.&".i.":<tab>".fname." :call <SID>DeleteMacro('".fname."')<CR>"
-		exe "amenu ".g:Tex_MacrosMenuLocation."&Edit.&".i.":<tab>".fname."   :call <SID>EditMacro('".fname."')<CR>"
-		exe "imenu ".g:Tex_MacrosMenuLocation."&".i.":<tab>".fname." <C-r>=<SID>ReadMacro('".fname."')<CR>"
-		exe "nmenu ".g:Tex_MacrosMenuLocation."&".i.":<tab>".fname." i<C-r>=<SID>ReadMacro('".fname."')<CR>"
+		exe "amenu ".g:tex_macrosMenuLocation."&Delete.&".i.":<tab>".fname." :call <SID>DeleteMacro('".fname."')<CR>"
+		exe "amenu ".g:tex_macrosMenuLocation."&Edit.&".i.":<tab>".fname."   :call <SID>EditMacro('".fname."')<CR>"
+		exe "imenu ".g:tex_macrosMenuLocation."&".i.":<tab>".fname." <C-r>=<SID>ReadMacro('".fname."')<CR>"
+		exe "nmenu ".g:tex_macrosMenuLocation."&".i.":<tab>".fname." i<C-r>=<SID>ReadMacro('".fname."')<CR>"
 		let i = i + 1
 	endwhile
 endfunction 
 
-if g:Tex_Menus
+if g:tex_menus
 	call <SID>SetCustomMacrosMenu()
 endif
 
