@@ -50,7 +50,7 @@ endfunction
 " TEXRC: Source the various texrc files in a hierarchical fashion. {{{
 " Set personal settings for current tex file.
 let s:loc_texrc = Tex_FindFileAbove('texrc')
-if s:loc_texrc != '' && filereadable(s:loc_texrc)
+if !empty(s:loc_texrc) && filereadable(s:loc_texrc)
 	exe 'source '.s:loc_texrc
 endif
 " Set personal default global settings.

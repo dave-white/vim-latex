@@ -60,8 +60,8 @@ TexLet g:Tex_Debug = 0
 " this name.
 TexLet g:Tex_DebugLog = ''
 
-let b:tex_useIMAP = 1
-let b:tex_useRunningImap = 0
+TexLet b:tex_useIMAP = 1
+TexLet b:tex_useRunningImap = 0
 
 " }}}
 " ==========================================================================
@@ -80,13 +80,13 @@ else
 	TexLet g:Tex_DefaultTargetFormat = 'pdf'
 endif
 
-TexLet g:Tex_EnableMultCompile = 1
+TexLet b:tex_enableMultCompile = 1
 " A comma seperated list of formats which need multiple compilations to be
 " correctly compiled.
 TexLet g:Tex_MultipleCompileFormats = 'dvi,pdf'
 
 " Uncomment this line if you compile ps files via dvi files.
-" TexLet g:Tex_FormatDependency_ps = 'dvi,ps'
+" TexLet g:Tex_FormatDependency_ps = ['dvi', 'ps']
 
 " --------------------------------------------------------------------------
 " Compiler rules {{{
@@ -111,42 +111,45 @@ TexLet g:Tex_CompileRule_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 " Synctex is now supported by pdflatex.
 
 " Build CLI `pdflatex` command. {{{
-let b:tex_compileCmd_pdf = 'pdflatex'
-let b:tex_compileCmdOptDict_pdf = {"-file-line-error-style": ""}
+TexLet b:tex_compileCmd_pdf = 'pdflatex'
+" let b:tex_outpDir
+" let b:tex_jobNm
+" TexLet CANNOT DO DICTIONARIES!!!
+TexLet b:tex_compileCmdOptDict_pdf = {"-file-line-error-style": ""}
 " " Specify CLI `pdflatex` args here: {{{
 " " -cnf-line=STRING
-" extend(b:tex_compileCmdArgDict_pdf, {"-cnf-line": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-cnf-line": ""})
 " " -fmt=FMTNAME
-" extend(b:tex_compileCmdArgDict_pdf, {"-fmt": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-fmt": ""})
 " " -interaction=STRING 
-" extend(b:tex_compileCmdArgDict_pdf, {"-interaction": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-interaction": ""})
 " " -jobname=STRING
-" extend(b:tex_compileCmdArgDict_pdf, {"-jobname": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-jobname": ""})
 " " -kpathsea-debug=NUMBER
-" extend(b:tex_compileCmdArgDict_pdf, {"-kpathsea-debug": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-kpathsea-debug": ""})
 " " -mktex=FMT (FMT=tex/tfm/pk)
-" extend(b:tex_compileCmdArgDict_pdf, {"-mktex": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-mktex": ""})
 " " -output-comment=STRING
-" extend(b:tex_compileCmdArgDict_pdf, {"-output-comment": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-output-comment": ""})
 " " -output-directory=DIR
-" extend(b:tex_compileCmdArgDict_pdf, {"-output-directory": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-output-directory": b:tex_outpDir})
 " " -output-format=FORMAT ('dvi' or 'pdf')
-" extend(b:tex_compileCmdArgDict_pdf, {"-output-format": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-output-format": ""})
 " " -progname=STRING
-" extend(b:tex_compileCmdArgDict_pdf, {"-progname": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-progname": ""})
 " " -src-specials=WHERE
 " "  (comma-sep. list: cr display hbox math par parend vbox)
-" extend(b:tex_compileCmdArgDict_pdf, {"-src-specials": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-src-specials": ""})
 " " -synctex=NUMBER
-" extend(b:tex_compileCmdArgDict_pdf, {"-synctex": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-synctex": ""})
 " " -translate-file=TCXNAME
-" extend(b:tex_compileCmdArgDict_pdf, {"-translate-line": ""})
+" call extend(b:tex_compileCmdArgDict_pdf, {"-translate-line": ""})
 " }}}
 " }}}
 
-b:tex_useMake = 0
+TexLet b:tex_useMake = 0
 
-TexLet g:Tex_CompileRule_pdf = s:bldCmd.' "$*"'
+TexLet g:Tex_CompileRule_pdf = b:tex_compileCmd_pdf.' "$*"'
 
 " TexLet g:Tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
 " TexLet g:Tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
@@ -279,7 +282,7 @@ TexLet g:Tex_Flavor = 'latex'
 " i.e, if the main file is "thesis.tex", $* will be "thesis".
 TexLet g:Tex_BibtexFlavor = 'biber'
 
-let b:tex_bibCmd = g:Tex_BibtexFlavor
+TexLet b:tex_bibCmd = g:Tex_BibtexFlavor
 if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
   let b:tex_bibCmd .= ' --input-directory="'.b:tex_outpDir.'"'
 		    \ .' --output-directory="'.b:tex_outpDir.'"'
