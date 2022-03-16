@@ -73,11 +73,11 @@ let b:doneTexCompiler = 1
 " ==============================================================================
 " Customization of 'efm':  {{{
 " This section contains the customization variables which the user can set.
-" g:Tex_IgnoredWarnings: This variable contains a ¡ seperated list of
+" g:tex_ignWarnPats: This variable contains a ¡ seperated list of
 " patterns which will be ignored in the TeX compiler's output. Use this
 " carefully, otherwise you might end up losing valuable information.
-if !exists('g:Tex_IgnoredWarnings')
-	let g:Tex_IgnoredWarnings =
+if !exists('g:tex_ignWarnPats')
+	let g:tex_ignWarnPats =
 		\'Underfull'."\n".
 		\'Overfull'."\n".
 		\'specifier changed to'."\n".
@@ -86,16 +86,16 @@ if !exists('g:Tex_IgnoredWarnings')
 		\'There were undefined references'."\n".
 		\'Citation %.%# undefined'
 endif
-" This is the number of warnings in the g:Tex_IgnoredWarnings string which
+" This is the number of warnings in the g:tex_ignWarnPats string which
 " will be ignored.
-if !exists('g:Tex_IgnoreLevel')
-	let g:Tex_IgnoreLevel = 7
+if !exists('g:tex_ignLvl')
+	let g:tex_ignLvl = 7
 endif
 " There will be lots of stuff in a typical compiler output which will
 " completely fall through the 'efm' parsing. This options sets whether or not
 " you will be shown those lines.
-if !exists('g:Tex_IgnoreUnmatched')
-	let g:Tex_IgnoreUnmatched = 1
+if !exists('g:tex_ignUnmatched')
+	let g:tex_ignUnmatched = 1
 endif
 " With all this customization, there is a slight risk that you might be
 " ignoring valid warnings or errors. Therefore before getting the final copy
@@ -104,8 +104,8 @@ endif
 " whether they match the error or warning patterns.
 " NOTE: An easier way of resetting the 'efm' to show everything is to do
 "       TCLevel strict
-if !exists('g:Tex_ShowallLines')
-	let g:Tex_ShowallLines = 0
+if !exists('g:tex_showAllLns')
+	let g:tex_showAllLns = 0
 endif
 
 " }}}
@@ -177,15 +177,15 @@ endif
 " ==============================================================================
 " Functions for setting up a customized 'efm' {{{
 
-" IgnoreWarnings: parses g:Tex_IgnoredWarnings for message customization {{{
+" IgnoreWarnings: parses g:tex_ignWarnPats for message customization {{{
 " Description: 
 function! <SID>IgnoreWarnings()
 	let s:Ignored_Overfull = 0
 
 	let i = 1
-	while s:Strntok(g:Tex_IgnoredWarnings, "\n", i) != '' &&
-				\ i <= g:Tex_IgnoreLevel
-		let warningPat = s:Strntok(g:Tex_IgnoredWarnings, "\n", i)
+	while s:Strntok(g:tex_ignWarnPats, "\n", i) != '' &&
+				\ i <= g:tex_ignLvl
+		let warningPat = s:Strntok(g:tex_ignWarnPats, "\n", i)
 		let warningPat = escape(substitute(warningPat, '[\,]', '%\\\\&', 'g'), ' ')
 
 		if warningPat =~? 'overfull'
@@ -210,12 +210,12 @@ endfunction
 " Description: 
 function! <SID>SetLatexEfm()
 
-	let pm = ( g:Tex_ShowallLines == 1 ? '+' : '-' )
+	let pm = ( g:tex_showAllLns == 1 ? '+' : '-' )
 
 	" Add a dummy entry to overwrite the global setting.
 	setlocal efm=dummy_value
 
-	if !g:Tex_ShowallLines
+	if !g:tex_showAllLns
 		call s:IgnoreWarnings()
 	endif
 
@@ -341,7 +341,7 @@ function! <SID>SetLatexEfm()
 	" See https://github.com/vim/vim/issues/807
 	exec 'setlocal efm+=%'.pm.'O'
 
-	if g:Tex_IgnoreUnmatched && !g:Tex_ShowallLines
+	if g:tex_ignUnmatched && !g:tex_showAllLns
 		" Ignore all lines which are unmatched so far.
 		setlocal efm+=%-G%.%#
 		" Sometimes, there is some garbage after a ')'
@@ -367,7 +367,7 @@ function! <SID>SetTexCompilerLevel(...)
 		let level = a:1
 	else
 		call Tex_ResetIncrementNumber(0)
-		echo substitute(g:Tex_IgnoredWarnings, 
+		echo substitute(g:tex_ignWarnPats, 
 			\ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
 		let level = input("\nChoose an ignore level: ")
 		if level == ''
@@ -375,10 +375,10 @@ function! <SID>SetTexCompilerLevel(...)
 		endif
 	endif
 	if level == 'strict'
-		let g:Tex_ShowallLines = 1
+		let g:tex_showAllLns = 1
 	elseif level =~ '^\d\+$'
-		let g:Tex_ShowallLines = 0
-		let g:Tex_IgnoreLevel = level
+		let g:tex_showAllLns = 0
+		let g:tex_ignLvl = level
 	else
 		echoerr "SetTexCompilerLevel: Unkwown option [".level."]"
 	end

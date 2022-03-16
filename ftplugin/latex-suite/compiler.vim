@@ -29,10 +29,10 @@ endfunc
 func! Tex_GetOutpDir(...) " {{{
   if a:0 < 1
     let l:fpathHead = expand('%:p:h')
-    let l:mod = ':p:h'
+    let l:mod = ':p'
   elseif a:0 < 2
-    let l:fpathHead = a:1
-    let l:mod = ':p:h'
+    let l:fpathHead = fnamemodify(a:1, ':p:h')
+    let l:mod = ':p'
   else
     let l:fpathHead = fnamemodify(a:1, ':p:h')
     let l:mod = a:2
@@ -58,55 +58,126 @@ func! Tex_BldCmd(cmd, optDict)
   return l:rslt
 endfunc
 " }}}
-" Tex_Compile: compiles the file at a:fpath. {{{
-func! Tex_Compile(fpath, targ)
-  if fnamemodify(a:fpath, ":e") != 'tex'
+func! Tex_CompileRun(file, cmd, ...)
+  if a:0 > 0
+    let l:ignLvl = a:1
+    if a:0 > 1
+      let l:ignWarnPats = a:2
+    else
+      let l:ignWarnPats = ""
+    endif
+  else
+    let l:ignLvl = -1
+    let l:ignWarnPats = ""
+  endif
+
+  let l:origLvl = g:tex_ignLvl
+  let l:origPats = g:tex_ignWarnPats
+
+  if !empty(l:ignWarnPats)
+    let g:tex_ignWarnPats .= g:tex_ignWarnPats.l:ignWarnPats
+  endif
+  if l:ignLvl >= 0
+    TCLevel l:ignLvl
+  endif
+
+  exec "silent! !".a:cmd." ".a:file
+
+  let l:errLst = Tex_GetErrorList()
+  call Tex_Debug("Tex_CompileRun: errLst = [".l:errLst."]", "comp")
+  " If there are any errors, then break from the rest of the steps
+  if l:errLst =~  '\v(error|warning)'
+    return 1
+  endif
+
+  let g:tex_ignLvl = l:origLvl
+  let g:tex_ignWarnPats = l:origPats
+
+  return 0
+endfunc
+" Tex_Compile: compilation function this function runs the latex {{{ 
+" command on the currently open file. often times the file being currently 
+" edited is only a fragment being \input'ed into some master tex file. in 
+" this case, make a file called mainfile.latexmain in the directory 
+" containig the file. in other words, if the current file is 
+" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
+" then make a file called main.tex.latexmain in the ~/thesis directory.  
+" this will then run "latex main.tex" when Tex_Compile() is called.
+func! Tex_Compile(...)
+  if b:tex_useMake
+    let l:cwd = getcwd()
+    call chdir(fnameescape(fnamemodify(l:fpath, ":p:h")))
+    exec 'make!'
+    call chdir(l:cwd)
+    redraw!
+    return 0
+  endif
+
+  if fnamemodify(l:fpath, ":e") != 'tex'
     echo "calling Tex_Compile from a non-tex file"
     return
   endif
-  " close any preview windows left open.
-  pclose!
-  let l:cwd = getcwd()
-  call chdir(fnameescape(fnamemodify(a:fpath, ":p:h")))
-  let l:fname = fnamemodify(a:fpath, ":t")
 
-  if b:tex_useMake
-    exec 'make! '
+  if a:0 < 1
+    let l:fpath = expand('%:p')
+    let l:mainTarg = b:tex_dfltTarg
+  elseif a:0 < 2
+    let l:fpath = a:1
+    let l:mainTarg = b:tex_dfltTarg
   else
-    if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
-      call mkdir(b:tex_outpDir, "p")
-    endif
-    " First ignore undefined references and the
-    " 'rerun to get cross-references right' message from
-    " the compiler output.
-    let origlevel = Tex_GetVarValue('Tex_IgnoreLevel')
-    let origpats = Tex_GetVarValue('Tex_IgnoredWarnings')
+    let l:fpath = a:1
+    let l:mainTarg = a:2
+  endif
 
-    let gLIgnoredWarnings = gLIgnoredWarnings."\n"
-	  \ . 'Reference %.%# undefined'."\n"
-	  \ . 'Rerun to get cross-references right'
-    TCLevel 1000
+  call Tex_Debug("Tex_Run: "
+	\."compiling to target [".l:mainTarg."]", "comp")
 
-    let l:jobNm = Tex_GetJobName()
-    let l:outpDir = Tex_GetOutpDir(a:fpath)
-    let l:auxFile = l:outpDir.l:jobNm.'.aux'
-    let l:bblFile = l:outpDir.l:jobNm.'.bbl'
-    let l:idxFile = l:outpDir.l:jobNm.'.idx'
+  " first get the dependency chain of this format.
+  let l:depChain = [l:mainTarg]
+  if g:tex_fmtDeps_{l:mainTarg}
+    let l:depChain = extendnew(g:tex_fmtDeps_{l:mainTarg}, [l:mainTarg])
+  endif
 
+  call Tex_Debug('Tex_Run: '
+	\.'getting dependency chain = ['.string(l:depChain).']', 'comp')
+
+  let l:cwd = getcwd()
+  call chdir(fnameescape(fnamemodify(l:fpath, ":p:h")))
+  let l:fname = fnamemodify(l:fpath, ":t")
+
+  if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
+    call mkdir(b:tex_outpDir, "p")
+  endif
+
+  let l:jobNm = Tex_GetJobName()
+  let l:outpDir = Tex_GetOutpDir(l:fpath)
+  let l:auxFile = l:outpDir.'/'.l:jobNm.'.aux'
+  let l:bblFile = l:outpDir.'/'.l:jobNm.'.bbl'
+  let l:idxFile = l:outpDir.'/'.l:jobNm.'.idx'
+
+  " now compile to the final target format via each dependency.
+  for l:targ in l:depChain
+    call Tex_Debug('Tex_Run: setting target to '.l:mainTarg, 'comp')
+    " close any preview windows left open.
+    pclose!
     " Record the 'state' of auxilliary files before compilation.
     let l:auxPreHash = system('md5sum '.l:auxFile)
     let l:idxPreHash = system('md5sum '.l:idxFile)
 
     " Compose the compiler program with its command line options.
-    let l:compileCmd = Tex_BldCmd(b:tex_compilePrg_{a:targ},
-	  \ b:tex_compilePrgOptDict_{a:targ})
+    let l:compileCmd = Tex_BldCmd(b:tex_compilePrg_{l:targ},
+	  \ b:tex_compilePrgOptDict_{l:targ})
 
     " Run the composed compiler command
-    exec "silent! !".l:compileCmd." ".l:fname
+    " exec "silent! !".l:compileCmd." ".l:fname
+    let l:err = Tex_CompileRun(l:fname, l:compileCmd, 1000,
+	  \ 'Reference %.%# undefined'."\n"
+	  \.'Rerun to get cross-references right')
 
     let l:rerun = 0
     let l:runCnt = 1
 
+    " Run biblatex if called for.
     if Tex_IsPresentInFile('\\bibdata|\\abx', l:auxFile)
       let l:bblPreHash = system('md5sum '.l:bblFile)
       let l:bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
@@ -116,13 +187,13 @@ func! Tex_Compile(fpath, targ)
       endif
     endif
 
-    if b:tex_doMultCompile
-	  \ && Tex_GetVarValue('Tex_MultipleCompileFormats') =~ a:targ
+    if b:tex_doMultCompile && index(g:tex_multCompileFmts, l:targ) >= 0
       " Recompile up to four times as necessary.
       while l:rerun && (l:runCnt < 5)
 	let l:rerun = 0
 	let l:runCnt += 1
-	exec "silent! !".l:compileCmd." ".l:fname
+	" exec "silent! !".l:compileCmd." ".l:fname
+	let l:err = Tex_CompileRun(l:fname, l:compileCmd)
 	let l:auxPostHash = system('md5sum '.l:auxFile)
 	if l:auxPostHash != l:auxPreHash
 	  let l:rerun = 1
@@ -130,60 +201,22 @@ func! Tex_Compile(fpath, targ)
 	endif
       endwhile
     endif
-  endif
-  call chdir(l:cwd)
-  redraw!
+    call chdir(l:cwd)
+    redraw!
 
-  let l:timeWrd = "time"
-  if l:runCnt != 1
-    let l:timeWrd .= "s"
-  endif
-  echomsg "Ran ".b:tex_compilePrg_{a:targ}." ".l:runCnt." ".l:timeWrd
-	\."."
-endfunc
-" }}}
-" Tex_RunLaTeX: compilation function this function runs the latex {{{ 
-" command on the currently open file. often times the file being currently 
-" edited is only a fragment being \input'ed into some master tex file. in 
-" this case, make a file called mainfile.latexmain in the directory 
-" containig the file. in other words, if the current file is 
-" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
-" then make a file called main.tex.latexmain in the ~/thesis directory.  
-" this will then run "latex main.tex" when Tex_RunLaTeX() is called.
-func! Tex_RunLaTeX(...)
-  if a:0 > 0
-    let l:fpath = a:1
-    let l:mainTarg = a:2
-  else
-    let l:fpath = expand('%:p')
-    let l:mainTarg = b:tex_dfltTarg
-  endif
-
-  call Tex_Debug("Tex_RunLaTeX: "
-	\."compiling to target [".l:mainTarg."]", "comp")
-
-  " first get the dependency chain of this format.
-  let l:depChain = [l:mainTarg]
-  if exists('gLFormatDependency_'.l:mainTarg)
-    let l:depChain = extendnew('gLFormatDependency_'.l:mainTarg,
-	  \ [l:mainTarg])
-  endif
-
-  call Tex_Debug('Tex_RunLaTeX: '
-	\.'getting dependency chain = ['.string(l:depChain).']', 'comp')
-
-  " now compile to the final target format via each dependency.
-  for l:targ in l:depChain
-    call Tex_Debug('Tex_RunLaTeX: setting target to '.l:mainTarg, 'comp')
-
-    call Tex_Compile(l:fpath, l:targ)
+    let l:timeWrd = "time"
+    if l:runCnt != 1
+      let l:timeWrd .= "s"
+    endif
+    echomsg "Ran ".b:tex_compilePrg_{l:targ}." ".l:runCnt." ".l:timeWrd
+	  \."."
 
     let errlist = Tex_GetErrorList()
-    call Tex_Debug("Tex_RunLaTeX: errlist = [".errlist."]", "comp")
+    call Tex_Debug("Tex_Run: errlist = [".errlist."]", "comp")
 
     " If there are any errors, then break from the rest of the steps
     if errlist =~  '\v(error|warning)'
-      call Tex_Debug('Tex_RunLaTeX: '
+      call Tex_Debug('Tex_Run: '
 	    \.'There were errors in compiling, breaking chain...', 'comp')
       break
     endif
@@ -192,28 +225,29 @@ func! Tex_RunLaTeX(...)
   let s:origwinnum = winnr()
   call Tex_SetupErrorWindow()
 
-  call Tex_Debug("-Tex_RunLaTeX", "comp")
+  call Tex_Debug("-Tex_Run", "comp")
 endfunc
 
 " }}}
 " Tex_ViewOutp: opens viewer {{{
 " Description: opens the DVI viewer for the file being currently edited.
 " Again, if the current file is a \input in a master file, see text above
-" Tex_RunLaTeX() to see how to set this information.
+" Tex_Compile() to see how to set this information.
 func! Tex_ViewOutp(...)
   if a:0 < 1
     let l:targ = b:tex_dfltTarg
-    let l:viewer = b:tex_viewPrg_{l:targ}
+    let l:viewer = g:tex_viewPrg_{l:targ}
   elseif a:0 < 2
     let l:targ = a:1
-    let l:viewer = b:tex_viewPrg_{l:targ}
+    let l:viewer = g:tex_viewPrg_{l:targ}
   else
     let l:targ = a:1
     let l:viewer = a:2
   endif
 
-  if !empty(b:tex_viewPrgComplete_{l:targ})
-    let l:cmd = substitute(b:tex_viewPrgComplete_{l:targ},
+  if exists("g:tex_viewPrgComplete_".l:targ)
+   \ && !empty(g:tex_viewPrgComplete_{l:targ})
+    let l:cmd = substitute(g:tex_viewPrgComplete_{l:targ},
 	  \ '{v:servername}', v:servername, 'g')
   elseif has('win32')
     " unfortunately, yap does not allow the specification of an external
@@ -248,11 +282,12 @@ func! Tex_ViewOutp(...)
       endif
     else
       let l:cmd = l:viewer.' $*.'.l:targ
+    endif
   endif
 
 
   let l:fpath = Tex_GetOutpDir(expand('%:p')).'/'
-  if !empty(b:tex_jobNm) && !b:fragmentFile
+  if !empty(b:tex_jobNm)
     let l:fpath .= b:tex_jobNm
   else
     let l:fpath .= expand('%:r')
@@ -271,7 +306,7 @@ endfunc
 " }}}
 " Tex_ForwardSearchLaTeX: searches for current location in dvi file. {{{
 " Description: if the DVI viewer is compatible, then take the viewer to that
-"              position in the dvi file. see docs for Tex_RunLaTeX() to set a
+"              position in the dvi file. see docs for Tex_Compile() to set a
 "              master file if this is an \input'ed file.
 " Tip: With YAP on Windows, it is possible to do forward and inverse searches
 "      on DVI files. to do forward search, you'll have to compile the file
@@ -425,7 +460,7 @@ endfunc
 " ==========================================================================
 " Tex_PartCompile: compiles selected fragment {{{
 " Description: creates a temporary file from the selected fragment of text
-"       prepending the preamble and \end{document} and then asks Tex_RunLaTeX() to
+"       prepending the preamble and \end{document} and then asks Tex_Compile() to
 "       compile it.
 func! Tex_PartCompile() range
   call Tex_Debug('+Tex_PartCompile', 'comp')
@@ -437,14 +472,14 @@ func! Tex_PartCompile() range
 
   " Remember all the temp files and for each temp file created, remember
   " where the temp file came from.
-  let sLNumTempFiles = (exists('sLNumTempFiles') ? sLNumTempFiles + 1 : 1)
-  let sLTempFiles = (exists('sLTempFiles') ? sLTempFiles : '')
+  let s:tmpFileCnt = (exists('s:tmpFileCnt') ? s:tmpFileCnt + 1 : 1)
+  let s:tmpFiles = (exists('s:tmpFiles') ? s:tmpFiles : '')
 	\ . tmpfile."\n"
-  let sLTempFile_{sLNumTempFiles} = tmpfile
+  let s:tmpFile_{s:tmpFileCnt} = tmpfile
   " TODO: For a function Tex_RestoreFragment which restores a temp file to
   "       its original location.
-  let sLTempFileOrig_{sLNumTempFiles} = expand('%:p')
-  let sLTempFileRange_{sLNumTempFiles} = a:firstline.','.a:lastline
+  let s:tmpFileOrig_{s:tmpFileCnt} = expand('%:p')
+  let s:tmpFileRange_{s:tmpFileCnt} = a:firstline.','.a:lastline
 
   " Set up an autocmd to clean up the temp files when Vim exits.
   if g:tex_removeTempFiles
@@ -477,23 +512,26 @@ func! Tex_PartCompile() range
   " set this as a fragment file.
   let b:fragmentFile = 1
 
-  silent! call Tex_RunLaTeX()
+  silent! call Tex_Compile()
 endfunc " }}}
 " Tex_RemoveTempFiles: cleans up temporary files created during part compilation {{{
 " Description: During part compilation, temporary files containing the
 "              visually selected text are created. These files need to be
 "              removed when Vim exits to avoid "file leakage".
 func! Tex_RemoveTempFiles()
-  if !exists('sLNumTempFiles') || !g:tex_removeTempFiles
+  if !exists('s:tmpFileCnt') || !g:tex_rmvTmpFiles
     return
   endif
   let i = 1
-  while i <= sLNumTempFiles
-    let tmpfile = sLTempFile_{i}
+  while i <= s:tmpFileCnt
+    let l:tmpFile = s:tmpFile_{i}
     " Remove the tmp file and all other associated files such as the
     " .log files etc.
-    call Tex_DeleteFile(fnamemodify(tmpfile, ':p:r').'.*')
-    let i = i + 1
+    let l:rmFileLst = glob(fnamemodify(l:tmpFile, ':p:r').'.*', 1, 1)
+    for l:file in l:rmFileLst
+      call delete(l:file)
+    endfor
+    let i += 1
   endwhile
 endfunc " }}}
 
@@ -521,7 +559,7 @@ func! Tex_SetupErrorWindow()
   call Tex_Debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
   " if we moved to a different window, then it means we had some errors.
   if winnum != winnr()
-    if g:tex_showErrorContext
+    if g:tex_showErrCntxt
       call Tex_UpdatePreviewWindow(mfnlog)
       exe 'nnoremap <buffer> <silent> j j:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
       exe 'nnoremap <buffer> <silent> k k:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
@@ -534,7 +572,7 @@ func! Tex_SetupErrorWindow()
 
     " resize the window to just fit in with the number of lines.
     exec ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
-    if Tex_GetVarValue('Tex_GotoError') == 1
+    if g:tex_gotoErr
       call Tex_GotoErrorLocation(mfnlog)
     else
       exec s:origwinnum.' wincmd w'
@@ -656,7 +694,6 @@ endfunc " }}}
 "
 "   The position is both the correct line number and the column number.
 func! Tex_GotoErrorLocation(filename)
-
   " first use vim's functionality to take us to the location of the error
   " accurate to the line (not column). This lets us go to the correct file
   " without applying any logic.
@@ -707,7 +744,7 @@ func! Tex_GotoErrorLocation(filename)
   exec winnum.' wincmd w'
   exec 'silent! '.linenum.' | normal! '.normcmd
 
-  if !Tex_GetVarValue('Tex_ShowErrorContext')
+  if !g:tex_showErrCntxt
     pclose!
   endif
 endfunc " }}}
@@ -719,7 +756,7 @@ func! <SID>Tex_SetCompilerMaps()
   endif
   let s:ml = '<Leader>'
 
-  nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_RunLaTeX()<cr>
+  nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_Compile()<cr>
   xnoremap <buffer> <Plug>Tex_Compile :call Tex_PartCompile()<cr>
   nnoremap <buffer> <Plug>Tex_View :call Tex_ViewOutp()<cr>
   nnoremap <buffer> <Plug>Tex_ForwardSearch :call Tex_ForwardSearchLaTeX()<cr>

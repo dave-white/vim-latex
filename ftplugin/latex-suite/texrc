@@ -25,14 +25,16 @@ func! RcLet(varNm, ...)
   endif
 
   if exists(a:varNm)
-    if type({a:varNm}) == v:t_dict
-      if !has_key({a:varNm}, l:key)
-	let {a:varNm}[l:key] = l:val
+    if (a:0 > 1)
+      if type({a:varNm}) == v:t_dict
+	if (a:0 > 1) && !has_key({a:varNm}, l:key)
+	  let {a:varNm}[l:key] = l:val
+	  return 1
+	endif
+      elseif type({a:varNm}) == v:t_list
+	call add({a:varNm}, l:val)
 	return 1
       endif
-    elseif type({a:varNm}) == v:t_list
-      call add({a:varNm}, l:val)
-      return 1
     endif
   else
     let {a:varNm} = l:val
@@ -81,10 +83,11 @@ call RcLet("b:tex_dfltTarg", "pdf")
 call RcLet("b:tex_doMultCompile", 1)
 " A comma seperated list of formats which need multiple compilations to be
 " correctly compiled.
-call RcLet("g:tex_multCompileFmts", 'dvi,pdf')
+call RcLet("g:tex_multCompileFmts", ["dvi", "pdf"])
 
 " Uncomment this line if you compile ps files via dvi files.
-" call RcLet("g:tex_FormatDependency_ps", ['dvi', 'ps'])
+call RcLet("g:tex_fmtDeps_ps", ['dvi', 'ps'])
+call RcLet("g:tex_fmtDeps_pdf")
 
 " --------------------------------------------------------------------------
 " Compiler rules {{{
@@ -95,7 +98,6 @@ call RcLet("g:tex_multCompileFmts", 'dvi,pdf')
 " output, so use it with care. The '-file-line-error' flag helps sanitize 
 " LaTeX error messages for processing by Vim.
 "relative to dir of main tex file
-"call RcLet("b:tex_outpDir", '')
 
 call RcLet("g:tex_compilePrg_dvi", 'latex -interaction=nonstopmode '
       \.'-file-line-error-style "$*"')
@@ -109,8 +111,8 @@ call RcLet("g:tex_compilePrg_ps", 'dvips -Ppdf -o "$*.ps" "$*.dvi"')
 "       possible.
 " Synctex is now supported by pdflatex.
 
-call RcLet("b:tex_outpDir", '')
-call RcLet("b:tex_jobNm", '')
+call RcLet("b:tex_outpDir", "")
+call RcLet("b:tex_jobNm", "")
 " Build CLI `pdflatex` command. {{{
 call RcLet("b:tex_compilePrg_pdf", 'pdflatex')
 " Initialize command line option dictionary.
@@ -244,7 +246,7 @@ call RcLet("g:tex_viewPrgComplete_dvi", '')
 " This is a handy way of specifying which warnings/errors to ignore. This is 
 " a
 " list of patterns seperated by '¡'
-call RcLet("g:tex_ignWarnings", 
+call RcLet("g:tex_ignWarnPats", 
       \ 'Underfull'."\n".
       \ 'Overfull'."\n".
       \ 'specifier changed to'."\n".
@@ -315,7 +317,7 @@ call RcLet("g:tex_rmvTmpFiles", 1)
 " Use a valid vim expression here if you want to customize the way 
 " latex-suite
 " searches for a master file from within another file.
-call RcLet("g:tex_mainFileXpr", "main")
+call RcLet("b:tex_mainFileXpr", "main")
 
 " }}}
 " ==========================================================================

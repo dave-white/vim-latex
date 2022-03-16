@@ -1134,7 +1134,7 @@ endfunction " }}}
 if executable('awk')
 
   func! Tex_IsPresentInFile(regex, file)
-    let l:awkCmd = "awk"
+    let l:awkCmd = "awk "
     let l:awkCmd .= "'BEGIN { ret = 0 } "
     let l:awkCmd .= "/".a:regex."/ "
     let l:awkCmd .= "{ ret = 1; exit } "
@@ -1174,68 +1174,6 @@ else
   endfunction
 endif
 " }}}
-" Tex_CatFile: returns the contents of a file in a <NL> seperated string 
-" {{{
-if exists('*readfile')
-  function! Tex_CatFile(filename)
-    if glob(a:filename) == ''
-      return ''
-    endif
-    return join(readfile(a:filename), "\n")
-  endfunction
-elseif Tex_UsePython()
-  function! Tex_CatFile(filename)
-    " catFile assigns a value to retval
-    exec g:tex_pythonCmd . ' catFile(r"'.a:filename.'")'
-
-    return retval
-  endfunction
-else
-  function! Tex_CatFile(filename)
-    if glob(a:filename) == ''
-      return ''
-    endif
-
-    call Tex_GotoTempFile()
-
-    silent! 1,$ d _
-
-    let _report = &report
-    let _sc = &sc
-    set report=9999999 nosc
-    exec 'silent! 0r! '.g:tex_catCmd.' '.a:filename
-
-    set nomod
-    let _a = @a
-    silent! normal! ggVG"ay
-    let retval = @a
-    call setreg("a", _a, "c")
-
-    silent! bd
-    let &report = _report
-    let &sc = _sc
-    return retval
-  endfunction
-endif
-" }}}
-" Tex_DeleteFile: removes a file if present {{{
-" Description: 
-if Tex_UsePython()
-  function! Tex_DeleteFile(filename)
-    exec g:tex_pythonCmd . ' deleteFile(r"'.a:filename.'")'
-
-    if exists('retval')
-      return retval
-    endif
-  endfunction else
-  function! Tex_DeleteFile(filename)
-    if filereadable(a:filename)
-      exec '! '.g:tex_rmCmd.' '.a:filename
-    endif
-  endfunction
-endif
-" }}}
-
 
 let &cpo = s:save_cpo
 
