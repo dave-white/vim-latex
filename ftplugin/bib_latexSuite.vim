@@ -8,7 +8,7 @@
 "
 
 if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
-	finish
+  finish
 endif
 
 " source main.vim because we need a few functions from it.
@@ -19,4 +19,4 @@ runtime ftplugin/latex-suite/bibtex.vim
 " Infect the current buffer with <buffer>-local imaps for the IMAPs
 call IMAP_infect()
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4:nowrap
+" vim:fdm=marker:ff=unix:noet

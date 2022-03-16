@@ -84,7 +84,7 @@
 " }}}
 
 if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
-	finish
+  finish
 endif
 
 " line continuation used here.
@@ -96,13 +96,13 @@ set cpo&vim
 " ============================================================================== 
 " Options {{{
 if !exists('g:Imap_StickyPlaceHolders')
-	let g:Imap_StickyPlaceHolders = 1
+  let g:Imap_StickyPlaceHolders = 1
 endif
 if !exists('g:Imap_DeleteEmptyPlaceHolders')
-	let g:Imap_DeleteEmptyPlaceHolders = 1
+  let g:Imap_DeleteEmptyPlaceHolders = 1
 endif
 if !exists('g:Imap_GoToSelectMode')
-	let g:Imap_GoToSelectMode = 1
+  let g:Imap_GoToSelectMode = 1
 endif
 " }}}
 " Variables {{{
@@ -156,176 +156,176 @@ endif
 "   [bg]:Imap_PlaceHolderStart and [bg]:Imap_PlaceHolderEnd settings.
 "
 function! IMAP(lhs, rhs, ft, ...)
-	" Find the place holders to save for IMAP_PutTextWithMovement() .
-	if a:0 < 2
-		let phs = '<+'
-		let phe = '+>'
+  " Find the place holders to save for IMAP_PutTextWithMovement() .
+  if a:0 < 2
+	let phs = '<+'
+	let phe = '+>'
+  else
+	let phs = a:1
+	let phe = a:2
+  endif
+
+  let hash = s:Hash(a:lhs)
+  let s:Map_{a:ft}_{hash} = a:rhs
+  let s:phs_{a:ft}_{hash} = phs
+  let s:phe_{a:ft}_{hash} = phe
+
+  " Add a:lhs to the list of left-hand sides that end with lastLHSChar:
+  let lastLHSChar = s:MultiByteLastCharacter(a:lhs)
+  if lastLHSChar =~ "\\s"
+	return
+  endif
+  let hash = s:Hash(lastLHSChar)
+  if !exists("s:LHS_" . a:ft . "_" . hash)
+	let s:LHS_{a:ft}_{hash} = escape(a:lhs, '\')
+  else
+	" Check whether this lhs is already mapped.
+	if a:lhs !~# '\V\^\%(' . s:LHS_{a:ft}_{hash} . '\)\$'
+	  let s:LHS_{a:ft}_{hash} = escape(a:lhs, '\') .'\|'.  s:LHS_{a:ft}_{hash}
+	endif
+  endif
+
+  " Add lastLHSChar to s:LHS_{ft}
+  if a:ft != ''
+	if !exists('s:LHS_'.a:ft)
+	  let s:LHS_{a:ft} = []
+	endif
+	if index(s:LHS_{a:ft}, lastLHSChar) < 0
+	  call add(s:LHS_{a:ft}, lastLHSChar )
+	endif
+  endif
+
+  " Only add a imap if it is a global IMAP or we are in the correct filetype
+  " (then, we add a <buffer>-local imap, other buffers have to be infected
+  " with IMAP_infect).
+  if a:ft != ''
+	if &ft == a:ft
+	  let buffer = '<buffer>'
 	else
-		let phs = a:1
-		let phe = a:2
+	  return
 	endif
+  else
+	let buffer = ''
+  endif
 
-	let hash = s:Hash(a:lhs)
-	let s:Map_{a:ft}_{hash} = a:rhs
-	let s:phs_{a:ft}_{hash} = phs
-	let s:phe_{a:ft}_{hash} = phe
-
-	" Add a:lhs to the list of left-hand sides that end with lastLHSChar:
-	let lastLHSChar = s:MultiByteLastCharacter(a:lhs)
-	if lastLHSChar =~ "\\s"
-		return
-	endif
-	let hash = s:Hash(lastLHSChar)
-	if !exists("s:LHS_" . a:ft . "_" . hash)
-		let s:LHS_{a:ft}_{hash} = escape(a:lhs, '\')
-	else
-		" Check whether this lhs is already mapped.
-		if a:lhs !~# '\V\^\%(' . s:LHS_{a:ft}_{hash} . '\)\$'
-			let s:LHS_{a:ft}_{hash} = escape(a:lhs, '\') .'\|'.  s:LHS_{a:ft}_{hash}
-		endif
-	endif
-
-	" Add lastLHSChar to s:LHS_{ft}
-	if a:ft != ''
-		if !exists('s:LHS_'.a:ft)
-			let s:LHS_{a:ft} = []
-		endif
-		if index(s:LHS_{a:ft}, lastLHSChar) < 0
-			call add(s:LHS_{a:ft}, lastLHSChar )
-		endif
-	endif
-
-	" Only add a imap if it is a global IMAP or we are in the correct filetype
-	" (then, we add a <buffer>-local imap, other buffers have to be infected
-	" with IMAP_infect).
-	if a:ft != ''
-		if &ft == a:ft
-			let buffer = '<buffer>'
-		else
-			return
-		endif
-	else
-		let buffer = ''
-	endif
-
-	" map only the last character of the left-hand side.
-	call s:IMAP_add_imap( lastLHSChar, buffer )
-endfunction
+  " map only the last character of the left-hand side.
+  call s:IMAP_add_imap( lastLHSChar, buffer )
+endfunc
 
 " }}}
 " IUNMAP: Removes a "fake" insert mode mapping. {{{
 function! IUNMAP(lhs, ft)
-	let lastLHSChar = s:MultiByteLastCharacter(a:lhs)
-	let charHash = s:Hash(lastLHSChar)
+  let lastLHSChar = s:MultiByteLastCharacter(a:lhs)
+  let charHash = s:Hash(lastLHSChar)
 
-	" Check whether the mapping exists
-	if exists("s:LHS_" . a:ft . "_" . charHash)
-				\ && a:lhs =~# '\V\^\%(' . s:LHS_{a:ft}_{charHash} . '\)\$'
+  " Check whether the mapping exists
+  if exists("s:LHS_" . a:ft . "_" . charHash)
+		\ && a:lhs =~# '\V\^\%(' . s:LHS_{a:ft}_{charHash} . '\)\$'
 
-		" Remove lhs from the list of mappings
-		let s:LHS_{a:ft}_{charHash} = substitute(s:LHS_{a:ft}_{charHash},
-					\ '\V\(\^\|\\|\)' . escape(escape(a:lhs, '\'), '\') . '\(\$\|\\|\)',
-					\ '\\|', '')
+	" Remove lhs from the list of mappings
+	let s:LHS_{a:ft}_{charHash} = substitute(s:LHS_{a:ft}_{charHash},
+		  \ '\V\(\^\|\\|\)' . escape(escape(a:lhs, '\'), '\') . '\(\$\|\\|\)',
+		  \ '\\|', '')
 
-		" Remove leading/trailing '\|'
-		let s:LHS_{a:ft}_{charHash} = substitute(s:LHS_{a:ft}_{charHash}, '^\\|\|\\|$', '', '')
+	" Remove leading/trailing '\|'
+	let s:LHS_{a:ft}_{charHash} = substitute(s:LHS_{a:ft}_{charHash}, '^\\|\|\\|$', '', '')
 
-		let hash = s:Hash(a:lhs)
-		unlet s:Map_{a:ft}_{hash}
-		unlet s:phs_{a:ft}_{hash}
-		unlet s:phe_{a:ft}_{hash}
+	let hash = s:Hash(a:lhs)
+	unlet s:Map_{a:ft}_{hash}
+	unlet s:phs_{a:ft}_{hash}
+	unlet s:phe_{a:ft}_{hash}
 
-		if strlen(s:LHS_{a:ft}_{charHash}) == 0
-			" No more mappings left for this lastLHSChar.
-			let idx = index(s:LHS_{a:ft}, lastLHSChar)
-			if idx >= 0
-				call remove(s:LHS_{a:ft}, idx )
-			endif
+	if strlen(s:LHS_{a:ft}_{charHash}) == 0
+	  " No more mappings left for this lastLHSChar.
+	  let idx = index(s:LHS_{a:ft}, lastLHSChar)
+	  if idx >= 0
+		call remove(s:LHS_{a:ft}, idx )
+	  endif
 
-			" Check for ft and unmap the last character of the left-hand side.
-			" (if ft is set, other buffers with the same ft have to be updated with
-			" IMAP_desinfect() and IMAP_infect()).
-			if a:ft != ''
-				if &ft == a:ft
-					call s:IMAP_rm_imap( lastLHSChar, '<buffer>' )
-				endif
-			else
-				call s:IMAP_rm_imap( lastLHSChar, '' )
-			endif
+	  " Check for ft and unmap the last character of the left-hand side.
+	  " (if ft is set, other buffers with the same ft have to be updated with
+	  " IMAP_desinfect() and IMAP_infect()).
+	  if a:ft != ''
+		if &ft == a:ft
+		  call s:IMAP_rm_imap( lastLHSChar, '<buffer>' )
 		endif
-
-	else
-		" a:lhs is not mapped!
-		" Do nothing.
+	  else
+		call s:IMAP_rm_imap( lastLHSChar, '' )
+	  endif
 	endif
-endfunction
+
+  else
+	" a:lhs is not mapped!
+	" Do nothing.
+  endif
+endfunc
 " }}}
 " IMAP_infect: Infect the current buffer with ft IMAPS. {{{
 function! IMAP_infect()
-	if &ft != '' && exists('s:LHS_'.&ft)
-		for lastLHSChar in s:LHS_{&ft}
-			call s:IMAP_add_imap( lastLHSChar, '<buffer>' )
-		endfor
-	endif
-endfunction
+  if &ft != '' && exists('s:LHS_'.&ft)
+	for lastLHSChar in s:LHS_{&ft}
+	  call s:IMAP_add_imap( lastLHSChar, '<buffer>' )
+	endfor
+  endif
+endfunc
 " }}}
 " IMAP_desinfect: Desinfect the current buffer with ft IMAPS. {{{
 function! IMAP_desinfect()
-	if exists('b:IMAP_imaps')
-		for lastLHSChar in copy(b:IMAP_imaps)
-			call s:IMAP_rm_imap( lastLHSChar, '<buffer>' )
-		endfor
-	endif
-endfunction
+  if exists('b:IMAP_imaps')
+	for lastLHSChar in copy(b:IMAP_imaps)
+	  call s:IMAP_rm_imap( lastLHSChar, '<buffer>' )
+	endfor
+  endif
+endfunc
 " }}}
 " IMAP_list:  list the rhs and place holders corresponding to a:lhs {{{
 "
 " Added mainly for debugging purposes, but maybe worth keeping.
 function! IMAP_list(lhs)
-	let char = s:MultiByteLastCharacter(a:lhs)
-	let charHash = s:Hash(char)
-	if exists("s:LHS_" . &ft ."_". charHash)
-				\ && a:lhs =~# '\V\^\%(' . s:LHS_{&ft}_{charHash} . '\)\$'
-		let ft = &ft
-	elseif exists("s:LHS__" . charHash)
-				\ && a:lhs =~# '\V\^\%(' . s:LHS__{charHash} . '\)\$'
-		let ft = ""
-	else
-		return ""
-	endif
-	let hash = s:Hash(a:lhs)
-	return "rhs = " . strtrans( s:Map_{ft}_{hash} ) . " place holders = " .
-				\ s:phs_{ft}_{hash} . " and " . s:phe_{ft}_{hash}
-endfunction
+  let char = s:MultiByteLastCharacter(a:lhs)
+  let charHash = s:Hash(char)
+  if exists("s:LHS_" . &ft ."_". charHash)
+		\ && a:lhs =~# '\V\^\%(' . s:LHS_{&ft}_{charHash} . '\)\$'
+	let ft = &ft
+  elseif exists("s:LHS__" . charHash)
+		\ && a:lhs =~# '\V\^\%(' . s:LHS__{charHash} . '\)\$'
+	let ft = ""
+  else
+	return ""
+  endif
+  let hash = s:Hash(a:lhs)
+  return "rhs = " . strtrans( s:Map_{ft}_{hash} ) . " place holders = " .
+		\ s:phs_{ft}_{hash} . " and " . s:phe_{ft}_{hash}
+endfunc
 " }}}
 " IMAP_list_all:  list all the rhs and place holders with lhs ending in a:char {{{
 function! IMAP_list_all(char)
-	let result = ''
-	let charHash = s:Hash(a:char)
-	if &ft == ''
-		let ft_list = ['']
-	else
-		let ft_list = [&ft, '']
-	endif
+  let result = ''
+  let charHash = s:Hash(a:char)
+  if &ft == ''
+	let ft_list = ['']
+  else
+	let ft_list = [&ft, '']
+  endif
 
-	" Loop over current file type and global IMAPs
-	for ft in ft_list
-		if ft == ''
-			let ft_display = 'global: '
-		else
-			let ft_display = ft . ': '
-		endif
-		if exists("s:LHS_" . ft ."_". charHash)
-			for lhs in split( s:LHS_{ft}_{charHash}, '\\|' )
-				" Undo the escaping of backslashes in lhs
-				let lhs = substitute(lhs, '\\\\', '\', 'g')
-				let hash = s:Hash(lhs)
-				let result .= ft_display . lhs . " => " . strtrans( s:Map_{ft}_{hash} ) . "\n"
-			endfor
-		endif
-	endfor
-	return result
-endfunction
+  " Loop over current file type and global IMAPs
+  for ft in ft_list
+	if ft == ''
+	  let ft_display = 'global: '
+	else
+	  let ft_display = ft . ': '
+	endif
+	if exists("s:LHS_" . ft ."_". charHash)
+	  for lhs in split( s:LHS_{ft}_{charHash}, '\\|' )
+		" Undo the escaping of backslashes in lhs
+		let lhs = substitute(lhs, '\\\\', '\', 'g')
+		let hash = s:Hash(lhs)
+		let result .= ft_display . lhs . " => " . strtrans( s:Map_{ft}_{hash} ) . "\n"
+	  endfor
+	endif
+  endfor
+  return result
+endfunc
 " }}}
 " LookupCharacter: inserts mapping corresponding to this character {{{
 "
@@ -334,82 +334,82 @@ endfunction
 " corresponding rhs saved in s:Map_{ft}_{lhs} .
 " The place-holder variables are passed to IMAP_PutTextWithMovement() .
 function! s:LookupCharacter(char)
-	if IMAP_GetVal('Imap_FreezeImap', 0) == 1
-		return a:char
-	endif
+  if IMAP_GetVal('Imap_FreezeImap', 0) == 1
+	return a:char
+  endif
 
-	let charHash = s:Hash(a:char)
+  let charHash = s:Hash(a:char)
 
-	" The line so far, including the character that triggered this function:
-	let linestart = strpart(getline("."), 0, col(".")-1)
-	let text = linestart . a:char
-	" Prefer a local map to a global one, even if the local map is shorter.
-	" Is this what we want?  Do we care?
-	" Use '\V' (very no-magic) so that only '\' is special, and it was already
-	" escaped when building up s:LHS_{&ft}_{charHash} .
-	if exists("s:LHS_" . &ft . "_" . charHash)
-				\ && text =~ "\\C\\V\\%(" . s:LHS_{&ft}_{charHash} . "\\)\\$"
-		let ft = &ft
-	elseif exists("s:LHS__" . charHash)
-				\ && text =~ "\\C\\V\\%(" . s:LHS__{charHash} . "\\)\\$"
-		let ft = ""
-	else
-		" If this is a character which could have been used to trigger an
-		" abbreviation, check if an abbreviation exists.
-		if a:char !~ '\k'
-			let lastword = matchstr(linestart, '\k\+$', '')
-			call IMAP_Debug('getting lastword = ['.lastword.']', 'imap')
-			if lastword != ''
-				let abbreviationRHS = maparg( lastword, 'i', 1 )
+  " The line so far, including the character that triggered this function:
+  let linestart = strpart(getline("."), 0, col(".")-1)
+  let text = linestart . a:char
+  " Prefer a local map to a global one, even if the local map is shorter.
+  " Is this what we want?  Do we care?
+  " Use '\V' (very no-magic) so that only '\' is special, and it was already
+  " escaped when building up s:LHS_{&ft}_{charHash} .
+  if exists("s:LHS_" . &ft . "_" . charHash)
+		\ && text =~ "\\C\\V\\%(" . s:LHS_{&ft}_{charHash} . "\\)\\$"
+	let ft = &ft
+  elseif exists("s:LHS__" . charHash)
+		\ && text =~ "\\C\\V\\%(" . s:LHS__{charHash} . "\\)\\$"
+	let ft = ""
+  else
+	" If this is a character which could have been used to trigger an
+	" abbreviation, check if an abbreviation exists.
+	if a:char !~ '\k'
+	  let lastword = matchstr(linestart, '\k\+$', '')
+	  call IMAP_Debug('getting lastword = ['.lastword.']', 'imap')
+	  if lastword != ''
+		let abbreviationRHS = maparg( lastword, 'i', 1 )
 
-				call IMAP_Debug('getting abbreviationRHS = ['.abbreviationRHS.']', 'imap')
+		call IMAP_Debug('getting abbreviationRHS = ['.abbreviationRHS.']', 'imap')
 
-				if abbreviationRHS == ''
-					return a:char
-				endif
-
-				let abbreviationRHS = escape(abbreviationRHS, '\<"')
-				exec 'let abbreviationRHS = "'.abbreviationRHS.'"'
-
-				let lhs = lastword.a:char
-				let rhs = abbreviationRHS.a:char
-				let phs = IMAP_GetPlaceHolderStart()
-				let phe = IMAP_GetPlaceHolderEnd()
-			else
-				return a:char
-			endif
-		else
-			return a:char
+		if abbreviationRHS == ''
+		  return a:char
 		endif
-	endif
-	" Find the longest left-hand side that matches the line so far.
-	" matchstr() returns the match that starts first. This automatically
-	" ensures that the longest LHS is used for the mapping.
-	if !exists('lhs') || !exists('rhs')
-		let lhs = matchstr(text, "\\C\\V\\%(" . s:LHS_{ft}_{charHash} . "\\)\\$")
-		let hash = s:Hash(lhs)
-		let rhs = s:Map_{ft}_{hash}
-		let phs = s:phs_{ft}_{hash} 
-		let phe = s:phe_{ft}_{hash}
-	endif
 
-	if strlen(lhs) == 0
+		let abbreviationRHS = escape(abbreviationRHS, '\<"')
+		exec 'let abbreviationRHS = "'.abbreviationRHS.'"'
+
+		let lhs = lastword.a:char
+		let rhs = abbreviationRHS.a:char
+		let phs = IMAP_GetPlaceHolderStart()
+		let phe = IMAP_GetPlaceHolderEnd()
+	  else
 		return a:char
+	  endif
+	else
+	  return a:char
 	endif
+  endif
+  " Find the longest left-hand side that matches the line so far.
+  " matchstr() returns the match that starts first. This automatically
+  " ensures that the longest LHS is used for the mapping.
+  if !exists('lhs') || !exists('rhs')
+	let lhs = matchstr(text, "\\C\\V\\%(" . s:LHS_{ft}_{charHash} . "\\)\\$")
+	let hash = s:Hash(lhs)
+	let rhs = s:Map_{ft}_{hash}
+	let phs = s:phs_{ft}_{hash} 
+	let phe = s:phe_{ft}_{hash}
+  endif
 
-	" enough back-spaces to erase the left-hand side
-	let bs = repeat("\<bs>", s:MultiByteStrlen(lhs))
+  if strlen(lhs) == 0
+	return a:char
+  endif
 
-	" \<c-g>u inserts an undo point
-	let result = a:char . "\<c-g>u" . bs . IMAP_PutTextWithMovement(rhs, phs, phe)
+  " enough back-spaces to erase the left-hand side
+  let bs = repeat("\<bs>", s:MultiByteStrlen(lhs))
 
-	if a:char !~? '[a-z0-9]'
-		" If 'a:char' is not a letter or number, insert it literally.
-		let result = "\<c-v>" . result
-	endif
+  " \<c-g>u inserts an undo point
+  let result = a:char . "\<c-g>u" . bs . IMAP_PutTextWithMovement(rhs, phs, phe)
 
-	return result
-endfunction
+  if a:char !~? '[a-z0-9]'
+	" If 'a:char' is not a letter or number, insert it literally.
+	let result = "\<c-v>" . result
+  endif
+
+  return result
+endfunc
 
 " }}}
 " IMAP_PutTextWithMovement: returns the string with movement appended {{{
@@ -423,62 +423,62 @@ endfunction
 "   [bg]:Imap_PlaceHolderEnd.
 function! IMAP_PutTextWithMovement(str, ...)
 
-	" The placeholders used in the particular input string. These can be
-	" different from what the user wants to use.
-	if a:0 < 2
-		let phs = '<+'
-		let phe = '+>'
-	else
-		let phs = escape(a:1, '\')
-		let phe = escape(a:2, '\')
-	endif
+  " The placeholders used in the particular input string. These can be
+  " different from what the user wants to use.
+  if a:0 < 2
+	let phs = '<+'
+	let phe = '+>'
+  else
+	let phs = escape(a:1, '\')
+	let phe = escape(a:2, '\')
+  endif
 
-	let text = a:str
+  let text = a:str
 
-	" The user's placeholder settings.
-	let phsUser = IMAP_GetPlaceHolderStart()
-	let pheUser = IMAP_GetPlaceHolderEnd()
+  " The user's placeholder settings.
+  let phsUser = IMAP_GetPlaceHolderStart()
+  let pheUser = IMAP_GetPlaceHolderEnd()
 
-	let pattern = '\V\(\.\{-}\)' .phs. '\(\.\{-}\)' .phe. '\(\.\*\)'
-	" If there are no placeholders, just return the text.
-	if text !~ pattern
-		call IMAP_Debug('Not getting '.phs.' and '.phe.' in '.text, 'imap')
-		return text
-	endif
-	" Break text up into "initial <+template+> final"; any piece may be empty.
-	let initial  = substitute(text, pattern, '\1', '')
-	let template = substitute(text, pattern, '\2', '')
-	let final    = substitute(text, pattern, '\3', '')
-
-	" If the user does not want to use placeholders, then remove all but the
-	" first placeholder.
-	" Otherwise, replace all occurences of the placeholders here with the
-	" user's choice of placeholder settings.
-	if exists('g:Imap_UsePlaceHolders') && !g:Imap_UsePlaceHolders
-		let final = substitute(final, '\V'.phs.'\.\{-}'.phe, '', 'g')
-	else
-		let final = substitute(final, '\V'.phs.'\(\.\{-}\)'.phe,
-					\ phsUser.'\1'.pheUser, 'g')
-	endif
-
-	" Build up the text to insert:
-	" 1. the initial text plus an extra character;
-	" 2. go to Normal mode with <C-\><C-N>, so it works even if 'insertmode'
-	" is set, and mark the position;
-	" 3. replace the extra character with tamplate and final;
-	" 4. back to Normal mode and restore the cursor position;
-	" 5. call IMAP_Jumpfunc().
-	let template = phsUser . template . pheUser
-	" Old trick:  insert and delete a character to get the same behavior at
-	" start, middle, or end of line and on empty lines.
-	let text = initial . "X\<C-\>\<C-N>:call IMAP_Mark('set')\<CR>\"_s"
-	let text = text . template . final
-	let text = text . "\<C-\>\<C-N>:call IMAP_Mark('go')\<CR>"
-	let text = text . ":call IMAP_Jumpfunc('', 1)\<CR>"
-
-	call IMAP_Debug('IMAP_PutTextWithMovement: text = ['.text.']', 'imap')
+  let pattern = '\V\(\.\{-}\)' .phs. '\(\.\{-}\)' .phe. '\(\.\*\)'
+  " If there are no placeholders, just return the text.
+  if text !~ pattern
+	call IMAP_Debug('Not getting '.phs.' and '.phe.' in '.text, 'imap')
 	return text
-endfunction
+  endif
+  " Break text up into "initial <+template+> final"; any piece may be empty.
+  let initial  = substitute(text, pattern, '\1', '')
+  let template = substitute(text, pattern, '\2', '')
+  let final    = substitute(text, pattern, '\3', '')
+
+  " If the user does not want to use placeholders, then remove all but the
+  " first placeholder.
+  " Otherwise, replace all occurences of the placeholders here with the
+  " user's choice of placeholder settings.
+  if exists('g:Imap_UsePlaceHolders') && !g:Imap_UsePlaceHolders
+	let final = substitute(final, '\V'.phs.'\.\{-}'.phe, '', 'g')
+  else
+	let final = substitute(final, '\V'.phs.'\(\.\{-}\)'.phe,
+		  \ phsUser.'\1'.pheUser, 'g')
+  endif
+
+  " Build up the text to insert:
+  " 1. the initial text plus an extra character;
+  " 2. go to Normal mode with <C-\><C-N>, so it works even if 'insertmode'
+  " is set, and mark the position;
+  " 3. replace the extra character with tamplate and final;
+  " 4. back to Normal mode and restore the cursor position;
+  " 5. call IMAP_Jumpfunc().
+  let template = phsUser . template . pheUser
+  " Old trick:  insert and delete a character to get the same behavior at
+  " start, middle, or end of line and on empty lines.
+  let text = initial . "X\<C-\>\<C-N>:call IMAP_Mark('set')\<CR>\"_s"
+  let text = text . template . final
+  let text = text . "\<C-\>\<C-N>:call IMAP_Mark('go')\<CR>"
+  let text = text . ":call IMAP_Jumpfunc('', 1)\<CR>"
+
+  call IMAP_Debug('IMAP_PutTextWithMovement: text = ['.text.']', 'imap')
+  return text
+endfunc
 
 " }}}
 " IMAP_Jumpfunc: takes user to next <+place-holder+> {{{
@@ -498,66 +498,66 @@ endfunction
 "            should use a zero value.
 function! IMAP_Jumpfunc(direction, inclusive)
 
-	" The user's placeholder settings.
-	let phsUser = IMAP_GetPlaceHolderStart()
-	let pheUser = IMAP_GetPlaceHolderEnd()
+  " The user's placeholder settings.
+  let phsUser = IMAP_GetPlaceHolderStart()
+  let pheUser = IMAP_GetPlaceHolderEnd()
 
-	" Set up flags for the search() function
-	let flags = a:direction
-	if a:inclusive
-		let flags .= 'c'
-	end
+  " Set up flags for the search() function
+  let flags = a:direction
+  if a:inclusive
+	let flags .= 'c'
+  endif
 
-	let searchString = '\V'.phsUser.'\_.\{-}'.pheUser
+  let searchString = '\V'.phsUser.'\_.\{-}'.pheUser
 
-	" If we didn't find any placeholders return quietly.
-	if !search(searchString, flags)
-		return
-	endif
+  " If we didn't find any placeholders return quietly.
+  if !search(searchString, flags)
+	return
+  endif
 
-	" Open any closed folds and make this part of the text visible.
-	normal! zv
+  " Open any closed folds and make this part of the text visible.
+  normal! zv
 
-	" We are at the starting placeholder. Start visual mode.
-	normal! v
+  " We are at the starting placeholder. Start visual mode.
+  normal! v
 
-	" Calculate if we have an empty placeholder. It is empty if both
-	" placeholders appear one after the other.
-	" Check also whether the empty placeholder ends at the end of the line.
-	let curline = strpart(getline('.'), col('.')-1)
-	let phUser = phsUser.pheUser
-	let placeHolderEmpty = (strpart(curline,0,strlen(phUser)) ==# phUser)
-	let placeHolderEOL = (curline ==# phUser)
+  " Calculate if we have an empty placeholder. It is empty if both
+  " placeholders appear one after the other.
+  " Check also whether the empty placeholder ends at the end of the line.
+  let curline = strpart(getline('.'), col('.')-1)
+  let phUser = phsUser.pheUser
+  let placeHolderEmpty = (strpart(curline,0,strlen(phUser)) ==# phUser)
+  let placeHolderEOL = (curline ==# phUser)
 
-	" Search for the end placeholder and position the cursor.
-	call search(searchString, 'ce')
+  " Search for the end placeholder and position the cursor.
+  call search(searchString, 'ce')
 
-	" If we are selecting in exclusive mode, then we need to move one step to
-	" the right
-	if &selection == 'exclusive'
-		normal! l
-	endif
+  " If we are selecting in exclusive mode, then we need to move one step to
+  " the right
+  if &selection == 'exclusive'
+	normal! l
+  endif
 
-	" Now either goto insert mode, visual mode or select mode.
-	if placeHolderEmpty && g:Imap_DeleteEmptyPlaceHolders
-		" Delete the empty placeholder into the blackhole.
-		normal! "_d
-		" Start insert mode. If the placeholder was at the end of the line, use
-		" startinsert! (equivalent to 'A'), otherwise startinsert (equiv. 'i')
-		if placeHolderEOL
-			startinsert!
-		else
-			startinsert
-		endif
+  " Now either goto insert mode, visual mode or select mode.
+  if placeHolderEmpty && g:Imap_DeleteEmptyPlaceHolders
+	" Delete the empty placeholder into the blackhole.
+	normal! "_d
+	" Start insert mode. If the placeholder was at the end of the line, use
+	" startinsert! (equivalent to 'A'), otherwise startinsert (equiv. 'i')
+	if placeHolderEOL
+	  startinsert!
 	else
-		if g:Imap_GoToSelectMode
-			" Go to select mode
-			execute "normal! \<C-g>"
-		else
-			" Do not go to select mode
-		endif
+	  startinsert
 	endif
-endfunction
+  else
+	if g:Imap_GoToSelectMode
+	  " Go to select mode
+	  execute "normal! \<C-g>"
+	else
+	  " Do not go to select mode
+	endif
+  endif
+endfunc
 " }}}
 " Maps for IMAP_Jumpfunc {{{
 "
@@ -590,19 +590,19 @@ vnoremap <silent> <Plug>IMAP_JumpBack          <C-\><C-N>`<:call IMAP_Jumpfunc('
 "       provided. It is assumed that if the user will create such mappings
 "       hself if e so desires.
 if !hasmapto('<Plug>IMAP_JumpForward', 'i')
-    imap <C-J> <Plug>IMAP_JumpForward
+  imap <C-J> <Plug>IMAP_JumpForward
 endif
 if !hasmapto('<Plug>IMAP_JumpForward', 'n')
-    nmap <C-J> <Plug>IMAP_JumpForward
+  nmap <C-J> <Plug>IMAP_JumpForward
 endif
 if exists('g:Imap_StickyPlaceHolders') && g:Imap_StickyPlaceHolders
-	if !hasmapto('<Plug>IMAP_JumpForward', 'v')
-		vmap <C-J> <Plug>IMAP_JumpForward
-	endif
+  if !hasmapto('<Plug>IMAP_JumpForward', 'v')
+	vmap <C-J> <Plug>IMAP_JumpForward
+  endif
 else
-	if !hasmapto('<Plug>IMAP_DeleteAndJumpForward', 'v')
-		vmap <C-J> <Plug>IMAP_DeleteAndJumpForward
-	endif
+  if !hasmapto('<Plug>IMAP_DeleteAndJumpForward', 'v')
+	vmap <C-J> <Plug>IMAP_DeleteAndJumpForward
+  endif
 endif
 " }}}
 
@@ -614,156 +614,158 @@ endif
 " 	Converts every non alphanumeric character into _{ascii}_ where {ascii} is
 " 	the ASCII code for that character...
 fun! s:Hash(text)
-	return substitute(a:text, '\([^[:alnum:]]\)',
-				\ '\="_".char2nr(submatch(1))."_"', 'g')
-endfun
+  return substitute(a:text, '\([^[:alnum:]]\)',
+		\ '\="_".char2nr(submatch(1))."_"', 'g')
+endfunc
 "" }}}
 " s:IMAP_add_imap() Adds the imap for IMAP {{{
 function! s:IMAP_add_imap( lastLHSChar, buffer )
-	if a:lastLHSChar == ' '
-		for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
-			call s:IMAP_add_imap( lastLHSChar, a:buffer )
-		endfor
-	else
-		if a:buffer =~# '<buffer>'
-			if !exists('b:IMAP_imaps')
-				let b:IMAP_imaps = []
-			endif
-			if index(b:IMAP_imaps, a:lastLHSChar) < 0
-				call add(b:IMAP_imaps, a:lastLHSChar )
-			endif
-		endif
-		exe 'inoremap <silent>' . a:buffer
-					\ escape(a:lastLHSChar, '|')
-					\ '<C-r>=<SID>LookupCharacter("' .
-					\ escape(a:lastLHSChar, '\|"') .
-					\ '")<CR>'
+  if a:lastLHSChar == ' '
+	for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
+	  call s:IMAP_add_imap( lastLHSChar, a:buffer )
+	endfor
+  else
+	if a:buffer =~# '<buffer>'
+	  if !exists('b:IMAP_imaps')
+		let b:IMAP_imaps = []
+	  endif
+	  if index(b:IMAP_imaps, a:lastLHSChar) < 0
+		call add(b:IMAP_imaps, a:lastLHSChar )
+	  endif
 	endif
-endfunction
+	exe 'inoremap <silent>' . a:buffer
+		  \ escape(a:lastLHSChar, '|')
+		  \ '<C-r>=<SID>LookupCharacter("' .
+		  \ escape(a:lastLHSChar, '\|"') .
+		  \ '")<CR>'
+  endif
+endfunc
 " }}}
 " s:IMAP_rm_imap() Removes the imap for IMAP {{{
 function! s:IMAP_rm_imap( lastLHSChar, buffer )
-	if a:lastLHSChar == ' '
-		for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
-			call s:IMAP_rm_imap( lastLHSChar, a:buffer )
-		endfor
-	else
-		if a:buffer =~# '<buffer>' && exists('b:IMAP_imaps')
-			let idx = index(b:IMAP_imaps, a:lastLHSChar)
-			if idx >= 0
-				call remove(b:IMAP_imaps, idx)
-			endif
-		endif
-		exe 'iunmap <silent>' . a:buffer escape(a:lastLHSChar, '|')
+  if a:lastLHSChar == ' '
+	for lastLHSChar in ['<space>', '<s-space>', '<c-space>', '<cs-space>']
+	  call s:IMAP_rm_imap( lastLHSChar, a:buffer )
+	endfor
+  else
+	if a:buffer =~# '<buffer>' && exists('b:IMAP_imaps')
+	  let idx = index(b:IMAP_imaps, a:lastLHSChar)
+	  if idx >= 0
+		call remove(b:IMAP_imaps, idx)
+	  endif
 	endif
-endfunction
+	exe 'iunmap <silent>' . a:buffer escape(a:lastLHSChar, '|')
+  endif
+endfunc
 " }}}
 " IMAP_GetPlaceHolderStart and IMAP_GetPlaceHolderEnd:  "{{{
 " return the buffer local placeholder variables, or the global one, or the default.
 function! IMAP_GetPlaceHolderStart()
-	if exists("b:Imap_PlaceHolderStart") && strlen(b:Imap_PlaceHolderEnd)
-		return b:Imap_PlaceHolderStart
-	elseif exists("g:Imap_PlaceHolderStart") && strlen(g:Imap_PlaceHolderEnd)
-		return g:Imap_PlaceHolderStart
-	else
-		return "<+"
-endfun
+  if exists("b:Imap_PlaceHolderStart") && strlen(b:Imap_PlaceHolderEnd)
+	return b:Imap_PlaceHolderStart
+  elseif exists("g:Imap_PlaceHolderStart") && strlen(g:Imap_PlaceHolderEnd)
+	return g:Imap_PlaceHolderStart
+  else
+	return "<+"
+  endif
+endfunc
 function! IMAP_GetPlaceHolderEnd()
-	if exists("b:Imap_PlaceHolderEnd") && strlen(b:Imap_PlaceHolderEnd)
-		return b:Imap_PlaceHolderEnd
-	elseif exists("g:Imap_PlaceHolderEnd") && strlen(g:Imap_PlaceHolderEnd)
-		return g:Imap_PlaceHolderEnd
-	else
-		return "+>"
-endfun
+  if exists("b:Imap_PlaceHolderEnd") && strlen(b:Imap_PlaceHolderEnd)
+	return b:Imap_PlaceHolderEnd
+  elseif exists("g:Imap_PlaceHolderEnd") && strlen(g:Imap_PlaceHolderEnd)
+	return g:Imap_PlaceHolderEnd
+  else
+	return "+>"
+  endif
+endfunc
 " }}}
 " IMAP_Debug: interface to Tex_Debug if available, otherwise emulate it {{{
 " Description: 
 " Do not want a memory leak! Set this to zero so that imaps always
 " starts out in a non-debugging mode.
 if !exists('g:Imap_Debug')
-	let g:Imap_Debug = 0
+  let g:Imap_Debug = 0
 endif
 function! IMAP_Debug(string, pattern)
-	if !g:Imap_Debug
-		return
-	endif
-	if exists('*Tex_Debug')
-		call Tex_Debug(a:string, a:pattern)
+  if !g:Imap_Debug
+	return
+  endif
+  if exists('*Tex_Debug')
+	call Tex_Debug(a:string, a:pattern)
+  else
+	if !exists('s:debug_'.a:pattern)
+	  let s:debug_{a:pattern} = a:string
 	else
-		if !exists('s:debug_'.a:pattern)
-			let s:debug_{a:pattern} = a:string
-		else
-			let s:debug_{a:pattern} = s:debug_{a:pattern}.a:string
-		endif
+	  let s:debug_{a:pattern} = s:debug_{a:pattern}.a:string
 	endif
-endfunction " }}}
+  endif
+endfunc " }}}
 " IMAP_DebugClear: interface to Tex_DebugClear if avaialable, otherwise emulate it {{{
 " Description: 
 function! IMAP_DebugClear(pattern)
-	if exists('*Tex_DebugClear')
-		call Tex_DebugClear(a:pattern)
-	else	
-		let s:debug_{a:pattern} = ''
-	endif
-endfunction " }}}
+  if exists('*Tex_DebugClear')
+	call Tex_DebugClear(a:pattern)
+  else	
+	let s:debug_{a:pattern} = ''
+  endif
+endfunc " }}}
 " IMAP_PrintDebug: interface to Tex_DebugPrint if avaialable, otherwise emulate it {{{
 " Description: 
 function! IMAP_PrintDebug(pattern)
-	if exists('*Tex_PrintDebug')
-		call Tex_PrintDebug(a:pattern)
-	else
-		if exists('s:debug_'.a:pattern)
-			echo s:debug_{a:pattern}
-		endif
+  if exists('*Tex_PrintDebug')
+	call Tex_PrintDebug(a:pattern)
+  else
+	if exists('s:debug_'.a:pattern)
+	  echo s:debug_{a:pattern}
 	endif
-endfunction " }}}
+  endif
+endfunc " }}}
 " IMAP_Mark:  Save the cursor position (if a:action == 'set') in a" {{{
 " script-local variable; restore this position if a:action == 'go'.
 let s:Mark = "(0,0)"
 let s:initBlanks = ''
 function! IMAP_Mark(action)
-	if a:action == 'set'
-		let s:Mark = "(" . line(".") . "," . col(".") . ")"
-		let s:initBlanks = matchstr(getline('.'), '^\s*')
-	elseif a:action == 'go'
-		execute "call cursor" s:Mark
-		let blanksNow = matchstr(getline('.'), '^\s*')
-		if strlen(blanksNow) > strlen(s:initBlanks)
-			execute 'silent! normal! '.(strlen(blanksNow) - strlen(s:initBlanks)).'l'
-		elseif strlen(blanksNow) < strlen(s:initBlanks)
-			execute 'silent! normal! '.(strlen(s:initBlanks) - strlen(blanksNow)).'h'
-		endif
+  if a:action == 'set'
+	let s:Mark = "(" . line(".") . "," . col(".") . ")"
+	let s:initBlanks = matchstr(getline('.'), '^\s*')
+  elseif a:action == 'go'
+	execute "call cursor" s:Mark
+	let blanksNow = matchstr(getline('.'), '^\s*')
+	if strlen(blanksNow) > strlen(s:initBlanks)
+	  execute 'silent! normal! '.(strlen(blanksNow) - strlen(s:initBlanks)).'l'
+	elseif strlen(blanksNow) < strlen(s:initBlanks)
+	  execute 'silent! normal! '.(strlen(s:initBlanks) - strlen(blanksNow)).'h'
 	endif
-endfunction	"" }}}
+  endif
+endfunc	"" }}}
 " IMAP_GetVal: gets the value of a variable {{{
 " Description: first checks window local, then buffer local etc.
 function! IMAP_GetVal(name, ...)
-	if a:0 > 0
-		let default = a:1
-	else
-		let default = ''
-	endif
-	if exists('w:'.a:name)
-		return w:{a:name}
-	elseif exists('b:'.a:name)
-		return b:{a:name}
-	elseif exists('g:'.a:name)
-		return g:{a:name}
-	else
-		return default
-	endif
-endfunction " }}}
+  if a:0 > 0
+	let default = a:1
+  else
+	let default = ''
+  endif
+  if exists('w:'.a:name)
+	return w:{a:name}
+  elseif exists('b:'.a:name)
+	return b:{a:name}
+  elseif exists('g:'.a:name)
+	return g:{a:name}
+  else
+	return default
+  endif
+endfunc " }}}
 " s:MultiByteStrlen: Same as strlen() but counts multibyte characters {{{
 " instead of bytes.
 function! s:MultiByteStrlen(str)
-	return strlen(substitute(a:str, ".", "x", "g"))
-endfunction " }}}
+  return strlen(substitute(a:str, ".", "x", "g"))
+endfunc " }}}
 " s:MultiByteLastCharacter: Return last multibyte characters {{{
 function! s:MultiByteLastCharacter(str)
-	return matchstr(a:str, ".$")
-endfunction " }}}
+  return matchstr(a:str, ".$")
+endfunc " }}}
 
 let &cpo = s:save_cpo
 
-" vim:ft=vim:ts=4:sw=4:noet:fdm=marker:commentstring=\"\ %s:nowrap
+" vim:ft=vim:noet:fdm=marker:commentstring=\"\ %s:

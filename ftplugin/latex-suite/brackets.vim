@@ -1,4 +1,4 @@
-" ==============================================================================
+" ==========================================================================
 " History: This was originally part of auctex.vim by Carl Mueller.
 "          Srinath Avadhanula incorporated it into latex-suite with
 "          significant modifications.
@@ -29,7 +29,7 @@
 " 
 " These functions make it extremeley easy to do all the \left \right stuff in
 " latex.
-" ============================================================================== 
+" ==========================================================================
 
 " Avoid reinclusion.
 if exists('b:did_brackets')
@@ -125,7 +125,7 @@ nnoremap <silent> <Plug>Tex_LeftRight	:call Tex_PutLeftRight()<CR>
 " Tex_SetBracketingMaps: create mappings for the current buffer {{{
 function! <SID>Tex_SetBracketingMaps()
 
-	if g:Tex_AdvancedMath == 1
+	if g:tex_advMath
 		call Tex_MakeMap('<M-b>', '<Plug>Tex_MathBF', 'i', '<buffer> <silent>')
 		call Tex_MakeMap('<M-c>', '<Plug>Tex_MathCal', 'i', '<buffer> <silent>')
 		call Tex_MakeMap('<M-l>', '<Plug>Tex_LeftRight', 'i', '<buffer> <silent>')

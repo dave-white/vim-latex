@@ -23,8 +23,8 @@
 "			vim.sf.net and also create a cvs tag at that point. We'll try to
 "			"stabilize" that version by releasing a few pre-releases and then
 "			keep that as a stable point.
-function! Tex_Version()
-	return "Latex-Suite: version 1.10.1"
-endfunction 
+func! Tex_Version()
+  return "Latex-Suite: version 1.10.1"
+endfunc 
 
 com! -nargs=0 TVersion echo Tex_Version()

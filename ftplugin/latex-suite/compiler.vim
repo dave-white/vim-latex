@@ -12,14 +12,14 @@ set cpo&vim
 
 func! Tex_GetJobName(...) " {{{
   if a:0 > 0
-    let l:isForMain = a:1
+    let isForMain = a:1
   else
-    let l:isForMain = 0
+    let isForMain = 0
   endif
 
   if !empty(b:tex_jobNm)
     return b:tex_jobNm
-  elseif l:isForMain
+  elseif isForMain
     return fnamemodify(Tex_GetMainFileName(), ':r')
   else
     return expand('%:r')
@@ -28,70 +28,70 @@ endfunc
 " }}}
 func! Tex_GetOutpDir(...) " {{{
   if a:0 < 1
-    let l:fpathHead = expand('%:p:h')
-    let l:mod = ':p'
+    let fpathHead = expand('%:p:h')
+    let mod = ':p'
   elseif a:0 < 2
-    let l:fpathHead = fnamemodify(a:1, ':p:h')
-    let l:mod = ':p'
+    let fpathHead = fnamemodify(a:1, ':p:h')
+    let mod = ':p'
   else
-    let l:fpathHead = fnamemodify(a:1, ':p:h')
-    let l:mod = a:2
+    let fpathHead = fnamemodify(a:1, ':p:h')
+    let mod = a:2
   endif
 
   if !empty(b:tex_outpDir)
-    let l:out_dir = fnameescape(l:fpathHead.'/'.b:tex_outpDir)
-    return fnamemodify(l:out_dir, l:mod)
+    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpDir)
+    return fnamemodify(out_dir, mod)
   else
-    return fnamemodify(l:fpathHead, l:mod)
+    return fnamemodify(fpathHead, mod)
   endif
 endfunc
 " }}}
 " Tex_BldCmd: {{{
 func! Tex_BldCmd(cmd, optDict)
-  let l:rslt = a:cmd
-  for [l:opt, l:val] in items(a:optDict)
-    let l:rslt .= ' '.l:opt
-    if strlen(l:val) > 0
-      let l:rslt .= '="'.l:val.'"'
+  let rslt = a:cmd
+  for [opt, val] in items(a:optDict)
+    let rslt .= ' '.opt
+    if strlen(val) > 0
+      let rslt .= '="'.val.'"'
     endif
   endfor
-  return l:rslt
+  return rslt
 endfunc
 " }}}
 func! Tex_CompileRun(file, cmd, ...)
   if a:0 > 0
-    let l:ignLvl = a:1
+    let ignLvl = a:1
     if a:0 > 1
-      let l:ignWarnPats = a:2
+      let ignWarnPats = a:2
     else
-      let l:ignWarnPats = ""
+      let ignWarnPats = ""
     endif
   else
-    let l:ignLvl = -1
-    let l:ignWarnPats = ""
+    let ignLvl = -1
+    let ignWarnPats = ""
   endif
 
-  let l:origLvl = g:tex_ignLvl
-  let l:origPats = g:tex_ignWarnPats
+  let origLvl = g:tex_ignLvl
+  let origPats = g:tex_ignWarnPats
 
-  if !empty(l:ignWarnPats)
-    let g:tex_ignWarnPats .= g:tex_ignWarnPats.l:ignWarnPats
+  if !empty(ignWarnPats)
+    let g:tex_ignWarnPats .= g:tex_ignWarnPats.ignWarnPats
   endif
-  if l:ignLvl >= 0
-    TCLevel l:ignLvl
+  if ignLvl >= 0
+    exe "TCLevel ".ignLvl
   endif
 
   exec "silent! !".a:cmd." ".a:file
 
-  let l:errLst = Tex_GetErrorList()
-  call Tex_Debug("Tex_CompileRun: errLst = [".l:errLst."]", "comp")
+  let errLst = Tex_GetErrorList()
+  call Tex_Debug("Tex_CompileRun: errLst = [".errLst."]", "comp")
   " If there are any errors, then break from the rest of the steps
-  if l:errLst =~  '\v(error|warning)'
+  if errLst =~  '\v(error|warning)'
     return 1
   endif
 
-  let g:tex_ignLvl = l:origLvl
-  let g:tex_ignWarnPats = l:origPats
+  let g:tex_ignLvl = origLvl
+  let g:tex_ignWarnPats = origPats
 
   return 0
 endfunc
@@ -104,111 +104,120 @@ endfunc
 " then make a file called main.tex.latexmain in the ~/thesis directory.  
 " this will then run "latex main.tex" when Tex_Compile() is called.
 func! Tex_Compile(...)
+  if a:0 < 1
+    let fpath = expand('%:p')
+    let mainTarg = b:tex_dfltTarg
+  elseif a:0 < 2
+    let fpath = a:1
+    let mainTarg = b:tex_dfltTarg
+  else
+    let fpath = a:1
+    let mainTarg = a:2
+  endif
+
   if b:tex_useMake
-    let l:cwd = getcwd()
-    call chdir(fnameescape(fnamemodify(l:fpath, ":p:h")))
+    let cwd = getcwd()
+    call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
     exec 'make!'
-    call chdir(l:cwd)
+    call chdir(cwd)
     redraw!
     return 0
   endif
 
-  if fnamemodify(l:fpath, ":e") != 'tex'
+  if fnamemodify(fpath, ":e") != 'tex'
     echo "calling Tex_Compile from a non-tex file"
     return
   endif
 
-  if a:0 < 1
-    let l:fpath = expand('%:p')
-    let l:mainTarg = b:tex_dfltTarg
-  elseif a:0 < 2
-    let l:fpath = a:1
-    let l:mainTarg = b:tex_dfltTarg
-  else
-    let l:fpath = a:1
-    let l:mainTarg = a:2
-  endif
-
   call Tex_Debug("Tex_Run: "
-	\."compiling to target [".l:mainTarg."]", "comp")
+	\."compiling to target [".mainTarg."]", "comp")
 
   " first get the dependency chain of this format.
-  let l:depChain = [l:mainTarg]
-  if g:tex_fmtDeps_{l:mainTarg}
-    let l:depChain = extendnew(g:tex_fmtDeps_{l:mainTarg}, [l:mainTarg])
+  let depChain = [mainTarg]
+  if g:tex_fmtDeps_{mainTarg}
+    let depChain = extendnew(g:tex_fmtDeps_{mainTarg}, [mainTarg])
   endif
 
   call Tex_Debug('Tex_Run: '
-	\.'getting dependency chain = ['.string(l:depChain).']', 'comp')
+	\.'getting dependency chain = ['.string(depChain).']', 'comp')
 
-  let l:cwd = getcwd()
-  call chdir(fnameescape(fnamemodify(l:fpath, ":p:h")))
-  let l:fname = fnamemodify(l:fpath, ":t")
+  let cwd = getcwd()
+  call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
+  let fname = fnamemodify(fpath, ":t")
 
   if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
     call mkdir(b:tex_outpDir, "p")
   endif
 
-  let l:jobNm = Tex_GetJobName()
-  let l:outpDir = Tex_GetOutpDir(l:fpath)
-  let l:auxFile = l:outpDir.'/'.l:jobNm.'.aux'
-  let l:bblFile = l:outpDir.'/'.l:jobNm.'.bbl'
-  let l:idxFile = l:outpDir.'/'.l:jobNm.'.idx'
+  let jobNm = Tex_GetJobName()
+  let outpDir = Tex_GetOutpDir(fpath)
+  let auxFile = outpDir.'/'.jobNm.'.aux'
+  let bblFile = outpDir.'/'.jobNm.'.bbl'
+  let idxFile = outpDir.'/'.jobNm.'.idx'
+
+  if has('win32')
+    let md5cmd = "Get-FileHash -Algorithm MD5"
+  elseif has('osx')
+    let md5cmd = "md5 -q"
+  else
+    let md5cmd = "md5sum"
+  endif
 
   " now compile to the final target format via each dependency.
-  for l:targ in l:depChain
-    call Tex_Debug('Tex_Run: setting target to '.l:mainTarg, 'comp')
+  for targ in depChain
+    call Tex_Debug('Tex_Run: setting target to '.mainTarg, 'comp')
     " close any preview windows left open.
     pclose!
     " Record the 'state' of auxilliary files before compilation.
-    let l:auxPreHash = system('md5sum '.l:auxFile)
-    let l:idxPreHash = system('md5sum '.l:idxFile)
+    let auxPreHash = system(md5cmd." ".auxFile)
+    let idxPreHash = system(md5cmd." ".idxFile)
 
     " Compose the compiler program with its command line options.
-    let l:compileCmd = Tex_BldCmd(b:tex_compilePrg_{l:targ},
-	  \ b:tex_compilePrgOptDict_{l:targ})
+    let compileCmd = Tex_BldCmd(b:tex_compilePrg_{targ},
+	  \ b:tex_compilePrgOptDict_{targ})
 
     " Run the composed compiler command
-    " exec "silent! !".l:compileCmd." ".l:fname
-    let l:err = Tex_CompileRun(l:fname, l:compileCmd, 1000,
+    " exec "silent! !".compileCmd." ".fname
+    let err = Tex_CompileRun(fname, compileCmd, 1000,
 	  \ 'Reference %.%# undefined'."\n"
 	  \.'Rerun to get cross-references right')
 
-    let l:rerun = 0
-    let l:runCnt = 1
+    let rerun = 0
+    let runCnt = 1
 
     " Run biblatex if called for.
-    if Tex_IsPresentInFile('\\bibdata|\\abx', l:auxFile)
-      let l:bblPreHash = system('md5sum '.l:bblFile)
-      let l:bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
-      exec 'silent! !'.l:bibCmd.' "'.l:jobNm.'"'
-      if system('md5sum '.l:bblFile) != l:bblPreHash
-	let l:rerun = 1
+    if Tex_IsPresentInFile('\\bibdata|\\abx', auxFile)
+      let bblPreHash = system(md5cmd." ".bblFile)
+      let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
+      exec 'silent! !'.bibCmd.' "'.jobNm.'"'
+      if system(md5cmd." ".bblFile) != bblPreHash
+	let rerun = 1
       endif
     endif
 
-    if b:tex_doMultCompile && index(g:tex_multCompileFmts, l:targ) >= 0
+    if b:tex_doMultCompile && (index(g:tex_multCompileFmts, targ) >= 0)
+      call confirm(string(rerun), "cont.")
       " Recompile up to four times as necessary.
-      while l:rerun && (l:runCnt < 5)
-	let l:rerun = 0
-	let l:runCnt += 1
-	" exec "silent! !".l:compileCmd." ".l:fname
-	let l:err = Tex_CompileRun(l:fname, l:compileCmd)
-	let l:auxPostHash = system('md5sum '.l:auxFile)
-	if l:auxPostHash != l:auxPreHash
-	  let l:rerun = 1
-	  let l:auxPreHash = l:auxPostHash
+      while rerun && (runCnt < 5)
+	let rerun = 0
+	let runCnt += 1
+	" exec "silent! !".compileCmd." ".fname
+	let err = Tex_CompileRun(fname, compileCmd)
+	let auxPostHash = system(md5cmd." ".auxFile)
+	if auxPostHash != auxPreHash
+	  let rerun = 1
+	  let auxPreHash = auxPostHash
 	endif
       endwhile
     endif
-    call chdir(l:cwd)
+    call chdir(cwd)
     redraw!
 
-    let l:timeWrd = "time"
-    if l:runCnt != 1
-      let l:timeWrd .= "s"
+    let timeWrd = "time"
+    if runCnt != 1
+      let timeWrd .= "s"
     endif
-    echomsg "Ran ".b:tex_compilePrg_{l:targ}." ".l:runCnt." ".l:timeWrd
+    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd
 	  \."."
 
     let errlist = Tex_GetErrorList()
@@ -235,68 +244,68 @@ endfunc
 " Tex_Compile() to see how to set this information.
 func! Tex_ViewOutp(...)
   if a:0 < 1
-    let l:targ = b:tex_dfltTarg
-    let l:viewer = g:tex_viewPrg_{l:targ}
+    let targ = b:tex_dfltTarg
+    let viewer = g:tex_viewPrg_{targ}
   elseif a:0 < 2
-    let l:targ = a:1
-    let l:viewer = g:tex_viewPrg_{l:targ}
+    let targ = a:1
+    let viewer = g:tex_viewPrg_{targ}
   else
-    let l:targ = a:1
-    let l:viewer = a:2
+    let targ = a:1
+    let viewer = a:2
   endif
 
-  if exists("g:tex_viewPrgComplete_".l:targ)
-   \ && !empty(g:tex_viewPrgComplete_{l:targ})
-    let l:cmd = substitute(g:tex_viewPrgComplete_{l:targ},
+  if exists("g:tex_viewPrgComplete_".targ)
+   \ && !empty(g:tex_viewPrgComplete_{targ})
+    let cmd = substitute(g:tex_viewPrgComplete_{targ},
 	  \ '{v:servername}', v:servername, 'g')
   elseif has('win32')
     " unfortunately, yap does not allow the specification of an external
     " editor from the command line. that would have really helped ensure
     " that this particular vim and yap are connected.
-    let l:cmd = 'start '.l:viewer.' "$*.'.l:targ.'"'
+    let cmd = 'start '.viewer.' "$*.'.targ.'"'
   elseif (has('osx') || has('macunix')) && !g:tex_treatMacViewerAsUNIX
-    if strlen(l:viewer) > 0
-      let appOpt = '-a ' . l:viewer
+    if strlen(viewer) > 0
+      let appOpt = '-a ' . viewer
     else
       let appOpt = ''
     endif
-    let l:cmd = 'open '.appOpt.' $*.'.l:targ
+    let cmd = 'open '.appOpt.' $*.'.targ
   else
     " taken from Dimitri Antoniou's tip on vim.sf.net (tip #225).
     " slight change to actually use the current servername instead of
     " hardcoding it as xdvi.
     " Using an option for specifying the editor in the command line
     " because that seems to not work on older bash'es.
-    if l:targ == 'dvi'
+    if targ == 'dvi'
       if g:tex_useEditorSettingInDVIViewer
-	if v:servername != '' && l:viewer =~ '^ *xdvik\?\( \|$\)'
-	  let l:cmd = l:viewer.' -editor "gvim --servername '.v:servername
+	if v:servername != '' && viewer =~ '^ *xdvik\?\( \|$\)'
+	  let cmd = viewer.' -editor "gvim --servername '.v:servername
 		\.' --remote-silent +\%l \%f" $*.dvi'
-	elseif \ l:viewer =~ '^ *kdvi\( \|$\)'
-	  let l:cmd = l:viewer.' --unique $*.dvi'
+	elseif \ viewer =~ '^ *kdvi\( \|$\)'
+	  let cmd = viewer.' --unique $*.dvi'
 	else
-	  let l:cmd = l:viewer.' $*.dvi'
+	  let cmd = viewer.' $*.dvi'
 	endif
       else
-	let l:cmd = l:viewer.' $*.dvi'
+	let cmd = viewer.' $*.dvi'
       endif
     else
-      let l:cmd = l:viewer.' $*.'.l:targ
+      let cmd = viewer.' $*.'.targ
     endif
   endif
 
 
-  let l:fpath = Tex_GetOutpDir(expand('%:p')).'/'
+  let fpath = Tex_GetOutpDir(expand('%:p')).'/'
   if !empty(b:tex_jobNm)
-    let l:fpath .= b:tex_jobNm
+    let fpath .= b:tex_jobNm
   else
-    let l:fpath .= expand('%:r')
+    let fpath .= expand('%:r')
   endif
 
-  let l:cmd = substitute(l:cmd, '\V$*', l:fpath, 'g')
-  call Tex_Debug("Tex_ViewOutp: l:cmd = ".l:cmd, "comp")
+  let cmd = substitute(cmd, '\V$*', fpath, 'g')
+  call Tex_Debug("Tex_ViewOutp: cmd = ".cmd, "comp")
 
-  exec 'silent! !'.l:cmd
+  exec 'silent! !'.cmd
 
   if !has('gui_running')
     redraw!
@@ -322,21 +331,21 @@ func! Tex_ForwardSearchLaTeX(...)
   endif
 
   if a:0 > 0
-    let l:targ = a:1
+    let targ = a:1
   else
-    let l:targ = b:tex_dfltTarg
+    let targ = b:tex_dfltTarg
   endif
 
-  if empty(g:tex_viewPrg_{l:targ})
+  if empty(g:tex_viewPrg_{targ})
     return
   endif
-  let viewer = g:tex_viewPrg_{l:targ}
+  let viewer = g:tex_viewPrg_{targ}
 
-  let l:origdir = fnameescape(getcwd())
+  let origdir = fnameescape(getcwd())
 
   let mainfnameRoot = shellescape(fnamemodify(Tex_GetMainFileName(), ':t:r'), 1)
   let mainfnameFull = Tex_GetMainFileName(':p:r')
-  let target_file = shellescape(mainfnameFull . "." . l:targ, 1)
+  let target_file = shellescape(mainfnameFull . "." . targ, 1)
   let sourcefile = shellescape(expand('%'), 1)
   let sourcefileFull = shellescape(expand('%:p'), 1)
   let linenr = line('.')
@@ -450,7 +459,7 @@ func! Tex_ForwardSearchLaTeX(...)
     redraw!
   endif
 
-  exe 'cd '.l:origdir
+  exe 'cd '.origdir
 endfunc
 
 " }}}
@@ -524,12 +533,12 @@ func! Tex_RemoveTempFiles()
   endif
   let i = 1
   while i <= s:tmpFileCnt
-    let l:tmpFile = s:tmpFile_{i}
+    let tmpFile = s:tmpFile_{i}
     " Remove the tmp file and all other associated files such as the
     " .log files etc.
-    let l:rmFileLst = glob(fnamemodify(l:tmpFile, ':p:r').'.*', 1, 1)
-    for l:file in l:rmFileLst
-      call delete(l:file)
+    let rmFileLst = glob(fnamemodify(tmpFile, ':p:r').'.*', 1, 1)
+    for file in rmFileLst
+      call delete(file)
     endfor
     let i += 1
   endwhile

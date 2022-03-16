@@ -1,23 +1,23 @@
-"=============================================================================
+"===========================================================================
 " 	     File: mathmacros.vim
 "      Author: Mikolaj Machowski
 "     Created: Tue Apr 23 06:00 PM 2002 PST
 " 
 "  Description: macros for everything mathematical in latex.
-"=============================================================================
+"===========================================================================
 
-if !(has('gui_running') && g:Tex_MathMenus && g:Tex_Menus)
-	finish
+if !(has('gui_running') && g:tex_mathMenus && g:tex_menus)
+  finish
 endif
 
-let s:MathMenuName = g:Tex_MenuPrefix.'&Math.'
+let s:mathMenuNm = g:tex_menuPrefix.'&Math.'
 
 function! Tex_MathMenuRemove()
-	exe 'silent! aunmenu '.s:MathMenuName
+  exe 'silent! aunmenu '.s:mathMenuNm
 endfunction
 
-let s:pA = 'amenu <silent> '.g:Tex_NextMenuLocation.' '.s:MathMenuName
-let g:Tex_NextMenuLocation = g:Tex_NextMenuLocation + 1
+let s:pA = 'amenu <silent> '.g:tex_nextMenuLoc.' '.s:mathMenuNm
+let g:tex_nextMenuLoc = g:tex_nextMenuLoc + 1
 
 " brackets and dollars {{{
 exe s:pA.'\\&[\ \\]                 <plug><C-r>=IMAP_PutTextWithMovement("\\[<++>\\]<++>")<cr>'
@@ -727,4 +727,4 @@ exe s:pA18.'negmedspace             <plug>\negmedspace '
 exe s:pA18.'negthickspace           <plug>\negthickspace '
 " 1}}}
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4
+" vim:fdm=marker:ff=unix:noet

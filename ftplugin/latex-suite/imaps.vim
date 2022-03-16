@@ -1,5 +1,5 @@
 " HEADER ==================================================================
-" vim:ft=vim:sw=2:sts=2:fdm=marker:commentstring=\"\ %s:ff=unix
+" vim:ft=vim:fdm=marker:commentstring=\"\ %s:ff=unix
 " 	 File: imaps.vim
 "      Author: David G. White
 "     Created: Sat. 19 Feb. 2022, 14:30 UTC-5
@@ -15,10 +15,10 @@
 let g:runImapLeaderList = ['\'] ", ';']
 
 " Unincorporated IMAPs {{{
-" call IMAP (g:Tex_Leader.'-', '\bigcap', "tex")
-" call IMAP (g:Tex_Leader.'+', '\bigcup', "tex")
-" call IMAP (g:Tex_Leader.':', '\ddot{<++>}<++>', "tex")
-" call IMAP (g:Tex_Leader.'|', '\Big|', "tex")
+" call IMAP (g:tex_leader.'-', '\bigcap', "tex")
+" call IMAP (g:tex_leader.'+', '\bigcup', "tex")
+" call IMAP (g:tex_leader.':', '\ddot{<++>}<++>', "tex")
+" call IMAP (g:tex_leader.'|', '\Big|', "tex")
 " }}}
 
 " Imap Dictionaries: {{{

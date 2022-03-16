@@ -14,7 +14,7 @@
 " 		done).
 
 if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
-	finish
+  finish
 endif
 
 " line continuation used here.
@@ -26,90 +26,90 @@ set cpo&vim
 "======================================================================
 " FB_OpenFileBrowser: opens a new buffer and displays the file list {{{
 " Description: 
-function! FB_OpenFileBrowser(dir)
-	if !isdirectory(a:dir)
-		return
+func! FB_OpenFileBrowser(dir)
+  if !isdirectory(a:dir)
+	return
+  endif
+  if exists('s:FB_BufferNumber')
+	if bufwinnr(s:FB_BufferNumber) != -1
+	  execute bufwinnr(s:FB_BufferNumber).' wincmd w'
+	  return
 	endif
-	if exists('s:FB_BufferNumber')
-		if bufwinnr(s:FB_BufferNumber) != -1
-			execute bufwinnr(s:FB_BufferNumber).' wincmd w'
-			return
-		endif
-		execute 'aboveleft split #'.s:FB_BufferNumber
-	else
-		aboveleft split __Choose_File__
-		let s:FB_BufferNumber = bufnr('%')
-	endif
-	call FB_DisplayFiles(a:dir)
-endfunction " }}}
+	execute 'aboveleft split #'.s:FB_BufferNumber
+  else
+	aboveleft split __Choose_File__
+	let s:FB_BufferNumber = bufnr('%')
+  endif
+  call FB_DisplayFiles(a:dir)
+endfunc " }}}
 " FB_DisplayFiles: displays the files in a given directory {{{
 " Description: 
 " 	Call this function only when the cursor is in a temporary buffer
-function! FB_DisplayFiles(dir)
-	if !isdirectory(a:dir)
-		return
+func! FB_DisplayFiles(dir)
+  if !isdirectory(a:dir)
+	return
+  endif
+  call s:FB_SetSilentSettings()
+  " make this a "scratch" buffer
+  call s:FB_SetScratchSettings()
+
+  let allowRegexp = s:FB_GetVar('FB_AllowRegexp', '')
+  let rejectRegexp = s:FB_GetVar('FB_RejectRegexp', '')
+
+  " change to the directory to make processing simpler.
+  try
+	execute "lcd ".fnameescape(a:dir)
+  catch
+	echohl ErrorMsg
+	unsilent echomsg 'Cannot enter directory "' . fnamemodify(a:dir, ':p') . '"'
+	echohl None
+	return
+  endtry
+  " delete everything in the buffer.
+  " IMPORTANT: we need to be in a scratch buffer
+  0,$ d_
+
+  let allFilenames = glob('*')
+  let dispFiles = ""
+  let subDirs = "../\n"
+
+  let start = 0
+  for filename in split(allFilenames, "\n")
+
+	if isdirectory(filename)
+	  let subDirs = subDirs.filename."/\n"
+	else
+	  if allowRegexp != '' && filename !~ allowRegexp
+	  elseif rejectRegexp != '' && filename =~ rejectRegexp
+	  else
+		let dispFiles = dispFiles.filename."\n"
+	  endif
 	endif
-	call s:FB_SetSilentSettings()
-	" make this a "scratch" buffer
-	call s:FB_SetScratchSettings()
+  endfor
 
-	let allowRegexp = s:FB_GetVar('FB_AllowRegexp', '')
-	let rejectRegexp = s:FB_GetVar('FB_RejectRegexp', '')
+  0put!=dispFiles
+  0put!=subDirs
+  " delte the last empty line resulting from the put
+  $ d_
 
-	" change to the directory to make processing simpler.
-	try
-		execute "lcd ".fnameescape(a:dir)
-	catch
-		echohl ErrorMsg
-		unsilent echomsg 'Cannot enter directory "' . fnamemodify(a:dir, ':p') . '"'
-		echohl None
-		return
-	endtry
-	" delete everything in the buffer.
-	" IMPORTANT: we need to be in a scratch buffer
-	0,$ d_
+  call s:FB_SetHighlighting()
+  call s:FB_DisplayHelp()
+  call s:FB_SetMaps()
 
-	let allFilenames = glob('*')
-	let dispFiles = ""
-	let subDirs = "../\n"
+  " goto the first file/directory
+  0
+  call search('^"=', 'w')
+  normal! j:<bs>
 
-    let start = 0
-    for filename in split(allFilenames, "\n")
+  set nomodified nomodifiable
 
-        if isdirectory(filename)
-            let subDirs = subDirs.filename."/\n"
-        else
-            if allowRegexp != '' && filename !~ allowRegexp
-            elseif rejectRegexp != '' && filename =~ rejectRegexp
-            else
-                let dispFiles = dispFiles.filename."\n"
-            endif
-        endif
-    endfor
-
-	0put!=dispFiles
-	0put!=subDirs
-	" delte the last empty line resulting from the put
-	$ d_
-
-	call s:FB_SetHighlighting()
-	call s:FB_DisplayHelp()
-	call s:FB_SetMaps()
-
-	" goto the first file/directory
-	0
-	call search('^"=', 'w')
-	normal! j:<bs>
-
-	set nomodified nomodifiable
-
-	call s:FB_ResetSilentSettings()
-endfunction " }}}
+  call s:FB_ResetSilentSettings()
+endfunc " }}}
 " FB_SetVar: sets script local variables from outside this script {{{
 " Description: 
-function! FB_SetVar(varname, value)
-	let s:{a:varname} = a:value
-endfunction " }}}
+func! FB_SetVar(varname, value)
+  let s:{a:varname} = a:value
+endfunc " }}}
 
 " ==============================================================================
 " Script local functions below this
@@ -117,133 +117,133 @@ endfunction " }}}
 " FB_SetHighlighting: sets syntax highlighting for the buffer {{{
 " Description:
 " Origin: from explorer.vim in vim
-function! <SID>FB_SetHighlighting()
-	" Set up syntax highlighting
-	" Something wrong with the evaluation of the conditional though...
-	if has("syntax") && exists("g:syntax_on") && !has("syntax_items")
-		syn match browseSynopsis    "^\"[ -].*"
-		syn match browseDirectory   "[^\"].*/ "
-		syn match browseDirectory   "[^\"].*/$"
-		syn match browseCurDir      "^\"= .*$"
+func! <SID>FB_SetHighlighting()
+  " Set up syntax highlighting
+  " Something wrong with the evaluation of the conditional though...
+  if has("syntax") && exists("g:syntax_on") && !has("syntax_items")
+	syn match browseSynopsis    "^\"[ -].*"
+	syn match browseDirectory   "[^\"].*/ "
+	syn match browseDirectory   "[^\"].*/$"
+	syn match browseCurDir      "^\"= .*$"
 
-		"hi def link browseSynopsis    PreProc
-		hi def link browseSynopsis    Special
-		hi def link browseDirectory   Directory
-		hi def link browseCurDir      Statement
-		hi def link browseSuffixes    Type
-	endif
-endfunction " }}}
+	"hi def link browseSynopsis    PreProc
+	hi def link browseSynopsis    Special
+	hi def link browseDirectory   Directory
+	hi def link browseCurDir      Statement
+	hi def link browseSuffixes    Type
+  endif
+endfunc " }}}
 " FB_SetMaps: sets buffer local maps {{{
 " Description: 
-function! <SID>FB_SetMaps()
-	nnoremap <buffer> <silent> q :bdelete<cr>
-	nnoremap <buffer> <silent> <esc> :bdelete<cr>
-	nnoremap <buffer> <silent> <CR> :call <SID>FB_EditEntry()<CR>
-	nnoremap <buffer> <silent> ? :call <SID>FB_ToggleHelp()<CR>
-	nnoremap <buffer>          C :CD<space>
+func! <SID>FB_SetMaps()
+  nnoremap <buffer> <silent> q :bdelete<cr>
+  nnoremap <buffer> <silent> <esc> :bdelete<cr>
+  nnoremap <buffer> <silent> <CR> :call <SID>FB_EditEntry()<CR>
+  nnoremap <buffer> <silent> ? :call <SID>FB_ToggleHelp()<CR>
+  nnoremap <buffer>          C :CD<space>
 
-	command! -nargs=1 -buffer -complete=dir CD :silent call FB_DisplayFiles('<args>')
+  command! -nargs=1 -buffer -complete=dir CD :silent call FB_DisplayFiles('<args>')
 
-	" lock the user in this window
-	nnoremap <buffer> <C-w> <nop>
-endfunction " }}}
+  " lock the user in this window
+  nnoremap <buffer> <C-w> <nop>
+endfunc " }}}
 " FB_SetSilentSettings: some settings which make things silent {{{
 " Description: 
 " Origin: from explorer.vim distributed with vim.
-function! <SID>FB_SetSilentSettings()
-	let s:save_report=&report
-	let s:save_showcmd = &sc
-	set report=10000 noshowcmd
-endfunction 
+func! <SID>FB_SetSilentSettings()
+  let s:save_report=&report
+  let s:save_showcmd = &sc
+  set report=10000 noshowcmd
+endfunc 
 " FB_ResetSilentSettings: reset settings set by FB_SetSilentSettings
 " Description: 
-function! <SID>FB_ResetSilentSettings()
-	let &report=s:save_report
-	let &showcmd = s:save_showcmd
-endfunction " }}}
+func! <SID>FB_ResetSilentSettings()
+  let &report=s:save_report
+  let &showcmd = s:save_showcmd
+endfunc " }}}
 " FB_SetScratchSettings: makes the present buffer a scratch buffer {{{
 " Description: 
-function! <SID>FB_SetScratchSettings()
-	" Turn off the swapfile, set the buffer type so that it won't get
-	" written, and so that it will get deleted when it gets hidden.
-	setlocal noreadonly modifiable
-	setlocal noswapfile
-	setlocal buftype=nowrite
-	setlocal bufhidden=delete
-	" Don't wrap around long lines
-	setlocal nowrap
-endfunction 
+func! <SID>FB_SetScratchSettings()
+  " Turn off the swapfile, set the buffer type so that it won't get
+  " written, and so that it will get deleted when it gets hidden.
+  setlocal noreadonly modifiable
+  setlocal noswapfile
+  setlocal buftype=nowrite
+  setlocal bufhidden=delete
+  " Don't wrap around long lines
+  setlocal nowrap
+endfunc 
 
 " }}}
 " FB_ToggleHelp: toggles verbosity of help {{{
 " Description: 
-function! <SID>FB_ToggleHelp()
-	let s:FB_VerboseHelp = 1 - s:FB_GetVar('FB_VerboseHelp', 0)
+func! <SID>FB_ToggleHelp()
+  let s:FB_VerboseHelp = 1 - s:FB_GetVar('FB_VerboseHelp', 0)
 
-	call FB_DisplayFiles('.')
-endfunction " }}}
+  call FB_DisplayFiles('.')
+endfunc " }}}
 " FB_DisplayHelp: displays a helpful header {{{
 " Description: 
-function! <SID>FB_DisplayHelp()
-	let verboseHelp = s:FB_GetVar('FB_VerboseHelp', 0)
-	if verboseHelp
-		let txt = 
-			\  "\" <cr> on file: choose the file and quit\n"
-			\ ."\" <cr> on dir : enter directory\n"
-			\ ."\" q/<esc>     : quit without choosing\n"
-			\ ."\" C/:CD       : change directory\n"
-			\ ."\" ?           : toggle help verbosity\n"
-			\ ."\"= ".getcwd()
-	else
-		let txt = "\" ?: toggle help verbosity\n"
-			\ ."\"= ".getcwd()
-	endif
-	0put!=txt
-endfunction " }}}
+func! <SID>FB_DisplayHelp()
+  let verboseHelp = s:FB_GetVar('FB_VerboseHelp', 0)
+  if verboseHelp
+	let txt = 
+		  \  "\" <cr> on file: choose the file and quit\n"
+		  \ ."\" <cr> on dir : enter directory\n"
+		  \ ."\" q/<esc>     : quit without choosing\n"
+		  \ ."\" C/:CD       : change directory\n"
+		  \ ."\" ?           : toggle help verbosity\n"
+		  \ ."\"= ".getcwd()
+  else
+	let txt = "\" ?: toggle help verbosity\n"
+		  \ ."\"= ".getcwd()
+  endif
+  0put!=txt
+endfunc " }}}
 " FB_EditEntry: handles the user pressing <enter> on a line {{{
 " Description: 
-function! <SID>FB_EditEntry()
-	let line = getline('.')
+func! <SID>FB_EditEntry()
+  let line = getline('.')
 
-	if isdirectory(line)
-		call FB_DisplayFiles(line)
+  if isdirectory(line)
+	call FB_DisplayFiles(line)
+  endif
+
+  " If the user has a call back function defined on choosing a file, handle
+  " it.
+  let cbf = s:FB_GetVar('FB_CallBackFunction', '')
+  if cbf != '' && line !~ '^" ' && filereadable(line) 
+	let fname = fnamemodify(line, ':p')
+	bdelete
+
+	let arguments = s:FB_GetVar('FB_CallBackFunctionArgs', '')
+	if arguments != ''
+	  let arguments = ','.arguments
 	endif
-
-	" If the user has a call back function defined on choosing a file, handle
-	" it.
-	let cbf = s:FB_GetVar('FB_CallBackFunction', '')
-	if cbf != '' && line !~ '^" ' && filereadable(line) 
-		let fname = fnamemodify(line, ':p')
-		bdelete
-
-		let arguments = s:FB_GetVar('FB_CallBackFunctionArgs', '')
-		if arguments != ''
-			let arguments = ','.arguments
-		endif
-		if exists('*Tex_Debug')
-			call Tex_Debug('arguments = '.arguments, 'fb')
-			call Tex_Debug("call ".cbf."('".fname."'".arguments.')', 'fb')
-		endif
-		exec "call ".cbf."('".fname."'".arguments.')'
+	if exists('*Tex_Debug')
+	  call Tex_Debug('arguments = '.arguments, 'fb')
+	  call Tex_Debug("call ".cbf."('".fname."'".arguments.')', 'fb')
 	endif
-endfunction " }}}
+	exec "call ".cbf."('".fname."'".arguments.')'
+  endif
+endfunc " }}}
 " FB_GetVar: gets the most local value of a variable {{{
-function! <SID>FB_GetVar(name, default)
-	if exists('s:'.a:name)
-		return s:{a:name}
-	elseif exists('w:'.a:name)
-		return w:{a:name}
-	elseif exists('b:'.a:name)
-		return b:{a:name}
-	elseif exists('g:'.a:name)
-		return g:{a:name}
-	else
-		return a:default
-	endif
-endfunction
+func! <SID>FB_GetVar(name, default)
+  if exists('s:'.a:name)
+	return s:{a:name}
+  elseif exists('w:'.a:name)
+	return w:{a:name}
+  elseif exists('b:'.a:name)
+	return b:{a:name}
+  elseif exists('g:'.a:name)
+	return g:{a:name}
+  else
+	return a:default
+  endif
+endfunc
 
 " }}}
 
 let &cpo = s:save_cpo
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4:nowrap
+" vim:fdm=marker:ff=unix:noet

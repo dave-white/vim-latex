@@ -1,13 +1,13 @@
-"=============================================================================
+"===========================================================================
 " 	     File: diacritics.vim
 "      Author: Lubomir Host
 "     Created: Tue Apr 23 07:00 PM 2002 PST
 " 
 "  Description: shortcuts for all diacritics. 
-"=============================================================================
+"===========================================================================
 
-if !g:Tex_Diacritics
-	finish
+if !g:tex_diacritics
+  finish
 endif
 
 " \'{a} {{{
@@ -121,4 +121,4 @@ call IMAP ('+Z', "\\v{Z}", 'tex')
 call IMAP ('+}', "\\\"{a}", 'tex')
 call IMAP ('+:', "\\^{o}", 'tex')
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4
+" vim:fdm=marker:ff=unix:noet

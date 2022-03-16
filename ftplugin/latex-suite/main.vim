@@ -956,7 +956,7 @@ if g:tex_smartKeyDot
 
   function! <SID>SmartDots()
     if strpart(getline('.'), col('.')-3, 2) == '..'
-	  \ && g:tex_package_detected =~ '\<amsmath\|ellipsis\>'
+	  \ && g:tex_pkgDetected =~ '\<amsmath\|ellipsis\>'
       return "\<bs>\<bs>\\dots"
     elseif synIDattr(synID(line('.'),col('.')-1,0),"name")
 	  \ =~ '^texMath'
