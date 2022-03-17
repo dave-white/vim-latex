@@ -31,17 +31,6 @@
 " latex.
 " ==========================================================================
 
-" Avoid reinclusion.
-if exists('b:did_brackets')
-	finish
-endif
-let b:did_brackets = 1
-
-" define the funtions only once.
-if exists('*Tex_MathBF')
-	finish
-endif
-
 " Tex_MathBF: encloses te previous letter/number in \mathbf{} {{{
 " Description: 
 function! Tex_MathBF()
@@ -113,34 +102,12 @@ function! Tex_PutLeftRight()
 	endif
 endfunction " }}}
 
-" Provide <plug>'d mapping for easy user customization. {{{
-inoremap <silent> <Plug>Tex_MathBF      <C-r>=Tex_MathBF()<CR>
-inoremap <silent> <Plug>Tex_MathCal     <C-r>=Tex_MathCal()<CR>
-inoremap <silent> <Plug>Tex_LeftRight   <C-r>=Tex_LeftRight()<CR>
-vnoremap <silent> <Plug>Tex_MathBF		<C-C>`>a}<Esc>`<i\mathbf{<Esc>
-vnoremap <silent> <Plug>Tex_MathCal		<C-C>`>a}<Esc>`<i\mathcal{<Esc>
-nnoremap <silent> <Plug>Tex_LeftRight	:call Tex_PutLeftRight()<CR>
-
-" }}}
-" Tex_SetBracketingMaps: create mappings for the current buffer {{{
-function! <SID>Tex_SetBracketingMaps()
-
-	if g:tex_advMath
-		call Tex_MakeMap('<M-b>', '<Plug>Tex_MathBF', 'i', '<buffer> <silent>')
-		call Tex_MakeMap('<M-c>', '<Plug>Tex_MathCal', 'i', '<buffer> <silent>')
-		call Tex_MakeMap('<M-l>', '<Plug>Tex_LeftRight', 'i', '<buffer> <silent>')
-		call Tex_MakeMap('<M-b>', '<Plug>Tex_MathBF', 'v', '<buffer> <silent>')
-		call Tex_MakeMap('<M-c>', '<Plug>Tex_MathCal', 'v', '<buffer> <silent>')
-		call Tex_MakeMap('<M-l>', '<Plug>Tex_LeftRight', 'n', '<buffer> <silent>')
-	endif
-
-endfunction
-" }}}
-
-augroup LatexSuite
-	au LatexSuite User LatexSuiteFileType 
-		\ call Tex_Debug('brackets.vim: Catching LatexSuiteFileType event', 'brak') | 
-		\ call <SID>Tex_SetBracketingMaps()
-augroup END
-
-" vim:fdm=marker
+if b:tex_advMath
+  inoremap <buffer> <silent> <M-b> <C-r>=Tex_MathBF()<CR>
+  inoremap <buffer> <silent> <M-c> <C-r>=Tex_MathCal()<CR>
+  inoremap <buffer> <silent> <M-l> <C-r>=Tex_LeftRight()<CR>
+  vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+  vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
+  nnoremap <buffer> <silent> <M-l> :call Tex_PutLeftRight()<CR>
+endif
+" vim:ft=vim:fdm=marker

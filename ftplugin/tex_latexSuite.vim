@@ -41,21 +41,33 @@ endfunc
 let s:path = fnameescape(expand('<sfile>:p:h'))
 
 " TEXRC: Set default global settings. {{{
-exe "so ".s:path.'/latex-suite/texrc'
+runtime ftplugin/latex-suite/texrc
 runtime ftplugin/tex/texrc
 let s:loc_texrc = Tex_FindFileAbove('texrc', fnameescape(expand('%:p')))
 if filereadable(s:loc_texrc)
   exe 'so '.s:loc_texrc
 endif
 " }}}
+exe 'so '.s:path.'/latex-suite/glob2loc.vim'
 
 if !exists("g:did_tex_plugin") || g:did_tex_plugin != 1
   let g:did_tex_plugin = 1
-  exe 'so '.fnameescape(expand('<sfile>:p:h').'/latex-suite/setup-glob.vim')
+  exe 'so '.s:path.'/latex-suite/setup-glob.vim'
 endif
-exe 'so '.fnameescape(expand('<sfile>:p:h').'/latex-suite/setup-loc.vim')
+exe 'so '.s:path.'/latex-suite/setup-loc.vim'
+
+if exists("b:tex_jobNm") && !empty(b:tex_jobNm)
+  let b:tex_compilePrgOptDict_pdf["-jobname"] = b:tex_jobNm
+endif
+
+if b:tex_outpDir != v:null
+  let b:tex_compilePrgOptDict_pdf["-output-directory"] = b:tex_outpDir
+  let b:tex_bibPrgOptDict["--input-directory"] = b:tex_outpDir
+  let b:tex_bibPrgOptDict["--output-directory"] = b:tex_outpDir
+endif
+
 let &cpo = s:save_cpo
 
-silent compiler tex
+compiler tex
 
 " vim:ft=vim:fdm=marker

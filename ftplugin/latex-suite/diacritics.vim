@@ -6,7 +6,7 @@
 "  Description: shortcuts for all diacritics. 
 "===========================================================================
 
-if !g:tex_diacritics
+if !b:tex_diacritics
   finish
 endif
 

@@ -5,7 +5,7 @@
 "  Description: mappings/menus for environments. 
 "=============================================================================
 
-if !g:tex_envMaps && !g:tex_envMenus
+if !b:tex_envMaps && !b:tex_envMenus
   finish
 endif
 
@@ -18,21 +18,21 @@ exe 'so '.fnameescape(expand('<sfile>:p:h').'/wizardfuncs.vim')
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
-if g:tex_envEndWithCR
+if b:tex_envEndWithCR
   let s:end_with_cr = "\<CR>"
 else
   let s:end_with_cr = ""
 endif
 
-if g:tex_itemsWithCR
+if b:tex_itemsWithCR
   let s:items_with_cr = "\<CR>"
 else
   let s:items_with_cr = " "
 endif
 
 " The prefix of labels of figures
-let s:labelprefix_figure = g:tex_envLabelPrefix_{'fig'}
-let s:labelprefix_table = g:tex_envLabelPrefix_{'tab'}
+let s:labelprefix_figure = b:tex_envLabelPrefix_{'fig'}
+let s:labelprefix_table = b:tex_envLabelPrefix_{'tab'}
 
 " Define environments for IMAP evaluation " {{{
 let s:figure =     "\\begin{figure}[<+htpb+>]\<cr>\\centering\<cr>\\includegraphics{<+file+>}\<cr>\\caption{<+caption text+>}\<cr>\\label{" . s:labelprefix_figure . "<+label+>}\<cr>\\end{figure}" . s:end_with_cr . "<++>"
@@ -76,21 +76,21 @@ function! <SID>Tex_EnvMacros(lhs, submenu, name)
     let vleft = s:vis_{a:name}_left
   endif
   let vrhs = "\<C-\\>\<C-N>:call VEnclose('".vleft."', '".vright."', '\\begin{".a:name."}', '\\end{".a:name."}')\<CR>"
-  let location = g:tex_envMenuLoc.a:submenu.a:name.'<tab>'
+  let location = b:tex_envMenuLoc.a:submenu.a:name.'<tab>'
 
   if a:lhs != '' 
 
-    let vlhs = g:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
+    let vlhs = b:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
     let location = location.a:lhs.'\ ('.vlhs.')'
 
-    if g:tex_envMaps && !exists('s:doneOnce')
+    if b:tex_envMaps && !exists('s:doneOnce')
       call IMAP(a:lhs, "\<C-r>=Tex_PutEnvironment('".a:name."')\<CR>", 'tex')
       exec 'xnoremap <silent> '.vlhs.' '.vrhs
     endif
 
   endif
 
-  if g:tex_menus && g:tex_envMenus && has("gui_running")
+  if b:tex_menus && b:tex_envMenus && has("gui_running")
     exe 'amenu '.location.' <plug><C-r>=Tex_DoEnvironment("'.a:name.'")<CR>'
     exe 'vmenu '.location.' '.vrhs
   endif
@@ -107,7 +107,7 @@ function! <SID>Tex_SpecialMacros(lhs, submenu, name, irhs, ...)
     let wiz = 0
   endif
 
-  let location = g:tex_envMenuLoc.a:submenu.a:name
+  let location = b:tex_envMenuLoc.a:submenu.a:name
 
   let vright = ''
   let vleft = ''
@@ -119,17 +119,17 @@ function! <SID>Tex_SpecialMacros(lhs, submenu, name, irhs, ...)
 
   if a:lhs != ''
 
-    let vlhs = g:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
+    let vlhs = b:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
     let location = location.'<tab>'.a:lhs.'\ ('.vlhs.')'
 
-    if g:tex_envMaps && !exists('s:doneOnce')
+    if b:tex_envMaps && !exists('s:doneOnce')
       call IMAP(a:lhs, a:irhs, 'tex')
       exec 'xnoremap '.vlhs.' '.vrhs
     endif
 
   endif
 
-  if g:tex_menus && g:tex_envMenus
+  if b:tex_menus && b:tex_envMenus
     if wiz
       exe 'amenu '.location.' <plug><C-r>=Tex_DoEnvironment("'.a:name.'")<CR>'
     else
@@ -143,17 +143,17 @@ endfunction " }}}
 " Description: 
 function! <SID>Tex_SecMacros(lhs, name)
 
-  let vlhs = g:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
+  let vlhs = b:tex_leader2.substitute(tolower(a:lhs), '^.', '', '')
   let vrhs = "\<C-\\>\<C-N>:call VEnclose('\\".a:name."{', '}', '', '')<CR>"
 
-  if g:tex_secMaps && !exists('s:doneOnce')
+  if b:tex_secMaps && !exists('s:doneOnce')
     exe 'xnoremap '.vlhs.' '.vrhs
     call IMAP (a:lhs, "\\".a:name.'{<++>}' . s:end_with_cr . '<++>', 'tex')
   endif
 
-  if g:tex_menus && g:tex_secMenus
-    let location = g:tex_envMenuLoc.'Sections.'.a:name.'<tab>'.a:lhs.'\ ('.vlhs.')'
-    let advlocation = g:tex_envMenuLoc.'Sections.Advanced.'.a:name
+  if b:tex_menus && b:tex_secMenus
+    let location = b:tex_envMenuLoc.'Sections.'.a:name.'<tab>'.a:lhs.'\ ('.vlhs.')'
+    let advlocation = b:tex_envMenuLoc.'Sections.Advanced.'.a:name
 
     let irhs = "\<C-r>=IMAP_PutTextWithMovement('\\".a:name."{<++>}" . s:end_with_cr . "<++>')\<CR>"
 
@@ -284,8 +284,8 @@ call s:Tex_SpecialMacros('EMP', '', 'minipage', s:minipage)
 call s:Tex_SpecialMacros('EPI', '', 'picture', s:picture)
 " }}}
 
-if g:tex_catchVisMapErrs
-  exe 'xnoremap '.g:tex_leader2."   :\<C-u>call ExecMap('".g:tex_leader2."', 'v')\<CR>"
+if b:tex_catchVisMapErrs
+  exe 'xnoremap '.b:tex_leader2."   :\<C-u>call ExecMap('".b:tex_leader2."', 'v')\<CR>"
 endif
 
 " ==============================================================================
@@ -307,7 +307,7 @@ endfunction
 " }}} 
 " Tex_description: {{{
 function! Tex_description(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let itlabel = input('(Optional) Item label? ')
     if itlabel != ''
       let itlabel = '['.itlabel.']'
@@ -320,7 +320,7 @@ endfunction
 " }}} 
 " Tex_figure: {{{
 function! Tex_figure(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let flto    = input('Float to (htbp)? ')
     let caption = input('Caption? ')
     let center  = input('Center ([y]/n)? ')
@@ -359,7 +359,7 @@ endfunction
 " }}} 
 " Tex_table: {{{
 function! Tex_table(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let flto    = input('Float to (htbp)? ')
     let caption = input('Caption? ')
     let center  = input('Center (y/n)? ')
@@ -400,7 +400,7 @@ endfunction
 " }}} 
 " Tex_tabular: {{{
 function! Tex_tabular(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let pos    = input('(Optional) Position (t b)? ')
     let format = input("Format  ( l r c p{width} | @{text} )? ")
     if pos != ''
@@ -417,7 +417,7 @@ endfunction
 " }}} 
 " Tex_standard_env: Provides a 'standard environment' including a label {{{
 function! Tex_standard_env(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     if a:env !~ '\*'
       let label = input('Label?  ')
       if label != ''
@@ -446,7 +446,7 @@ endfunction
 " }}} 
 " Tex_list: {{{
 function! Tex_list(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let label = input('Label (for \item)? ')
     if label != ''
       let label = '{'.label.'}'
@@ -465,7 +465,7 @@ endfunction
 " }}} 
 " Tex_document: {{{
 function! Tex_document(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let dstyle = input('Document style? ')
     let opts = input('(Optional) Options? ')
     let foo = '\documentclass'
@@ -482,7 +482,7 @@ endfunction
 " }}} 
 " Tex_minipage: {{{
 function! Tex_minipage(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     let foo = '\begin{minipage}'
     let pos = input('(Optional) Position (t b)? ')
     let width = input('Width? ')
@@ -499,7 +499,7 @@ endfunction
 " }}} 
 " Tex_thebibliography: {{{
 function! Tex_thebibliography(env)
-  if g:tex_useMenuWizard == 1
+  if b:tex_useMenuWizard == 1
     " AUC Tex: "Label for BibItem: 99"
     let indent = input('Indent for BibItem? ')
     let foo = '{'.indent.'}'
@@ -529,9 +529,9 @@ endfunction
 " Description: 
 function! PromptForEnvironment(ask)
   return Tex_ChooseFromPrompt(
-	\ a:ask."\n".Tex_CreatePrompt(g:tex_promptEnvs, 2)
+	\ a:ask."\n".Tex_CreatePrompt(b:tex_promptEnvs, 2)
 	\ ."\nEnter name or number of environment :", 
-	\ string(g:tex_promptEnvs))
+	\ string(b:tex_promptEnvs))
 endfunction " }}}
 " Tex_DoEnvironment: fast insertion of environments {{{
 " Description:
@@ -574,17 +574,17 @@ function! Tex_PutEnvironment(env)
   else
     " first check if the keyword has been set as an alias
     let env = a:env
-    if exists("g:tex_env_{'".a:env."'}_aliasto")
-      let env = g:tex_env_{a:env}_aliasto
+    if exists("b:tex_env_{'".a:env."'}_aliasto")
+      let env = b:tex_env_{a:env}_aliasto
     endif
     " The user can define something like
-    " let g:tex_env_theorem = "\\begin{theorem}\<CR><++>\<CR>\\end{theorem}"
+    " let b:tex_env_theorem = "\\begin{theorem}\<CR><++>\<CR>\\end{theorem}"
     " This will effectively over-write the default definition of the
     " theorem environment which uses a \label.
     if exists("b:tex_env_{'".env."'}")
       return IMAP_PutTextWithMovement(b:tex_env_{env})
-    elseif exists("g:tex_env_{'".env."'}")
-      return IMAP_PutTextWithMovement(g:tex_env_{env})
+    elseif exists("b:tex_env_{'".env."'}")
+      return IMAP_PutTextWithMovement(b:tex_env_{env})
     elseif env =~ '^\%(theorem\|definition\|lemma\|proposition\|corollary\|assumption\|remark\|equation\|align\*\|align\>\|multline\|subequations\)$'
       return Tex_standard_env(env)
     elseif env =~ '^\%(enumerate\|itemize\|theindex\|trivlist\)$'
@@ -601,10 +601,10 @@ function! Tex_PutEnvironment(env)
     else
       " Look in supported packages if exists template for environment
       " given in the line
-      if exists('g:tex_pkgSupported') && g:tex_pkgSupported != ''
+      if exists('b:tex_pkgSupported') && b:tex_pkgSupported != ''
 	let i = 1
-	while Tex_Strntok(g:tex_pkgSupported, ',', i) != ''
-	  let checkpack = Tex_Strntok(g:tex_pkgSupported, ',', i)
+	while Tex_Strntok(b:tex_pkgSupported, ',', i) != ''
+	  let checkpack = Tex_Strntok(b:tex_pkgSupported, ',', i)
 	  if g:TeX_package_{checkpack} =~ 'e..:'.env
 	    if env =~ '*'
 	      " Don't allow * to be treated as wildcard
@@ -625,12 +625,12 @@ endfunction " }}}
 " Mapping the <F5> key to insert/prompt for an environment/package {{{
 " and <S-F5> to prompt/replace an environment
 "
-" g:tex_promptEnvs is a variable containing a comma seperated list
+" b:tex_promptEnvs is a variable containing a comma seperated list
 " of environments. This list defines the prompt which latex-suite sets up when
 " the user presses <F5> on an empty line.
 "
 " Leaving this empty is equivalent to disabling the feature.
-if !empty(g:tex_promptEnvs)
+if !empty(b:tex_promptEnvs)
 
   " Provide only <plug>s here. main.vim will create the actual maps.
   inoremap <silent> <Plug>Tex_FastEnvironmentInsert  <C-r>=Tex_FastEnvironmentInsert("no")<cr>
@@ -715,7 +715,7 @@ if !empty(g:tex_promptEnvs)
       let pack = matchstr(l, '^\s*\zs.*')
       normal!  0"_D
 
-      " If the g:tex_pkgMenu variable is set to zero,
+      " If the b:tex_pkgMenu variable is set to zero,
       " the function Tex_pack_one is not defined. In this case
       " we use a very simple replacement.
       if exists('*Tex_pack_one')
@@ -848,23 +848,18 @@ endif
 
 " }}}
 " Map <S-F1> through <S-F4> to insert environments {{{
-if !empty(g:tex_hotkeyMaps)
+if !empty(b:tex_hotkeyMaps)
 
   " SetUpHotKeys: maps <F1> through <F4> to insert environments
   " Description: 
-  function! <SID>SetUpHotKeys()
-    let i = 1
-    let envname = g:tex_hotkeyMaps[i]
-    while  envname != ''
-
-      exec 'inoremap <silent> <buffer> <S-F'.i.'> <C-r>=Tex_PutEnvironment("'.envname.'")<CR>'
-
+  func <SID>SetUpHotKeys()
+    let i = 0
+    while i < len(b:tex_hotkeyMaps)
       let i += 1
-      let envname = g:tex_hotkeyMaps[i]
-
+      exec 'inoremap <silent> <buffer> <S-F'.i
+	    \.'> <C-r>=Tex_PutEnvironment("'.b:tex_hotkeyMaps[i-1].'")<CR>'
     endwhile
-
-  endfunction
+  endfunc
 
 endif
 
@@ -873,14 +868,14 @@ endif
 " Description: This function is made public so it can be called by the
 "              SetTeXOptions() function in main.vim
 function! Tex_SetFastEnvironmentMaps()
-  if !empty(g:tex_promptEnvs)
+  if !empty(b:tex_promptEnvs)
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'i', '<silent> <buffer>')
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'n', '<silent> <buffer>')
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'v', '<silent> <buffer>')
     call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'i', '<silent> <buffer>')
     call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'n', '<silent> <buffer>')
   endif
-  if !empty(g:tex_hotkeyMaps)
+  if !empty(b:tex_hotkeyMaps)
     call s:SetUpHotKeys()
   endif
 endfunction " }}}
@@ -942,20 +937,20 @@ for env in ['itemize', 'enumerate', 'theindex',
       \ 'asparaenum',  'asparaitem',
       \ 'compactenum', 'compactitem',
       \ 'inparaenum',  'inparaitem']
-  call RcLet("g:tex_itemStyle_".env, "\\item". s:items_with_cr)
+  call RcLet("b:tex_itemStyle_".env, "\\item". s:items_with_cr)
 endfor
 
-call RcLet("g:tex_itemStyle_thebibliography",
+call RcLet("b:tex_itemStyle_thebibliography",
       \ "\\bibitem[<+biblabel+>]{<+bibkey+>}".s:items_with_cr."<++>")
-call RcLet("g:tex_itemStyle_description",
+call RcLet("b:tex_itemStyle_description",
       \ "\\item[<+label+>]".s:items_with_cr."<++>")
 
 function! Tex_InsertItem()
   " Get current enclosing environment
   let env = Tex_GetCurrentEnv()
 
-  if exists('g:tex_itemStyle_'.env)
-    return IMAP_PutTextWithMovement(g:tex_itemStyle_{env})
+  if exists('b:tex_itemStyle_'.env)
+    return IMAP_PutTextWithMovement(b:tex_itemStyle_{env})
   else
     return ''
   endif
@@ -969,7 +964,7 @@ inoremap <script> <silent> <Plug>Tex_InsertItemOnNextLine <ESC>o<C-R>=Tex_Insert
 function! Tex_SetItemMaps()
   " Only include the <M-i> mapping if the user want this. Note that it
   " conflicts with inserting 'é'.
-  if !hasmapto("<Plug>Tex_InsertItemOnThisLine", "i") && g:tex_advancedMath == 1
+  if !hasmapto("<Plug>Tex_InsertItemOnThisLine", "i") && b:tex_advMath
     imap <buffer> <M-i> <Plug>Tex_InsertItemOnThisLine
   endif
   if !hasmapto("<Plug>Tex_InsertItemOnNextLine", "i")
@@ -982,22 +977,22 @@ endfunction " }}}
 " ==============================================================================
 " Define certain commonly used command definitions {{{
 
-call RcLet("g:tex_com_newtheorem",
+call RcLet("b:tex_com_newtheorem",
       \ '\newtheorem{<+name+>}{<+caption+>}[<+within+>]')
-call RcLet("g:tex_com_frac", '\frac{<+n+>}{<+d+>}<++>')
-call RcLet("g:tex_com_tfrac", '\tfrac{<+n+>}{<+d+>}<++>')
+call RcLet("b:tex_com_frac", '\frac{<+n+>}{<+d+>}<++>')
+call RcLet("b:tex_com_tfrac", '\tfrac{<+n+>}{<+d+>}<++>')
 
 " }}}
 " PromptForCommand: prompts for a command {{{
 " Description: 
 func PromptForCommand(ask)
   let cmd_prompt = 
-	\ Tex_CreatePrompt(g:tex_promptCmds, 2) . "\n" .
+	\ Tex_CreatePrompt(b:tex_promptCmds, 2) . "\n" .
 	\ "Enter number or command name :"
 
   let inp = input(a:ask."\n".cmd_prompt)
   if inp =~ '^[0-9]\+$'
-    let cmd = g:tex_promptCmds[inp]
+    let cmd = b:tex_promptCmds[inp]
   else
     let cmd = inp
   endif
@@ -1059,13 +1054,13 @@ function! Tex_PutCommand(com, isvisual)
     endif
   else
     let com = a:com
-    if exists('g:tex_com_{"'.a:com.'"}_aliasto')
-      let com = g:tex_com_{a:com}_aliasto
+    if exists('b:tex_com_{"'.a:com.'"}_aliasto')
+      let com = b:tex_com_{a:com}_aliasto
     endif
     if exists('b:tex_com_{"'.com.'"}')
       return IMAP_PutTextWithMovement(b:tex_com_{com})
-    elseif exists('g:tex_com_{"'.com.'"}')
-      return IMAP_PutTextWithMovement(g:tex_com_{com})
+    elseif exists('b:tex_com_{"'.com.'"}')
+      return IMAP_PutTextWithMovement(b:tex_com_{com})
     elseif com == '$'
       return IMAP_PutTextWithMovement('$<++>$')
     else
@@ -1076,11 +1071,11 @@ endfunction " }}}
 " Mapping the <F7> key to prompt/insert for command {{{
 " and <S-F7> to prompt/replace command
 "
-" g:tex_promptCmds is a variable containing a comma seperated list
+" b:tex_promptCmds is a variable containing a comma seperated list
 " of commands. 
 "
 " Leaving this empty is equivalent to disabling the feature.
-if !empty(g:tex_promptCmds)
+if !empty(b:tex_promptCmds)
 
   inoremap <silent> <Plug>Tex_FastCommandInsert  <C-r>=Tex_DoCommand('no')<cr>
   nnoremap <silent> <Plug>Tex_FastCommandInsert  i<C-r>=Tex_DoCommand('no')<cr>
@@ -1145,7 +1140,7 @@ endif
 " Description: This function is made public so it can be called by the
 "              SetTeXOptions() function in main.vim
 function! Tex_SetFastCommandMaps()
-  if !empty(g:tex_promptCmds)
+  if !empty(b:tex_promptCmds)
     if !hasmapto('<Plug>Tex_FastCommandInsert', 'i')
       imap <silent> <buffer> <F7> <Plug>Tex_FastCommandInsert
     endif
@@ -1171,21 +1166,16 @@ function! <SID>SetEnvMacrosOptions()
     return
   endif
   let b:doneTexEnvMaps = 1
-  if !empty(g:tex_promptEnvs) || !empty(g:tex_hotkeyMaps)
+  if !empty(b:tex_promptEnvs) || !empty(b:tex_hotkeyMaps)
     call Tex_SetFastEnvironmentMaps()
   endif
-  if !empty(g:tex_promptCmds)
+  if !empty(b:tex_promptCmds)
     call Tex_SetFastCommandMaps()
   endif
   call Tex_SetItemMaps()
 endfunction " }}}
-" Catch the Filetype event so we set maps for each buffer {{{
-augroup LatexSuite
-  au LatexSuite User LatexSuiteFileType 
-	\ call Tex_Debug('envmacros.vim: Catching LatexSuiteFileType event', 'env') |
-	\ call s:SetEnvMacrosOptions()
-augroup END
-" }}}
+
+call s:SetEnvMacrosOptions()
 
 let &cpo = s:save_cpo
 

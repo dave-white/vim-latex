@@ -6,11 +6,11 @@
 "  Description: macros for everything mathematical in latex.
 "===========================================================================
 
-if !(has('gui_running') && g:tex_mathMenus && g:tex_menus)
+if !(has('gui_running') && b:tex_mathMenus && b:tex_menus)
   finish
 endif
 
-let s:MathMenuName = g:tex_menuPrefix.'Ma&th.'
+let s:MathMenuName = b:tex_menuPrefix.'Ma&th.'
 
 function! Tex_MathMenuRemove()
   exe 'silent! aunmenu '.s:MathMenuName

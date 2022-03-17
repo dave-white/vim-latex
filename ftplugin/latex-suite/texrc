@@ -14,7 +14,7 @@
 " ==========================================================================
 " RcLet: Set val of `rc` var only if not done already {{{
 func! RcLet(varNm, ...)
-  let l:key = ""
+  let l:key = v:null
   if a:0 < 1
     let l:val = 0
   elseif a:0 < 2
@@ -47,25 +47,16 @@ endfunc
 " ==========================================================================
 " General settings {{{
 
-let g:tex_usePython = 1
-
-" the system command which pulls in a file.
-if &shell =~ 'sh'
-  let g:tex_catCmd = 'cat'
-  let g:tex_rmCmd = 'rm'
-else
-  let g:tex_catCmd = 'type'
-  let g:tex_rmCmd = 'del'
-endif
+let g:tex_usePython = 0
 
 " whether to turn on debugging
 let g:tex_debug = 0
 " If non empty, all the debugging information will be written to a file of
 " this name.
-let g:tex_debugLog = ''
+let g:tex_debugLog = v:null
 
-let b:tex_useIMAP = 0
-let b:tex_useRunningImap = 1
+let g:tex_useIMAP = 0
+let g:tex_useRunningImap = 1
 
 " }}}
 " ==========================================================================
@@ -78,9 +69,9 @@ let b:tex_useRunningImap = 1
 " NOTE: Make sure that a target for this format exists in the 'Compiler 
 " rules'
 "       section below and is set up properly for your system.
-let b:tex_dfltTarg = "pdf"
+let g:tex_targ = "pdf"
 
-let b:tex_doMultCompile = 1
+let g:tex_doMultCompile = 1
 " A comma seperated list of formats which need multiple compilations to be
 " correctly compiled.
 let g:tex_multCompileFmts = ["dvi", "pdf"]
@@ -111,45 +102,12 @@ let g:tex_compilePrg_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 "       possible.
 " Synctex is now supported by pdflatex.
 
-let b:tex_outpDir = ""
-let b:tex_jobNm = ""
-" Build CLI `pdflatex` command. {{{
-let b:tex_compilePrg_pdf = 'pdflatex'
-" Initialize command line option dictionary.
-let b:tex_compilePrgOptDict_pdf = {}
-" " Specify CLI `pdflatex` args here: {{{
-" " -cnf-line=STRING
-" RcLet("b:tex_compileCmdOptDict_pdf["-cnf-line"]", "")
-let b:tex_compilePrgOptDict_pdf["-file-line-error-style"] = ""
-" " -fmt=FMTNAME
-" RcLet("b:tex_compileCmdOptDict_pdf["-fmt"]", "")
-" " -interaction=STRING 
-" RcLet("b:tex_compileCmdOptDict_pdf["-interaction"]", "")
-" " -jobname=STRING
-" RcLet("b:tex_compileCmdOptDict_pdf["-jobname"]", "")
-" " -kpathsea-debug=NUMBER
-" RcLet("b:tex_compileCmdOptDict_pdf["-kpathsea-debug"]", "")
-" " -mktex=FMT (FMT=tex/tfm/pk)
-" RcLet("b:tex_compileCmdOptDict_pdf["-mktex"]", "")
-" " -output-comment=STRING
-" RcLet("b:tex_compileCmdOptDict_pdf["-output-comment"]", "")
-" " -output-directory=DIR
-" RcLet("b:tex_compileCmdOptDict_pdf["-output-directory"]", "")
-" " -output-format=FORMAT ('dvi' or 'pdf')
-" RcLet("b:tex_compileCmdOptDict_pdf["-output-format"]", "")
-" " -progname=STRING
-" RcLet("b:tex_compileCmdOptDict_pdf["-progname"]", "")
-" " -src-specials=WHERE
-" "  (comma-sep. list: cr display hbox math par parend vbox)
-" RcLet("b:tex_compileCmdOptDict_pdf["-src-specials"]", "")
-" " -synctex=NUMBER
-" RcLet("b:tex_compileCmdOptDict_pdf["-synctex"]", "")
-" " -translate-file=TCXNAME
-" RcLet("b:tex_compileCmdOptDict_pdf["-translate-line"]", "")
-" }}}
-" }}}
+let g:tex_compilePrg_pdf = 'pdflatex'
+let g:tex_outpDir = v:null
+let g:tex_compilePrgOptDict_pdf = {}
+let g:tex_compilePrgOptDict_pdf["-file-line-error-style"] = v:true
 
-let b:tex_useMake = 0
+let g:tex_useMake = 0
 
 " let g:tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
 " let g:tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
@@ -173,10 +131,10 @@ if has('win32')
   let g:tex_viewPrg_dvi = 'yap -1'
 elseif has('osx') || has('macunix')
   " Let the system pick.  If you want, you can override the choice here.
-  let g:tex_viewPrg_ps = ''
-  let g:tex_viewPrg_pdf = ''
+  let g:tex_viewPrg_ps = v:null
+  let g:tex_viewPrg_pdf = v:null
   " let g:tex_viewPrg_pdf = 'Acrobat\ Reader\ 5.1'
-  let g:tex_viewPrg_dvi = ''
+  let g:tex_viewPrg_dvi = v:null
   " Set this to 1 to disable opening a viewer with 'open -a'
   " Note: If you do this, you need to specify viewers above
   let g:tex_treatMacViewerAsUNIX = 0
@@ -194,8 +152,8 @@ else
   " up the dvi viewer according to Dimitri Antoniou's tip on vim.sf.net 
   " (tip
   " #225)
-  let g:tex_useEditorSettingInDVIViewer = 0
 endif
+let g:tex_useEditorSettingInDVIViewer = 0
 " For unix systems or macunix systens with enabled Tex_TreatMacViewerAsUNIX:
 " Set this to 1 if you do not want to execute the viewer in the background
 let g:tex_execNixViewerInForeground = 0
@@ -231,7 +189,7 @@ let g:tex_execNixViewerInForeground = 0
 " 	let g:tex_viewRuleComplete_html = 'MozillaFirebird "$*/index.html" &'
 "
 " Doing something like this would not be possible using Tex_ViewRule_html
-let g:tex_viewPrgComplete_dvi = ''
+let g:tex_viewPrgComplete_dvi = v:null
 
 " }}}
 " --------------------------------------------------------------------------
@@ -252,13 +210,12 @@ let g:tex_ignWarnPats = [
       \ 'Missing number, treated as zero.',
       \ 'There were undefined references',
       \ 'Citation %.%# undefined',
-      \ 'Token not allowed in a PDF string'
       \ ]
 
 " the 'ignore level' of the 'efm'. A value of 4 says that the first 4 kinds 
 " of warnings in the list above will be ignored. Use the command TCLevel to 
 " set a level dynamically.
-let g:tex_ignLvl = 8
+let g:tex_ignLvl = len(g:tex_ignWarnPats)
 
 " NOTE: The values of g:tex_Flavor and gLCompilerFlags are provided as a
 "       way to make compiler/tex.vim standalone. i.e independent of the rest
@@ -271,12 +228,8 @@ let g:tex_flavor = 'latex'
 " specifies the BibTeX flavor and if necessary options. If you use $* in 
 " this setting, it will be replaced by the *root* of the main file name, 
 " i.e, if the main file is "thesis.tex", $* will be "thesis".
-let b:tex_bibPrg = 'biber'
-let b:tex_bibPrgOptDict = {}
-if !empty(b:tex_outpDir)
-  let b:tex_bibPrgOptDict["--input-directory"] = b:tex_outpDir
-  let b:tex_bibPrgOptDict["--output-directory"] = b:tex_outpDir
-endif
+let g:tex_bibPrg = 'biber'
+let g:tex_bibPrgOptDict = {}
 
 " specifies the MakeIndedx flavor and if necessary options. $* will be
 " replaced by the *root* of the main file name. See above.
@@ -289,7 +242,7 @@ let g:tex_mkIdxFlavor = 'makeindex "$*.idx"'
 " NOTE: leave commented for using the default flags.
 " TODO: Is it necessary (or even desirable) to use 2 variables to specify a
 "       flavor and flags seperately? --SA
-" let g:tex_CompilerFlags = ''
+" let g:tex_CompilerFlags = v:null
 
 " If disabled (set to 0) LaTeX-Suite doesn't go immediately to warnings or
 " errors after compilation
@@ -309,7 +262,7 @@ let g:tex_rmvTmpFiles = 1
 " Use a valid vim expression here if you want to customize the way 
 " latex-suite
 " searches for a master file from within another file.
-let b:tex_mainFileXpr = "main"
+let g:tex_mainFileXpr = "main"
 
 " }}}
 " ==========================================================================
@@ -671,7 +624,7 @@ let g:tex_viewerPreviewHeight = 10
 let g:tex_ExplorerHeight = 10
 
 " Directory for images. Read |latex-completion-explorer| before changing
-let g:tex_imgDir = '.'
+let g:tex_imgDir = "img"
 
 " }}}
 " Options for completing a \ref {{{
@@ -689,12 +642,12 @@ let g:tex_useOutlineCompletion = 1
 " \input'ed files from the |latex-master-file|.
 "
 " Only used when g:tex_UseOutlineCompletion = 0.
-let g:tex_projSrcFiles = ''
+let g:tex_projSrcFiles = v:null
 
 " Whether latex-suite simply searches for \\label's in all the .tex file
 " found in the current directory or whether it will use a more complex
 " algorithm. This is used only g:tex_UseOutlineCompletion = 0 and
-" g:tex_ProjectSourceFiles = ''.
+" g:tex_ProjectSourceFiles = v:null.
 " See :help Tex_UseSimpleLabelSearch for more information
 let g:tex_useSimpleLabelSearch = 0
 
@@ -739,8 +692,8 @@ let g:tex_useJabref = 0
 " whether or not searches for \cite's are cached.
 let g:tex_rememberCiteSearch = 0
 " Paths to the bibliography files and custom packages.
-let g:tex_BIBINPUTS = ''
-let g:tex_TEXINPUTS = ''
+let g:tex_BIBINPUTS = v:null
+let g:tex_TEXINPUTS = v:null
 
 " }}}
 

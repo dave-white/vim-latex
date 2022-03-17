@@ -21,7 +21,7 @@ function! <SID>SetTemplateMenu()
 	if fname == ''
 	  break
 	endif
-	exe "amenu ".g:tex_templateMenuLoc."&".i.":<Tab>".fname." ".
+	exe "amenu ".b:tex_templateMenuLoc."&".i.":<Tab>".fname." ".
 		  \":call <SID>ReadTemplate('".fname."')<CR>"
 	let i = i + 1
   endwhile
@@ -95,8 +95,8 @@ function! <SID>FindInTemplateDir(filename, ...)
   " The pattern used... An empty filename should be regarded as '*.tex'
   let pattern = (a:filename != '' ? a:filename : '*.tex')
 
-  if exists("g:tex_customTemplateDirectory") && g:tex_customTemplateDirectory != ''
-	return call("Tex_FindInDirectory", [pattern, 0, g:tex_customTemplateDirectory] + a:000)
+  if exists("b:tex_customTemplateDirectory") && b:tex_customTemplateDirectory != ''
+	return call("Tex_FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
   else
 	return call("Tex_FindInDirectory", [pattern, 1, 'templates'] + a:000 )
   endif
@@ -158,7 +158,7 @@ endif
 
 " }}}
 " Set up the menus {{{
-if g:tex_menus
+if b:tex_menus
   call <SID>SetTemplateMenu()
 endif
 

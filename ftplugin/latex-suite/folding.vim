@@ -9,12 +9,6 @@
 
 nnoremap <Plug>Tex_RefreshFolds :call MakeTexFolds(1, 1)<cr>
 
-augroup LatexSuite
-  au LatexSuite User LatexSuiteFileType 
-		\ call Tex_Debug('folding.vim: catching LatexSuiteFileType', 'fold') | 
-		\ call Tex_SetFoldOptions()
-augroup END
-
 " Tex_SetFoldOptions: sets maps for every buffer {{{
 " Description: 
 function! Tex_SetFoldOptions()
@@ -25,7 +19,7 @@ function! Tex_SetFoldOptions()
 
   setlocal foldtext=TexFoldTextFunction()
 
-  if g:tex_folding
+  if b:tex_folding
 	call MakeTexFolds(0, 0)
   endif
 
@@ -46,7 +40,7 @@ endfunction " }}}
 " Description:
 " 	This function takes a comma seperated list of "sections" and creates fold
 " 	definitions for them. The first item is supposed to be the "shallowest" field
-" 	and the last is the "deepest". See g:tex_foldedSections for the default
+" 	and the last is the "deepest". See b:tex_foldedSections for the default
 " 	definition of the lst input argument.
 "
 " 	**works recursively**
@@ -83,27 +77,27 @@ endfunction
 " used in conjunction with MakeSyntaxFolds().
 " see ../plugin/syntaxFolds.vim for documentation
 function! MakeTexFolds(force, manual)
-  if !g:tex_folding
+  if !b:tex_folding
 	return
   endif
   if &ft != 'tex'
 	return
   endif
 
-  " Setup folded items lists g:tex_foldedxxxx
-  " 	1. Use default value if g:tex_foldedxxxxxx is not defined
-  " 	2. prepend default value to g:tex_foldedxxxxxx if it starts with ','
-  " 	3. append default value to g:tex_foldedxxxxxx if it ends with ','
+  " Setup folded items lists b:tex_foldedxxxx
+  " 	1. Use default value if b:tex_foldedxxxxxx is not defined
+  " 	2. prepend default value to b:tex_foldedxxxxxx if it starts with ','
+  " 	3. append default value to b:tex_foldedxxxxxx if it ends with ','
 
   " Folding items which are not caught in any of the standard commands,
   " environments or sections.
   let s = 'item,slide,preamble,<<<'
-  if !exists('g:tex_foldedMisc')
-	let g:tex_foldedMisc = s
-  elseif g:tex_foldedMisc[0] == ','
-	let g:tex_foldedMisc = s . g:tex_foldedMisc
-  elseif g:tex_foldedMisc =~ ',$'
-	let g:tex_foldedMisc = g:tex_foldedMisc . s
+  if !exists('b:tex_foldedMisc')
+	let b:tex_foldedMisc = s
+  elseif b:tex_foldedMisc[0] == ','
+	let b:tex_foldedMisc = s . b:tex_foldedMisc
+  elseif b:tex_foldedMisc =~ ',$'
+	let b:tex_foldedMisc = b:tex_foldedMisc . s
   endif
 
   " By default do not fold any commands. It looks like trying to fold
@@ -114,26 +108,26 @@ function! MakeTexFolds(force, manual)
   " requires a regexp which will match unbalanced curly braces and that is
   " apparently not doable with regexps.
   let s = ''
-  if !exists('g:tex_foldedCommands')
-	let g:tex_foldedCommands = s
-  elseif g:tex_foldedCommands[0] == ','
-	let g:tex_foldedCommands = s . g:tex_foldedCommands
-  elseif g:tex_foldedCommands =~ ',$'
-	let g:tex_foldedCommands = g:tex_foldedCommands . s
+  if !exists('b:tex_foldedCommands')
+	let b:tex_foldedCommands = s
+  elseif b:tex_foldedCommands[0] == ','
+	let b:tex_foldedCommands = s . b:tex_foldedCommands
+  elseif b:tex_foldedCommands =~ ',$'
+	let b:tex_foldedCommands = b:tex_foldedCommands . s
   endif
 
   let s = 'verbatim,comment,eq,gather,align,figure,table,thebibliography,'
 		\. 'keywords,abstract,titlepage'
-  if !exists('g:tex_foldedEnvironments')
-	let g:tex_foldedEnvironments = s
-  elseif g:tex_foldedEnvironments[0] == ','
-	let g:tex_foldedEnvironments = s . g:tex_foldedEnvironments
-  elseif g:tex_foldedEnvironments =~ ',$'
-	let g:tex_foldedEnvironments = g:tex_foldedEnvironments . s
+  if !exists('b:tex_foldedEnvironments')
+	let b:tex_foldedEnvironments = s
+  elseif b:tex_foldedEnvironments[0] == ','
+	let b:tex_foldedEnvironments = s . b:tex_foldedEnvironments
+  elseif b:tex_foldedEnvironments =~ ',$'
+	let b:tex_foldedEnvironments = b:tex_foldedEnvironments . s
   endif
 
-  if !exists('g:tex_foldedSections')
-	let g:tex_foldedSections = 'part,chapter,section,'
+  if !exists('b:tex_foldedSections')
+	let b:tex_foldedSections = 'part,chapter,section,'
 		  \. 'subsection,subsubsection,paragraph'
   endif
 
@@ -235,7 +229,7 @@ function! MakeTexFolds(force, manual)
   " ========================================================================
 
   " {{{ comment lines
-  if g:tex_foldedMisc =~ '\<comments\>'
+  if b:tex_foldedMisc =~ '\<comments\>'
 	call AddSyntaxFoldItem (
 		  \ '^%\([^%]\|[^f]\|[^a]\|[^k]\|[^e]\)',
 		  \ '^[^%]',
@@ -246,7 +240,7 @@ function! MakeTexFolds(force, manual)
   " }}}
 
   " {{{ items
-  if g:tex_foldedMisc =~ '\<item\>'
+  if b:tex_foldedMisc =~ '\<item\>'
 	call AddSyntaxFoldItem (
 		  \ '^\s*\\item',
 		  \ '^\s*\\item\|^\s*\\end{\(enumerate\|itemize\|description\)}',
@@ -259,7 +253,7 @@ function! MakeTexFolds(force, manual)
   " }}}
 
   " {{{ title
-  if g:tex_foldedMisc =~ '\<title\>'
+  if b:tex_foldedMisc =~ '\<title\>'
 	call AddSyntaxFoldItem (
 		  \ '^\s*\\title\W',
 		  \ '^\s*\\maketitle',
@@ -274,9 +268,9 @@ function! MakeTexFolds(force, manual)
   let pass = 0
   while pass < 2
 	if pass == 0
-	  let lst = g:tex_foldedCommands
+	  let lst = b:tex_foldedCommands
 	else
-	  let lst = g:tex_foldedEnvironments
+	  let lst = b:tex_foldedEnvironments
 	endif
 	while lst != ''
 	  let i = match(lst, ',')
@@ -314,8 +308,8 @@ function! MakeTexFolds(force, manual)
   " }}}
 
   " Sections {{{
-  if g:tex_foldedSections != '' 
-	call Tex_FoldSections(g:tex_foldedSections,
+  if b:tex_foldedSections != '' 
+	call Tex_FoldSections(b:tex_foldedSections,
 		  \ '^\s*\\\%(frontmatter\|mainmatter\|backmatter\)\|'
 		  \. '^\s*\\begin{thebibliography\|^\s*\\endinput\|'
 		  \. '^\s*\\begin{slide\|^\s*\\\%(begin\|end\){document\|'
@@ -324,7 +318,7 @@ function! MakeTexFolds(force, manual)
   " }}} 
 
   " {{{ slide
-  if g:tex_foldedMisc =~ '\<slide\>'
+  if b:tex_foldedMisc =~ '\<slide\>'
 	call AddSyntaxFoldItem (
 		  \ '^\s*\\begin{slide',
 		  \ '^\s*\\appendix\W\|^\s*\\chapter\W\|^\s*\\end{slide\|^\s*\\end{document',
@@ -335,7 +329,7 @@ function! MakeTexFolds(force, manual)
   " }}}
 
   " {{{ preamble
-  if g:tex_foldedMisc =~ '\<preamble\>'
+  if b:tex_foldedMisc =~ '\<preamble\>'
 	call AddSyntaxFoldItem (
 		  \ '^\s*\\document\(class\|style\)\>',
 		  \ '^\s*\\begin{document}',
@@ -346,7 +340,7 @@ function! MakeTexFolds(force, manual)
   " }}}
 
   " Manually folded regions {{{
-  if g:tex_foldedMisc =~ '\(^\|,\)<<<\(,\|$\)'
+  if b:tex_foldedMisc =~ '\(^\|,\)<<<\(,\|$\)'
 	call AddSyntaxFoldItem (
 		  \ '<<<',
 		  \ '>>>',
@@ -359,8 +353,8 @@ function! MakeTexFolds(force, manual)
   call MakeSyntaxFolds(a:force)
 
   " Open all folds if this function was triggered automatically
-  " and g:tex_autoFolding is disabled
-  if !a:manual && !g:tex_autoFolding
+  " and b:tex_autoFolding is disabled
+  if !a:manual && !b:tex_autoFolding
 	normal! zR
   endif
 endfunction
@@ -458,7 +452,7 @@ function! TexFoldTextFunction()
 	return myfoldtext . 'Preamble: ' . getline(v:foldstart)
   endif
 
-  let section_pattern = substitute(g:tex_foldedSections,
+  let section_pattern = substitute(b:tex_foldedSections,
 		\ ',\||', '\\|', 'g')
   let section_pattern = '\\\%('.section_pattern.'\)\>'
 
@@ -554,4 +548,5 @@ function! s:StripLine( string )
 endfunction
 " }}}
 
+call Tex_SetFoldOptions()
 " vim:fdm=marker:ff=unix:noet

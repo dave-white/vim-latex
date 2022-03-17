@@ -6,18 +6,18 @@
 "  Description: macros for everything mathematical in latex.
 "===========================================================================
 
-if !(has('gui_running') && g:tex_mathMenus && g:tex_menus)
+if !(has('gui_running') && b:tex_mathMenus && b:tex_menus)
   finish
 endif
 
-let s:mathMenuNm = g:tex_menuPrefix.'&Math.'
+let s:mathMenuNm = b:tex_menuPrefix.'&Math.'
 
 function! Tex_MathMenuRemove()
   exe 'silent! aunmenu '.s:mathMenuNm
 endfunction
 
-let s:pA = 'amenu <silent> '.g:tex_nextMenuLoc.' '.s:mathMenuNm
-let g:tex_nextMenuLoc = g:tex_nextMenuLoc + 1
+let s:pA = 'amenu <silent> '.b:tex_nextMenuLoc.' '.s:mathMenuNm
+let b:tex_nextMenuLoc = b:tex_nextMenuLoc + 1
 
 " brackets and dollars {{{
 exe s:pA.'\\&[\ \\]                 <plug><C-r>=IMAP_PutTextWithMovement("\\[<++>\\]<++>")<cr>'

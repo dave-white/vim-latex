@@ -19,11 +19,7 @@ func! Tex_SetTexViewerMaps()
   endif
 endfunc
 
-augroup LatexSuite
-  au LatexSuite User LatexSuiteFileType 
-		\ call Tex_Debug('texviewer.vim: Catching LatexSuiteFileType event', 'view') | 
-		\ call Tex_SetTexViewerMaps()
-augroup END
+call Tex_SetTexViewerMaps()
 
 command -nargs=1 TLook    call Tex_Complete(<q-args>, 'tex')
 command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
@@ -123,14 +119,14 @@ func! Tex_Complete(what, where)
 	  else
 		" Clear the quickfix list
 		cexpr []
-		if g:tex_rememberCiteSearch && exists('s:citeSearchHistory')
+		if b:tex_rememberCiteSearch && exists('s:citeSearchHistory')
 		  call <SID>Tex_SetupCWindow(s:citeSearchHistory)
 		else
 		  call Tex_GrepHelper(s:prefix, 'bib')
 		  redraw!
 		  call <SID>Tex_SetupCWindow()
 		endif
-		if g:tex_rememberCiteSearch && &ft == 'qf'
+		if b:tex_rememberCiteSearch && &ft == 'qf'
 		  let _a = @a
 		  silent! normal! ggVG"ay
 		  let s:citeSearchHistory = @a
@@ -170,7 +166,7 @@ func! Tex_Complete(what, where)
 			\ '.', 
 			\ '')
 
-	elseif exists('s:type') && exists("g:tex_completion_".s:type)
+	elseif exists('s:type') && exists("b:tex_completion_".s:type)
 	  call <SID>Tex_CompleteRefCiteCustom('plugin_'.s:type)
 
 	else
@@ -320,7 +316,7 @@ endfunc
 func! s:Tex_SetupCWindow(...)
   call Tex_Debug('+Tex_SetupCWindow', 'view')
   cclose
-  exe 'copen '. g:tex_viewerCwindowHeight
+  exe 'copen '. b:tex_viewerCwindowHeight
   " If called with an argument, it means we want to re-use some search
   " history from last time. Therefore, just paste it here and proceed.
   if a:0 == 1
@@ -434,7 +430,7 @@ func! s:Tex_SyncPreviewWindow()
 
   " Vanilla 6.1 has bug. This additional setting of cwindow height prevents
   " resizing of this window
-  exe g:tex_viewerCwindowHeight.' wincmd _'
+  exe b:tex_viewerCwindowHeight.' wincmd _'
 
   " Handle situation if there is no item beginning with s:prefix.
   " Unfortunately, because we know it late we have to close everything and
@@ -457,7 +453,7 @@ func! s:Tex_SyncPreviewWindow()
   wincmd j
 
   " Settings of preview window
-  exe g:tex_viewerPreviewHeight.' wincmd _'
+  exe b:tex_viewerPreviewHeight.' wincmd _'
   setlocal nofoldenable
 
   if exists('s:type') && s:type =~ 'cite'
@@ -572,14 +568,14 @@ func! Tex_ScanFileForCite(prefix)
 	  " the corresponding .bbl file. (because the .bbl file will most
 	  " probably be generated automatically from the .bib file with
 	  " bibtex).
-	  let fname = Tex_FindFile(bibname, '.,'.g:tex_bIBINPUTS, '.bib')
+	  let fname = Tex_FindFile(bibname, '.,'.b:tex_bIBINPUTS, '.bib')
 	  if fname != ''
 		call Tex_Debug('finding .bib file ['.bufname('%').']', 'view')
 		exec 'split '.fnameescape(fname)
 		call Tex_Grepadd('@.*{'.a:prefix, "%")
 		q
 	  else
-		let fname = Tex_FindFile(bibname, '.,'.g:tex_bIBINPUTS, '.bbl')
+		let fname = Tex_FindFile(bibname, '.,'.b:tex_bIBINPUTS, '.bbl')
 		if fname != ''
 		  exec 'split '.fnameescape(fname)
 		  call Tex_Debug('finding .bbl file ['.bufname('.').']', 'view')
@@ -683,9 +679,9 @@ endfunc
 " Functions for custom command completion
 " ==============================================================================
 " Tex_completion_{var}: similar variables can be set in package files {{{
-let g:tex_completion_bibliographystyle = 'abbr,alpha,plain,unsrt'
-let g:tex_completion_addtocontents = 'lof}{,lot}{,toc}{'
-let g:tex_completion_addcontentsline = 'lof}{figure}{,lot}{table}{,toc}{chapter}{,toc}{part}{,'.
+let b:tex_completion_bibliographystyle = 'abbr,alpha,plain,unsrt'
+let b:tex_completion_addtocontents = 'lof}{,lot}{,toc}{'
+let b:tex_completion_addcontentsline = 'lof}{figure}{,lot}{table}{,toc}{chapter}{,toc}{part}{,'.
 	  \ 'toc}{section}{,toc}{subsection}{,toc}{paragraph}{,'.
 	  \ 'toc}{subparagraph}{'
 " }}}
@@ -694,12 +690,12 @@ let g:tex_completion_addcontentsline = 'lof}{figure}{,lot}{table}{,toc}{chapter}
 func! s:Tex_PromptForCompletion(texcommand,ask)
 
   let common_completion_prompt = 
-		\ Tex_CreatePrompt(g:tex_completion_{a:texcommand}, 2, ',') . "\n" .
+		\ Tex_CreatePrompt(b:tex_completion_{a:texcommand}, 2, ',') . "\n" .
 		\ 'Enter number or completion: '
 
   let inp = input(a:ask."\n".common_completion_prompt)
   if inp =~ '^[0-9]\+$'
-	let completion = Tex_Strntok(g:tex_completion_{a:texcommand}, ',', inp)
+	let completion = Tex_Strntok(b:tex_completion_{a:texcommand}, ',', inp)
   else
 	let completion = inp
   endif
@@ -729,9 +725,9 @@ endfunc
 " these lines need to be outside the function.
 let s:path = expand('<sfile>:p:h')
 if Tex_UsePython()
-  exec g:tex_pythonCmd . " import sys, re"
-  exec g:tex_pythonCmd . " sys.path += [r'". s:path . "']"
-  exec g:tex_pythonCmd . " import outline"
+  exec b:tex_pythonCmd . " import sys, re"
+  exec b:tex_pythonCmd . " sys.path += [r'". s:path . "']"
+  exec b:tex_pythonCmd . " import outline"
 endif
 
 func! Tex_StartOutlineCompletion()
@@ -757,8 +753,8 @@ func! Tex_StartOutlineCompletion()
   setlocal foldmarker=<<<,>>>
 
   if Tex_UsePython()
-	exec g:tex_pythonCmd . ' retval = outline.main(r"""' . mainfname . '""", """' . s:prefix . '""")'
-	exec g:tex_pythonCmd . ' vim.current.buffer[:] = retval.splitlines()'
+	exec b:tex_pythonCmd . ' retval = outline.main(r"""' . mainfname . '""", """' . s:prefix . '""")'
+	exec b:tex_pythonCmd . ' vim.current.buffer[:] = retval.splitlines()'
   else
 	" delete everything in it to the blackhole
 	% d _
@@ -883,7 +879,7 @@ func! Tex_FindBibFiles( currfile, recursive )
 	  if bibname == ''
 		break
 	  endif
-	  let fname = Tex_FindFile(bibname, '.,'.g:tex_bIBINPUTS, '.bib')
+	  let fname = Tex_FindFile(bibname, '.,'.b:tex_bIBINPUTS, '.bib')
 	  if fname != ''
 		let bibfiles = bibfiles.fname."\n"
 	  endif
@@ -933,9 +929,9 @@ endfunc
 " get the place where this plugin resides for setting cpt and dict options.
 " these lines need to be outside the function.
 if Tex_UsePython()
-  exec g:tex_pythonCmd . " import sys, re"
-  exec g:tex_pythonCmd . " sys.path += [r'". s:path . "']"
-  exec g:tex_pythonCmd . " import bibtools"
+  exec b:tex_pythonCmd . " import sys, re"
+  exec b:tex_pythonCmd . " sys.path += [r'". s:path . "']"
+  exec b:tex_pythonCmd . " import bibtools"
 endif
 
 func! Tex_StartCiteCompletion()
@@ -949,8 +945,8 @@ func! Tex_StartCiteCompletion()
   bot split __OUTLINE__
   exec Tex_GetVarValue('Tex_OutlineWindowHeight', 15).' wincmd _'
 
-  exec g:tex_pythonCmd . ' Tex_BibFile = bibtools.BibFile(r"""'.bibfiles.'""")'
-  exec g:tex_pythonCmd . ' Tex_BibFile.addfilter(r"key ^'.s:prefix.'")'
+  exec b:tex_pythonCmd . ' Tex_BibFile = bibtools.BibFile(r"""'.bibfiles.'""")'
+  exec b:tex_pythonCmd . ' Tex_BibFile.addfilter(r"key ^'.s:prefix.'")'
 
   call Tex_DisplayBibList()
   "call Tex_EchoBibShortcuts()
@@ -995,7 +991,7 @@ func! Tex_DisplayBibList()
   " delete everything in it to the blackhole
   % d _
 
-  exec g:tex_pythonCmd . ' vim.current.buffer[:] = Tex_BibFile.__str__().splitlines()'
+  exec b:tex_pythonCmd . ' vim.current.buffer[:] = Tex_BibFile.__str__().splitlines()'
 
   call Tex_SetupBibSyntax()
 
@@ -1049,7 +1045,7 @@ func! Tex_HandleBibShortcuts(command)
   if a:command == 'filter' || a:command == 'sort'
 
 	let fieldprompt = 
-		  \ "Field acronyms: (`:let g:tex_echoBibFields = 0` to avoid this message)\n" .
+		  \ "Field acronyms: (`:let b:tex_echoBibFields = 0` to avoid this message)\n" .
 		  \ " [t] title         [a] author        [b] booktitle     \n" .
 		  \ " [j] journal       [y] year          [p] bibtype       \n" .
 		  \ " (you can also enter the complete field name)    \n"
@@ -1085,18 +1081,18 @@ func! Tex_HandleBibShortcuts(command)
 	  endif
 	  call Tex_Debug(":tex_handleBibShortcuts: using inp = [".inp."]", "view")
 	  if a:command == 'filter'
-		exec g:tex_pythonCmd . ' Tex_BibFile.addfilter(r"'.inp.'")'
+		exec b:tex_pythonCmd . ' Tex_BibFile.addfilter(r"'.inp.'")'
 	  elseif a:command == 'sort'
-		exec g:tex_pythonCmd . " Tex_BibFile.addsortfield(r\"".inp."\")"
-		exec g:tex_pythonCmd . ' Tex_BibFile.sort()'
+		exec b:tex_pythonCmd . " Tex_BibFile.addsortfield(r\"".inp."\")"
+		exec b:tex_pythonCmd . ' Tex_BibFile.sort()'
 	  endif
 	  silent! call Tex_DisplayBibList()
 	endif
 
   elseif a:command == 'remove_filters'
 
-	exec g:tex_pythonCmd . ' Tex_BibFile.rmfilters()'
-	exec g:tex_pythonCmd . ' Tex_BibFile.addfilter(r"key ^'.s:prefix.'")'
+	exec b:tex_pythonCmd . ' Tex_BibFile.rmfilters()'
+	exec b:tex_pythonCmd . ' Tex_BibFile.addfilter(r"key ^'.s:prefix.'")'
 	call Tex_DisplayBibList()
 
   endif

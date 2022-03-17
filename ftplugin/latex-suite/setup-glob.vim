@@ -7,24 +7,24 @@ let s:path = expand('<sfile>:p:h')
 
 " Python {{{
 if has('python3')
-  let g:tex_pythonVersion = 3
-  let g:tex_pythonCmd = 'python3'
-  let g:tex_pythonFileCmd = 'py3file'
+  let b:tex_pythonVersion = 3
+  let b:tex_pythonCmd = 'python3'
+  let b:tex_pythonFileCmd = 'py3file'
 elseif has('python')
-  let g:tex_pythonVersion = 2
-  let g:tex_pythonCmd = 'python'
-  let g:tex_pythonFileCmd = 'pyfile'
+  let b:tex_pythonVersion = 2
+  let b:tex_pythonCmd = 'python'
+  let b:tex_pythonFileCmd = 'pyfile'
 else
-  let g:tex_pythonVersion = 0
+  let b:tex_pythonVersion = 0
 endif
 
 func! Tex_UsePython()
-  return g:tex_pythonVersion && g:tex_usePython
+  return b:tex_pythonVersion && b:tex_usePython
 endfunc
 
 " Define the functions in python if available.
 if Tex_UsePython()
-  exec g:tex_pythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h'))
+  exec b:tex_pythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h'))
 	\ . '/pytools.py'
 endif
 " }}}
@@ -38,7 +38,7 @@ endif
 " Do not want a memory leak! Set this to zero so that latex-suite always
 " starts out in a non-debugging mode.
 function! Tex_Debug(str, ...)
-  if !g:tex_debug
+  if !b:tex_debug
     return
   endif
   if a:0 > 0
@@ -47,10 +47,10 @@ function! Tex_Debug(str, ...)
     let pattern = ''
   endif
 
-  " If g:tex_debug:tex_og' is given, write debug information into this file 
+  " If b:tex_debug:tex_og' is given, write debug information into this file 
   " (preferred method).  Otherwise, save it in a variable
-  if !empty(g:tex_debug:tex_og)
-    exec 'redir! >> '.g:tex_debug:tex_og
+  if !empty(b:tex_debug:tex_og)
+    exec 'redir! >> '.b:tex_debug:tex_og
     silent! echo pattern.' : '.a:str
     redir END
   else
@@ -447,7 +447,7 @@ endfunction " }}}
 " s:RemoveLastHistoryItem: removes last search item from search history {{{
 " Description: Execute this string to clean up the search history.
 let s:RemoveLastHistoryItem = ':call histdel("/", -1)'
-      \.'|let@/=g:tex_lastSearchPattern'
+      \.'|let@/=b:tex_lastSearchPattern'
 
 " }}}
 " VEnclose: encloses the visually selected region with given arguments {{{
@@ -506,7 +506,7 @@ function! VEnclose(vstart, vend, VStart, VEnd)
     " s:RemoveLastHistoryItem
     " will reset @/ to this pattern so we do not create new 
     " highlighting.
-    let g:tex_lastSearchPattern = @/
+    let b:tex_lastSearchPattern = @/
 
     silent! exe normcmd
     " this is to restore the r register.
@@ -610,49 +610,44 @@ function! Tex_GotoTempFile()
   endif
   exec 'silent! split '.s:tempFileName
 endfunction " }}}
-" Tex_IsPresentInFile: finds if a regexp, is present in filename {{{
+" Tex_FileContains: finds if a regexp, is present in filename {{{
 
-if executable('awk')
+if Tex_UsePython()
 
-  func! Tex_IsPresentInFile(regex, file)
+  func Tex_FileContains(regex, fpath)
+    exec b:tex_pythonCmd . ' isPresentInFile(r"'.a:regex.'", r"'
+	  \.a:fpath.'")'
+
+    return retval
+  endfunc
+  
+elseif executable('awk')
+
+  func Tex_FileContains(regex, fpath)
     let l:awkCmd = "awk "
     let l:awkCmd .= "'BEGIN { ret = 0 } "
     let l:awkCmd .= "/".a:regex."/ "
     let l:awkCmd .= "{ ret = 1; exit } "
     let l:awkCmd .= "END { print ret }' "
-    let l:awkCmd .= a:file
+    let l:awkCmd .= a:fpath
     return str2nr(system(l:awkCmd))
   endfunc
 
-elseif Tex_UsePython()
-  func! Tex_IsPresentInFile(regexp, filename)
-    exec g:tex_pythonCmd . ' isPresentInFile(r"'.a:regexp.'", r"'
-	  \.a:filename.'")'
-
-    return retval
-  endfunc
 else
-  func! Tex_IsPresentInFile(regexp, filename)
-    call Tex_GotoTempFile()
 
-    silent! 1,$ d _
-    let _report = &report
-    let _sc = &sc
-    set report=9999999 nosc
-    exec 'silent! 0r! '.g:tex_catCmd.' '.a:filename
-    set nomod
-    let &report = _report
-    let &sc = _sc
-
-    " Use very magic to digest usual regular expressions.
-    if search('\v' . a:regexp, 'w')
-      let retval = 1
-    else
-      let retval = 0
-    endif
-    silent! bd
-    return retval
+  func Tex_FileContains(regex, fpath)
+    let ln_lst = readfile(a:fpath)
+    let idx = 0
+    let found = 0
+    while (idx < len(ln_lst)) && !found
+      let idx += 1
+      if ln_lst[idx] =~ a:regex
+	found = 1
+      endif
+    endwhile
+    return found
   endfunc
+
 endif
 " }}}
 " }}}
@@ -663,7 +658,7 @@ exe 'source '.fnameescape(s:path.'/texmenuconf.vim')
 exe 'source '.fnameescape(s:path.'/envmacros.vim')
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 " source utf-8 or plain math menus
-if exists("g:tex_useUtfMenus") && g:tex_useUtfMenus != 0
+if exists("b:tex_useUtfMenus") && b:tex_useUtfMenus != 0
       \ && has("gui_running")
   exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
 else
@@ -677,7 +672,7 @@ exe 'source '.fnameescape(s:path.'/bibtex.vim')
 " source advanced math functions
 exe 'source '.fnameescape(s:path.'/brackets.vim')
 exe 'source '.fnameescape(s:path.'/smartspace.vim')
-if g:tex_diacritics != 0
+if b:tex_diacritics != 0
   exe 'source '.fnameescape(s:path.'/diacritics.vim')
 endif
 exe 'source '.fnameescape(s:path.'/texviewer.vim')
@@ -687,7 +682,7 @@ exe 'source '.fnameescape(s:path.'/version.vim')
 " Settings for taglist.vim plugin
 " =========================================================================
 " Sets Tlist_Ctags_Cmd for taglist.vim and regexps for ctags {{{
-if g:tex_tagListSupport
+if b:tex_tagListSupport
   if !exists("g:tlist_tex_settings")
     let g:tlist_tex_settings = 'tex;s:section;c:chapter;l:label;r:ref'
   endif
@@ -698,7 +693,7 @@ if g:tex_tagListSupport
     let s:tex_ctags = 'ctags' " Configurable in texrc?
   endif
 
-  if g:tex_internalTagDfns == 1
+  if b:tex_internalTagDfns == 1
     let Tlist_Ctags_Cmd = s:tex_ctags
 	  \." --langdef=tex --langmap=tex:.tex.ltx.latex"
 	  \.' --regex-tex="/\\\\begin{abstract}'
@@ -723,5 +718,5 @@ endif
 " }}}
 
 " commands to completion
-let g:tex_completion_explorer = ','
+let b:tex_completion_explorer = ','
 

@@ -11,7 +11,7 @@ nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
 if exists('s:lastEltLoc')
-	  \ && g:tex_eltMenuLoc == s:lastEltLoc
+	  \ && b:tex_eltMenuLoc == s:lastEltLoc
   finish
 endif
 
@@ -22,12 +22,12 @@ if exists('s:lastEltLoc')
   exe 'aunmenu '.s:lastEltLoc.'Various.'
 endif
 
-let s:lastEltLoc = g:tex_eltMenuLoc
+let s:lastEltLoc = b:tex_eltMenuLoc
 
-let s:fontMenuLoc       = g:tex_eltMenuLoc.'Font.'
-let s:dimensionMenuLoc  = g:tex_eltMenuLoc.'Dimension.'
-let s:counterMenuLoc    = g:tex_eltMenuLoc.'Counters.'
-let s:variousMenuLoc    = g:tex_eltMenuLoc.'Various.'
+let s:fontMenuLoc       = b:tex_eltMenuLoc.'Font.'
+let s:dimensionMenuLoc  = b:tex_eltMenuLoc.'Dimension.'
+let s:counterMenuLoc    = b:tex_eltMenuLoc.'Counters.'
+let s:variousMenuLoc    = b:tex_eltMenuLoc.'Various.'
 
 " ==========================================================================
 " Set up the functions the first time.
@@ -48,17 +48,17 @@ if !exists('s:definedFuncs') " {{{
 	let vislhs = matchstr(tolower(a:font), '^.\zs.*')
 
 	" avoid redoing imaps and vmaps for every reconfiguration of menus.
-	if !exists('s:doneOnce') && g:tex_fontMaps
-	  exe "xnoremap <silent> ".g:tex_leader.vislhs.
+	if !exists('s:doneOnce') && b:tex_fontMaps
+	  exe "xnoremap <silent> ".b:tex_leader.vislhs.
 			\" \<C-\\>\<C-N>:call VEnclose('\\text".vislhs."{', '}', '{\\"
 			\.vislhs.a:fam." ', '}')<CR>"
 	  exe 'call IMAP ("'.a:font.'", "\\text'.vislhs.'{<++>}<++>", "tex")'
 	endif
 
 	" menu entry.
-	if g:tex_menus && g:tex_fontMenus
+	if b:tex_menus && b:tex_fontMenus
 	  let location = s:fontMenuLoc.substitute(a:fam, '^.', '\u&', '').'.'
-			\.vislhs.a:fam.'<tab>'.a:font.'\ ('.g:tex_leader.vislhs.')'
+			\.vislhs.a:fam.'<tab>'.a:font.'\ ('.b:tex_leader.vislhs.')'
 	  exe "amenu ".location." <plug><C-r>=IMAP_PutTextWithMovement('\\text"
 			\.vislhs."{<++>}<++>')<CR>"
 	  exe "vmenu ".location." \<C-\\>\<C-N>:call VEnclose('\\text".vislhs
@@ -132,11 +132,11 @@ call <SID>Tex_FontFamily("FSC","shape")
 call <SID>Tex_FontFamily("FIT","shape")
 
 " the \emph is special.
-if g:tex_fontMaps | exe "xnoremap <silent> ".g:tex_leader."em \<C-\\>\<C-N>:call VEnclose('\\emph{', '}', '{\\em', '\\/}')<CR>" | endif
-if g:tex_fontMaps | exe 'call IMAP ("FEM", "\\emph{<++>}<++>", "tex")' | endif
+if b:tex_fontMaps | exe "xnoremap <silent> ".b:tex_leader."em \<C-\\>\<C-N>:call VEnclose('\\emph{', '}', '{\\em', '\\/}')<CR>" | endif
+if b:tex_fontMaps | exe 'call IMAP ("FEM", "\\emph{<++>}<++>", "tex")' | endif
 
 " }}}
-if g:tex_menus && g:tex_fontMenus
+if b:tex_menus && b:tex_fontMenus
   " {{{ diacritics
   call <SID>Tex_FontDiacritics('Acute',        '"')
   call <SID>Tex_FontDiacritics('Breve',        'u')
@@ -181,7 +181,7 @@ endif
 " ==========================================================================
 " Dimensions
 " ==========================================================================
-if g:tex_menus
+if b:tex_menus
   " {{{ Static1
   call <SID>Tex_DimMenus('Static1', 'arraycolsep')
   call <SID>Tex_DimMenus('Static1', 'arrayrulewidth')
@@ -258,7 +258,7 @@ endif
 " ==========================================================================
 " Counters
 " ==========================================================================
-if g:tex_menus
+if b:tex_menus
   " Counters {{{
   call <SID>Tex_CounterMenus('Counters', 'bottomnumber')
   call <SID>Tex_CounterMenus('Counters', 'chapter')
@@ -321,7 +321,7 @@ endif
 " ==========================================================================
 " Various
 " ==========================================================================
-if g:tex_menus
+if b:tex_menus
   " Various {{{
   call <SID>Tex_VariousMenus('ref{}'         , '\ref{<++>}<++>')
   call <SID>Tex_VariousMenus('pageref{}'     , '\pageref{<++>}<++>')
@@ -334,8 +334,8 @@ if g:tex_menus
   " }}}
 endif
 
-if g:tex_catchVisMapErrs
-  exe "xnoremap ".g:tex_leader."   :\<C-u>call ExecMap('".g:tex_leader
+if b:tex_catchVisMapErrs
+  exe "xnoremap ".b:tex_leader."   :\<C-u>call ExecMap('".b:tex_leader
 		\."', 'v')\<CR>"
 endif
 " this is for avoiding reinclusion of imaps from next time on.

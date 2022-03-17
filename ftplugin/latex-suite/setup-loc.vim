@@ -45,91 +45,91 @@ if b:tex_useIMAP " {{{
     call IMAP ('::', '\dots', "tex")
     call IMAP ('..', '\dotsc', "tex")
     call IMAP ('**', '\dotsb', "tex")
-    call IMAP (g:tex_leader.'^', '\hat{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'_', '\bar{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'6', '\partial', "tex")
-    call IMAP (g:tex_leader.'8', '\infty', "tex")
-    call IMAP (g:tex_leader.'/', '\frac{<++>}{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'%', '\frac{<++>}{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'@', '\circ', "tex")
-    call IMAP (g:tex_leader.'0', '^\circ', "tex")
-    call IMAP (g:tex_leader.'=', '\equiv', "tex")
-    call IMAP (g:tex_leader."\\",'\setminus', "tex")
-    if !g:tex_smartKeyDot
-      call IMAP (g:tex_leader.'.', '\cdot', "tex")
+    call IMAP (b:tex_leader.'^', '\hat{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'_', '\bar{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'6', '\partial', "tex")
+    call IMAP (b:tex_leader.'8', '\infty', "tex")
+    call IMAP (b:tex_leader.'/', '\frac{<++>}{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'%', '\frac{<++>}{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'@', '\circ', "tex")
+    call IMAP (b:tex_leader.'0', '^\circ', "tex")
+    call IMAP (b:tex_leader.'=', '\equiv', "tex")
+    call IMAP (b:tex_leader."\\",'\setminus', "tex")
+    if !b:tex_smartKeyDot
+      call IMAP (b:tex_leader.'.', '\cdot', "tex")
     endif
-    call IMAP (g:tex_leader.'*', '\times', "tex")
-    call IMAP (g:tex_leader.'&', '\wedge', "tex")
-    call IMAP (g:tex_leader.'-', '\bigcap', "tex")
-    call IMAP (g:tex_leader.'+', '\bigcup', "tex")
-    call IMAP (g:tex_leader.'M', '\sum_{<++>}^{<++>}<++>', 'tex')
-    call IMAP (g:tex_leader.'S', '\sum_{<++>}^{<++>}<++>', 'tex')
-    call IMAP (g:tex_leader.'(', '\subset', "tex")
-    call IMAP (g:tex_leader.')', '\supset', "tex")
-    call IMAP (g:tex_leader.'<', '\le', "tex")
-    call IMAP (g:tex_leader.'>', '\ge', "tex")
-    call IMAP (g:tex_leader.',', '\nonumber', "tex")
-    call IMAP (g:tex_leader.'~', '\tilde{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.';', '\dot{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.':', '\ddot{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'2', '\sqrt{<++>}<++>', "tex")
-    call IMAP (g:tex_leader.'|', '\Big|', "tex")
-    call IMAP (g:tex_leader.'I', "\\int_{<++>}^{<++>}<++>", 'tex')
+    call IMAP (b:tex_leader.'*', '\times', "tex")
+    call IMAP (b:tex_leader.'&', '\wedge', "tex")
+    call IMAP (b:tex_leader.'-', '\bigcap', "tex")
+    call IMAP (b:tex_leader.'+', '\bigcup', "tex")
+    call IMAP (b:tex_leader.'M', '\sum_{<++>}^{<++>}<++>', 'tex')
+    call IMAP (b:tex_leader.'S', '\sum_{<++>}^{<++>}<++>', 'tex')
+    call IMAP (b:tex_leader.'(', '\subset', "tex")
+    call IMAP (b:tex_leader.')', '\supset', "tex")
+    call IMAP (b:tex_leader.'<', '\le', "tex")
+    call IMAP (b:tex_leader.'>', '\ge', "tex")
+    call IMAP (b:tex_leader.',', '\nonumber', "tex")
+    call IMAP (b:tex_leader.'~', '\tilde{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.';', '\dot{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.':', '\ddot{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'2', '\sqrt{<++>}<++>', "tex")
+    call IMAP (b:tex_leader.'|', '\Big|', "tex")
+    call IMAP (b:tex_leader.'I', "\\int_{<++>}^{<++>}<++>", 'tex')
     " }}}
     " Greek Letters {{{
-    call IMAP(g:tex_leader.'a', '\alpha', 'tex')
-    call IMAP(g:tex_leader.'b', '\beta', 'tex')
-    call IMAP(g:tex_leader.'c', '\chi', 'tex')
-    call IMAP(g:tex_leader.'d', '\delta', 'tex')
-    call IMAP(g:tex_leader.'e', '\varepsilon', 'tex')
-    call IMAP(g:tex_leader.'f', '\varphi', 'tex')
-    call IMAP(g:tex_leader.'g', '\gamma', 'tex')
-    call IMAP(g:tex_leader.'h', '\eta', 'tex')
-    call IMAP(g:tex_leader.'i', '\iota', 'tex')
-    call IMAP(g:tex_leader.'k', '\kappa', 'tex')
-    call IMAP(g:tex_leader.'l', '\lambda', 'tex')
-    call IMAP(g:tex_leader.'m', '\mu', 'tex')
-    call IMAP(g:tex_leader.'n', '\nu', 'tex')
-    call IMAP(g:tex_leader.'o', '\omicron', 'tex')
-    call IMAP(g:tex_leader.'p', '\pi', 'tex')
-    call IMAP(g:tex_leader.'q', '\theta', 'tex')
-    call IMAP(g:tex_leader.'r', '\rho', 'tex')
-    call IMAP(g:tex_leader.'s', '\sigma', 'tex')
-    call IMAP(g:tex_leader.'t', '\tau', 'tex')
-    call IMAP(g:tex_leader.'u', '\upsilon', 'tex')
-    call IMAP(g:tex_leader.'v', '\varsigma', 'tex')
-    call IMAP(g:tex_leader.'w', '\omega', 'tex')
-    call IMAP(g:tex_leader.'x', '\xi', 'tex')
-    call IMAP(g:tex_leader.'y', '\psi', 'tex')
-    call IMAP(g:tex_leader.'z', '\zeta', 'tex')
+    call IMAP(b:tex_leader.'a', '\alpha', 'tex')
+    call IMAP(b:tex_leader.'b', '\beta', 'tex')
+    call IMAP(b:tex_leader.'c', '\chi', 'tex')
+    call IMAP(b:tex_leader.'d', '\delta', 'tex')
+    call IMAP(b:tex_leader.'e', '\varepsilon', 'tex')
+    call IMAP(b:tex_leader.'f', '\varphi', 'tex')
+    call IMAP(b:tex_leader.'g', '\gamma', 'tex')
+    call IMAP(b:tex_leader.'h', '\eta', 'tex')
+    call IMAP(b:tex_leader.'i', '\iota', 'tex')
+    call IMAP(b:tex_leader.'k', '\kappa', 'tex')
+    call IMAP(b:tex_leader.'l', '\lambda', 'tex')
+    call IMAP(b:tex_leader.'m', '\mu', 'tex')
+    call IMAP(b:tex_leader.'n', '\nu', 'tex')
+    call IMAP(b:tex_leader.'o', '\omicron', 'tex')
+    call IMAP(b:tex_leader.'p', '\pi', 'tex')
+    call IMAP(b:tex_leader.'q', '\theta', 'tex')
+    call IMAP(b:tex_leader.'r', '\rho', 'tex')
+    call IMAP(b:tex_leader.'s', '\sigma', 'tex')
+    call IMAP(b:tex_leader.'t', '\tau', 'tex')
+    call IMAP(b:tex_leader.'u', '\upsilon', 'tex')
+    call IMAP(b:tex_leader.'v', '\varsigma', 'tex')
+    call IMAP(b:tex_leader.'w', '\omega', 'tex')
+    call IMAP(b:tex_leader.'x', '\xi', 'tex')
+    call IMAP(b:tex_leader.'y', '\psi', 'tex')
+    call IMAP(b:tex_leader.'z', '\zeta', 'tex')
     " not all capital greek letters exist in LaTeX!
     " reference: http://www.giss.nasa.gov/latex/ltx-405.html
     " But we still expand all the letters and give choices to users
-    call IMAP(g:tex_leader.'A', '\Alpha', 'tex')
-    call IMAP(g:tex_leader.'B', '\Beta', 'tex')
-    call IMAP(g:tex_leader.'C', '\Chi', 'tex')
-    call IMAP(g:tex_leader.'D', '\Delta', 'tex')
-    call IMAP(g:tex_leader.'E', '\Varepsilon', 'tex')
-    call IMAP(g:tex_leader.'F', '\Varphi', 'tex')
-    call IMAP(g:tex_leader.'G', '\Gamma', 'tex')
-    call IMAP(g:tex_leader.'H', '\Eta', 'tex')
-    call IMAP(g:tex_leader.'I', '\Iota', 'tex')
-    call IMAP(g:tex_leader.'K', '\Kappa', 'tex')
-    call IMAP(g:tex_leader.'L', '\Lambda', 'tex')
-    call IMAP(g:tex_leader.'M', '\Mu', 'tex')
-    call IMAP(g:tex_leader.'N', '\Nu', 'tex')
-    call IMAP(g:tex_leader.'O', '\Omicron', 'tex')
-    call IMAP(g:tex_leader.'P', '\Pi', 'tex')
-    call IMAP(g:tex_leader.'Q', '\Theta', 'tex')
-    call IMAP(g:tex_leader.'R', '\Rho', 'tex')
-    call IMAP(g:tex_leader.'S', '\Sigma', 'tex')
-    call IMAP(g:tex_leader.'T', '\Tau', 'tex')
-    call IMAP(g:tex_leader.'U', '\Upsilon', 'tex')
-    call IMAP(g:tex_leader.'V', '\Varsigma', 'tex')
-    call IMAP(g:tex_leader.'W', '\Omega', 'tex')
-    call IMAP(g:tex_leader.'X', '\Xi', 'tex')
-    call IMAP(g:tex_leader.'Y', '\Psi', 'tex')
-    call IMAP(g:tex_leader.'Z', '\Zeta', 'tex')
+    call IMAP(b:tex_leader.'A', '\Alpha', 'tex')
+    call IMAP(b:tex_leader.'B', '\Beta', 'tex')
+    call IMAP(b:tex_leader.'C', '\Chi', 'tex')
+    call IMAP(b:tex_leader.'D', '\Delta', 'tex')
+    call IMAP(b:tex_leader.'E', '\Varepsilon', 'tex')
+    call IMAP(b:tex_leader.'F', '\Varphi', 'tex')
+    call IMAP(b:tex_leader.'G', '\Gamma', 'tex')
+    call IMAP(b:tex_leader.'H', '\Eta', 'tex')
+    call IMAP(b:tex_leader.'I', '\Iota', 'tex')
+    call IMAP(b:tex_leader.'K', '\Kappa', 'tex')
+    call IMAP(b:tex_leader.'L', '\Lambda', 'tex')
+    call IMAP(b:tex_leader.'M', '\Mu', 'tex')
+    call IMAP(b:tex_leader.'N', '\Nu', 'tex')
+    call IMAP(b:tex_leader.'O', '\Omicron', 'tex')
+    call IMAP(b:tex_leader.'P', '\Pi', 'tex')
+    call IMAP(b:tex_leader.'Q', '\Theta', 'tex')
+    call IMAP(b:tex_leader.'R', '\Rho', 'tex')
+    call IMAP(b:tex_leader.'S', '\Sigma', 'tex')
+    call IMAP(b:tex_leader.'T', '\Tau', 'tex')
+    call IMAP(b:tex_leader.'U', '\Upsilon', 'tex')
+    call IMAP(b:tex_leader.'V', '\Varsigma', 'tex')
+    call IMAP(b:tex_leader.'W', '\Omega', 'tex')
+    call IMAP(b:tex_leader.'X', '\Xi', 'tex')
+    call IMAP(b:tex_leader.'Y', '\Psi', 'tex')
+    call IMAP(b:tex_leader.'Z', '\Zeta', 'tex')
     " }}}
     " ProtectLetters: sets up identity maps for things like ``a {{{
     " " Description: If we simply do
@@ -147,8 +147,8 @@ if b:tex_useIMAP " {{{
       for i in range(a:first, a:last)
 	let l:char = nr2char(i)
 	if l:char =~ '[[:print:]]'
-	      \ && !((g:tex_smartKeyDot && l:char == '.')
-	      \		|| (g:tex_smartKeyQuote && l:char == '"'))
+	      \ && !((b:tex_smartKeyDot && l:char == '.')
+	      \		|| (b:tex_smartKeyQuote && l:char == '"'))
 	  call IMAP('``'.l:char, '``'.l:char, 'tex')
 	  call IMAP('\`'.l:char, '\`'.l:char, 'tex')
 	  call IMAP('"`'.l:char, '"`'.l:char, 'tex')
@@ -165,19 +165,19 @@ if b:tex_useIMAP " {{{
   " \end{verbatim}, whereas in characterise visual mode, the thingie is 
   " enclosed in \verb| and |.
   exec 'xnoremap <silent> '
-	\ .g:tex_leader."( \<C-\\>\<C-N>:call "
+	\ .b:tex_leader."( \<C-\\>\<C-N>:call "
 	\ ."VEnclose('\\left( ', ' \\right)', "
 	\ ."'\\left(', '\\right)')\<CR>"
   exec 'xnoremap <silent> '
-	\ .g:tex_leader."[ \<C-\\>\<C-N>:call "
+	\ .b:tex_leader."[ \<C-\\>\<C-N>:call "
 	\ ."VEnclose('\\left[ ', ' \\right]', "
 	\ ."'\\left[', '\\right]')\<CR>"
   exec 'xnoremap <silent> '
-	\ .g:tex_leader."{ \<C-\\>\<C-N>:call "
+	\ .b:tex_leader."{ \<C-\\>\<C-N>:call "
 	\ ."VEnclose('\\left\\{ ', ' \\right\\}', "
 	\ ."'\\left\\{', '\\right\\}')\<CR>"
   exec 'xnoremap <silent> '
-	\ .g:tex_leader."$ \<C-\\>\<C-N>:call "
+	\ .b:tex_leader."$ \<C-\\>\<C-N>:call "
 	\ ."VEnclose('$', '$', '\\[', '\\]')\<CR>"
   " }}}
   " Infect the current buffer with <buffer>-local imaps for the IMAPs
@@ -188,7 +188,7 @@ endif
 " Smart key-mappings
 " ======================================================================== 
 " TexQuotes: inserts `` or '' instead of " {{{
-if g:tex_smartKeyQuote
+if b:tex_smartKeyQuote
 
   " TexQuotes: inserts `` or '' instead of "
   " Taken from texmacro.vim by Benji Fisher <benji@e-math.AMS.org>
@@ -213,15 +213,15 @@ if g:tex_smartKeyQuote
     " Find the appropriate open-quote and close-quote strings.
     if exists("b:tex_smartQuoteOpen")
       let open = b:tex_smartQuoteOpen
-    elseif exists("g:tex_smartQuoteOpen")
-      let open = g:tex_smartQuoteOpen
+    elseif exists("b:tex_smartQuoteOpen")
+      let open = b:tex_smartQuoteOpen
     else
       let open = "``"
     endif
     if exists("b:tex_smartQuoteClose")
       let close = b:tex_smartQuoteClose
-    elseif exists("g:tex_smartQuoteClose")
-      let close = g:tex_smartQuoteClose
+    elseif exists("b:tex_smartQuoteClose")
+      let close = b:tex_smartQuoteClose
     else
       let close = "''"
     endif
@@ -282,7 +282,7 @@ if g:tex_smartKeyQuote
 endif
 " }}}
 " SmartBS: smart backspacing {{{
-if g:tex_smartKeyBS 
+if b:tex_smartKeyBS 
 
   " SmartBS: smart backspacing
   " SmartBS lets you treat diacritic characters (those \'{a} thingies) as 
@@ -324,11 +324,11 @@ endif
 " SmartDots: inserts \cdots instead of ... in math mode otherwise {{{ 
 " \ldots if amsmath package is detected then just use \dots and let amsmath 
 " take care of it.
-if g:tex_smartKeyDot
+if b:tex_smartKeyDot
 
   func! <SID>SmartDots()
     if strpart(getline('.'), col('.')-3, 2) == '..'
-	  \ && g:tex_pkgDetected =~ '\<amsmath\|ellipsis\>'
+	  \ && b:tex_pkgDetected =~ '\<amsmath\|ellipsis\>'
       return "\<bs>\<bs>\\dots"
     elseif synIDattr(synID(line('.'),col('.')-1,0),"name")
 	  \ =~ '^texMath'
@@ -344,14 +344,14 @@ if g:tex_smartKeyDot
 endif
 " }}}
 " smart functions
-if g:tex_smartKeyQuote
+if b:tex_smartKeyQuote
   inoremap <buffer> <silent> " "<Left><C-R>=<SID>TexQuotes()<CR>
 endif
-if g:tex_smartKeyBS
+if b:tex_smartKeyBS
   inoremap <buffer> <silent> <BS>
 	\ <C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
 endif
-if g:tex_smartKeyDot
+if b:tex_smartKeyDot
   inoremap <buffer> <silent> . <C-R>=<SID>SmartDots()<CR>
 endif
 

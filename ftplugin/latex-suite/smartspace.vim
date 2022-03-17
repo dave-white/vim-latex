@@ -11,7 +11,7 @@
 
 " Avoid reinclusion or if the user doesn't want us.
 if exists('b:done_smartspace') 
-	  \ || (exists('g:tex_smartKeySpace') && !g:tex_smartKeySpace)
+	  \ || (exists('b:tex_smartKeySpace') && !b:tex_smartKeySpace)
   finish
 endif
 let b:done_smartspace = 1

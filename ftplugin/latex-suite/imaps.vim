@@ -15,10 +15,10 @@
 let g:runImapLeaderList = ['\'] ", ';']
 
 " Unincorporated IMAPs {{{
-" call IMAP (g:tex_leader.'-', '\bigcap', "tex")
-" call IMAP (g:tex_leader.'+', '\bigcup', "tex")
-" call IMAP (g:tex_leader.':', '\ddot{<++>}<++>', "tex")
-" call IMAP (g:tex_leader.'|', '\Big|', "tex")
+" call IMAP (b:tex_leader.'-', '\bigcap', "tex")
+" call IMAP (b:tex_leader.'+', '\bigcup', "tex")
+" call IMAP (b:tex_leader.':', '\ddot{<++>}<++>', "tex")
+" call IMAP (b:tex_leader.'|', '\Big|', "tex")
 " }}}
 
 " Imap Dictionaries: {{{

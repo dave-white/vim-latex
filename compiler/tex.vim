@@ -50,8 +50,8 @@
 "      In this case, vim will wrongly interpret the line-number as 123 instead
 "      of 1234. If you have cygwin, a simple remedy around this is to first
 "      copy the file vimlatex (provided) into your $PATH, make sure its
-"      executable and then set the variable g:tex_flavor to vimlatex in your
-"      ~/.vimrc (i.e putting let "g:tex_flavor = 'vimlatex'" in your .vimrc).
+"      executable and then set the variable b:tex_flavor to vimlatex in your
+"      ~/.vimrc (i.e putting let "b:tex_flavor = 'vimlatex'" in your .vimrc).
 "      This problem occurs rarely enough that its not a botheration for most
 "      people.
 "
@@ -63,40 +63,18 @@ if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
   finish
 endif
 
-" avoid reinclusion for the same buffer. keep it buffer local so it can be
-" externally reset in case of emergency re-sourcing.
-if exists('b:doneTexCompiler') && !exists('b:forceRedoTexCompiler')
-  finish
-endif
-let b:doneTexCompiler = 1
-
 " ==========================================================================
 " Customization of 'efm':  {{{
 " This section contains the customization variables which the user can set.
-" g:tex_ignWarnPats: This variable contains a ¡ seperated list of
+" b:tex_ignWarnPats: This variable contains a ¡ seperated list of
 " patterns which will be ignored in the TeX compiler's output. Use this
 " carefully, otherwise you might end up losing valuable information.
-if !exists('g:tex_ignWarnPats')
-  let g:tex_ignWarnPats = [
-	\ 'Underfull',
-	\ 'Overfull',
-	\ 'specifier changed to',
-	\ 'You have requested',
-	\ 'Missing number, treated as zero.',
-	\ 'There were undefined references',
-	\ 'Citation %.%# undefined'
-	\ ]
-endif
-" This is the number of warnings in the g:tex_ignWarnPats string which
-" will be ignored.
-if !exists('g:tex_ignLvl')
-  let g:tex_ignLvl = 7
-endif
+"
 " There will be lots of stuff in a typical compiler output which will
 " completely fall through the 'efm' parsing. This options sets whether or 
 " not you will be shown those lines.
-if !exists('g:tex_ignUnmatched')
-  let g:tex_ignUnmatched = 1
+if !exists('b:tex_ignUnmatched')
+  let b:tex_ignUnmatched = 1
 endif
 " With all this customization, there is a slight risk that you might be 
 " ignoring valid warnings or errors. Therefore before getting the final 
@@ -105,8 +83,8 @@ endif
 " irrespective of whether they match the error or warning patterns.
 " NOTE: An easier way of resetting the 'efm' to show everything is to do
 "       TCLevel strict
-if !exists('g:tex_showAllLns')
-  let g:tex_showAllLns = 0
+if !exists('b:tex_showAllLns')
+  let b:tex_showAllLns = 0
 endif
 
 " }}}
@@ -118,18 +96,18 @@ endif
 " Case 1
 " ------
 " The first is when this file is a part of latex-suite. In this case, a
-" variable called g:tex_defaultTargetFormat exists, which gives the default
+" variable called b:tex_defaultTargetFormat exists, which gives the default
 " format .tex files should be compiled into. In this case, we use the TTarget
 " command provided by latex-suite.
 "
 " Case 2
 " ------
 " The user is using this file without latex-suite AND he wants to directly
-" specify the complete 'makeprg'. Then he should set the g:tex_compileRule_dvi
+" specify the complete 'makeprg'. Then he should set the b:tex_compileRule_dvi
 " variable. This is a string which should be directly be able to be cast into
 " &makeprg. An example of one such string is:
 "
-" 	g:tex_compileRule_dvi = 'pdflatex \\nonstopmode \\input\{$*\}'
+" 	b:tex_compileRule_dvi = 'pdflatex \\nonstopmode \\input\{$*\}'
 "
 " NOTE: You will need to escape back-slashes, {'s etc yourself if you are
 "       using this file independently of latex-suite.
@@ -142,51 +120,67 @@ endif
 " customization. In this case, this file makes some intelligent guesses based
 " on the platform. If he doesn't want to specify the complete 'makeprg' but
 " only the name of the compiler program (for example 'pdflatex' or 'latex'),
-" then he sets b:tex_flavor or g:tex_flavor. 
+" then he sets b:tex_flavor or b:tex_flavor. 
 
-if exists('g:tex_defaultTargetFormat')
-  exec 'TTarget '.g:tex_defaultTargetFormat
-elseif exists('g:tex_compileRule_dvi')
-  let &l:makeprg = g:tex_compileRule_dvi
-else
-  " If buffer-local variable 'tex_flavor' exists, it defines TeX flavor, 
-  " otherwize the same for global variable with same name, else it will be 
-  " LaTeX
-  if exists("b:tex_flavor")
-    let current_compiler = b:tex_flavor
-  elseif exists("g:tex_flavor")
-    let current_compiler = g:tex_flavor
+func Tex_SetCompiler(...)
+  if a:0 > 0
+    let targ = a:1
   else
-    let current_compiler = "latex"
+    if exists("b:tex_targ")
+      let targ = b:tex_targ
+    else
+      let targ = "dvi"
+    endif
   endif
-  if has('win32')
-    let escChars = ''
+
+  " if glob("Makefile") || glob("makefile")
+  "   let &l:makeprg = "make"
+  if exists("b:tex_compilePrg_".targ)
+    let &l:makeprg = Tex_BldCmd(b:tex_compilePrg_{targ},
+	  \ b:tex_compilePrgOptDict_{targ})
+  elseif exists('b:tex_compileRule_dvi')
+    let &l:makeprg = b:tex_compileRule_dvi
   else
-    let escChars = '{}\'
+    " If buffer-local variable 'tex_flavor' exists, it defines TeX flavor, 
+    " otherwize the same for global variable with same name, else it will 
+    " be LaTeX
+    if exists("b:tex_flavor")
+      let current_compiler = b:tex_flavor
+    elseif exists("b:tex_flavor")
+      let current_compiler = b:tex_flavor
+    else
+      let current_compiler = "latex"
+    endif
+    if has('win32')
+      let escChars = ''
+    else
+      let escChars = '{}\'
+    endif
+    " Furthermore, if 'win32' is detected, then we want to set the arguments 
+    " up so that miktex can handle it.
+    if has('win32')
+      let options = '--src-specials'
+    else
+      let options = ''
+    endif
+    let &l:makeprg = current_compiler . ' ' . options .
+	  \ escape(' \nonstopmode \input{$*}', escChars)
   endif
-  " Furthermore, if 'win32' is detected, then we want to set the arguments 
-  " up so that miktex can handle it.
-  if has('win32')
-    let options = '--src-specials'
-  else
-    let options = ''
-  endif
-  let &l:makeprg = current_compiler . ' ' . options .
-	\ escape(' \nonstopmode \input{$*}', escChars)
-endif
+endfunc
+
 
 " }}}
 " ==========================================================================
 " Functions for setting up a customized 'efm' {{{
 
-" IgnoreWarnings: parses g:tex_ignWarnPats for message customization {{{
+" IgnoreWarnings: parses b:tex_ignWarnPats for message customization {{{
 " Description: 
 func! <SID>IgnoreWarnings()
   let s:Ignored_Overfull = 0
 
   let i = 0
-  while (i < len(g:tex_ignWarnPats)) && (i < g:tex_ignLvl)
-    let warningPat = g:tex_ignWarnPats[i]
+  while (i < len(b:tex_ignWarnPats)) && (i < b:tex_ignLvl)
+    let warningPat = b:tex_ignWarnPats[i]
     let warningPat = escape(substitute(warningPat, '[\,]', '%\\\\&', 'g'), ' ')
 
     if warningPat =~? 'overfull'
@@ -211,12 +205,12 @@ endfunc
 " Description: 
 func! <SID>SetLatexEfm()
 
-  let pm = ( g:tex_showAllLns == 1 ? '+' : '-' )
+  let pm = ( b:tex_showAllLns == 1 ? '+' : '-' )
 
   " Add a dummy entry to overwrite the global setting.
   setlocal efm=dummy_value
 
-  if !g:tex_showAllLns
+  if !b:tex_showAllLns
     call s:IgnoreWarnings()
   endif
 
@@ -342,7 +336,7 @@ func! <SID>SetLatexEfm()
   " See https://github.com/vim/vim/issues/807
   exec 'setlocal efm+=%'.pm.'O'
 
-  if g:tex_ignUnmatched && !g:tex_showAllLns
+  if b:tex_ignUnmatched && !b:tex_showAllLns
     " Ignore all lines which are unmatched so far.
     setlocal efm+=%-G%.%#
     " Sometimes, there is some garbage after a ')'
@@ -353,14 +347,6 @@ func! <SID>SetLatexEfm()
   setlocal efm-=dummy_value
 
 endfunc 
-
-" }}}
-" Strntok: extract the n^th token from a list {{{
-" example: Strntok('1,23,3', ',', 2) = 23
-fun! <SID>Strntok(s, tok, n)
-  return matchstr( a:s.a:tok[0], '\v(\zs([^'.a:tok.']*)\ze['.a:tok.']){'.a:n.'}')
-endfun
-
 " }}}
 " SetTexCompilerLevel: sets the "level" for the latex compiler {{{
 func! <SID>SetTexCompilerLevel(...)
@@ -368,18 +354,18 @@ func! <SID>SetTexCompilerLevel(...)
     let level = a:1
   else
     call Tex_ResetIncrementNumber(0)
-    echo substitute(g:tex_ignWarnPats, 
-	  \ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
+    " echo substitute(b:tex_ignWarnPats, 
+	  " \ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
     let level = input("\nChoose an ignore level: ")
     if level == ''
       return
     endif
   endif
   if level == 'strict'
-    let g:tex_showAllLns = 1
+    let b:tex_showAllLns = 1
   elseif level =~ '^\d\+$'
-    let g:tex_showAllLns = 0
-    let g:tex_ignLvl = level
+    let b:tex_showAllLns = 0
+    let b:tex_ignLvl = level
   else
     echoerr "SetTexCompilerLevel: Unkwown option [".level."]"
   endif
@@ -392,22 +378,24 @@ com! -nargs=? TCLevel :call <SID>SetTexCompilerLevel(<f-args>)
 " }}}
 " ==========================================================================
 
-call s:SetLatexEfm()
-
 " Set the errorfile if not already set by somebody else
 if &errorfile ==# ''  ||  &errorfile ==# 'errors.err'
   try
-    execute 'set errorfile=' . fnameescape(Tex_GetMainFileName(':p:r') . '.log')
+    execute 'set errorfile=' . fnameescape(Tex_GetOutpDir().Tex_GetJobName() . '.log')
   catch
   endtry
 endif
 
+call Tex_SetCompiler()
+call s:SetLatexEfm()
+
+if b:tex_debug
+  call Tex_Debug("compiler/tex.vim: sourcing this file", "comp")
+endif
 
 if !exists('*Tex_Debug')
   func! Tex_Debug(...)
   endfunc
 endif
-
-call Tex_Debug("compiler/tex.vim: sourcing this file", "comp")
 
 " vim:fdm=marker:ff=unix:noet
