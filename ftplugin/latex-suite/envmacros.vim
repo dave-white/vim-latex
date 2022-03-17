@@ -529,10 +529,9 @@ endfunction
 " Description: 
 function! PromptForEnvironment(ask)
   return Tex_ChooseFromPrompt(
-	\ a:ask."\n" . 
-	\ Tex_CreatePrompt(g:tex_promptEnvs, 2, ",") .
-	\ "\nEnter name or number of environment :", 
-	\ g:tex_promptEnvs, ",")
+	\ a:ask."\n".Tex_CreatePrompt(g:tex_promptEnvs, 2)
+	\ ."\nEnter name or number of environment :", 
+	\ string(g:tex_promptEnvs))
 endfunction " }}}
 " Tex_DoEnvironment: fast insertion of environments {{{
 " Description:
@@ -631,7 +630,7 @@ endfunction " }}}
 " the user presses <F5> on an empty line.
 "
 " Leaving this empty is equivalent to disabling the feature.
-if g:tex_promptEnvs != ''
+if !empty(g:tex_promptEnvs)
 
   " Provide only <plug>s here. main.vim will create the actual maps.
   inoremap <silent> <Plug>Tex_FastEnvironmentInsert  <C-r>=Tex_FastEnvironmentInsert("no")<cr>
@@ -849,19 +848,19 @@ endif
 
 " }}}
 " Map <S-F1> through <S-F4> to insert environments {{{
-if g:tex_hotkeyMaps != ''
+if !empty(g:tex_hotkeyMaps)
 
   " SetUpHotKeys: maps <F1> through <F4> to insert environments
   " Description: 
   function! <SID>SetUpHotKeys()
     let i = 1
-    let envname = Tex_Strntok(g:tex_hotkeyMaps, ',', i)
+    let envname = g:tex_hotkeyMaps[i]
     while  envname != ''
 
       exec 'inoremap <silent> <buffer> <S-F'.i.'> <C-r>=Tex_PutEnvironment("'.envname.'")<CR>'
 
-      let i = i + 1
-      let envname = Tex_Strntok(g:tex_hotkeyMaps, ',', i)
+      let i += 1
+      let envname = g:tex_hotkeyMaps[i]
 
     endwhile
 
@@ -874,14 +873,14 @@ endif
 " Description: This function is made public so it can be called by the
 "              SetTeXOptions() function in main.vim
 function! Tex_SetFastEnvironmentMaps()
-  if g:tex_promptEnvs != ''
+  if !empty(g:tex_promptEnvs)
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'i', '<silent> <buffer>')
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'n', '<silent> <buffer>')
     call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'v', '<silent> <buffer>')
     call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'i', '<silent> <buffer>')
     call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'n', '<silent> <buffer>')
   endif
-  if g:tex_hotkeyMaps != ''
+  if !empty(g:tex_hotkeyMaps)
     call s:SetUpHotKeys()
   endif
 endfunction " }}}
@@ -991,20 +990,20 @@ call RcLet("g:tex_com_tfrac", '\tfrac{<+n+>}{<+d+>}<++>')
 " }}}
 " PromptForCommand: prompts for a command {{{
 " Description: 
-function! PromptForCommand(ask)
-  let common_com_prompt = 
-	\ Tex_CreatePrompt(g:tex_promptCmds, 2, ',') . "\n" .
+func PromptForCommand(ask)
+  let cmd_prompt = 
+	\ Tex_CreatePrompt(g:tex_promptCmds, 2) . "\n" .
 	\ "Enter number or command name :"
 
-  let inp = input(a:ask."\n".common_com_prompt)
+  let inp = input(a:ask."\n".cmd_prompt)
   if inp =~ '^[0-9]\+$'
-    let com = Tex_Strntok(g:tex_promptCmds, ',', inp)
+    let cmd = g:tex_promptCmds[inp]
   else
-    let com = inp
+    let cmd = inp
   endif
 
-  return com
-endfunction " }}}
+  return cmd
+endfunc " }}}
 " Tex_DoCommand: fast insertion of commands {{{
 " Description:
 "
@@ -1081,7 +1080,7 @@ endfunction " }}}
 " of commands. 
 "
 " Leaving this empty is equivalent to disabling the feature.
-if g:tex_promptCmds != ''
+if !empty(g:tex_promptCmds)
 
   inoremap <silent> <Plug>Tex_FastCommandInsert  <C-r>=Tex_DoCommand('no')<cr>
   nnoremap <silent> <Plug>Tex_FastCommandInsert  i<C-r>=Tex_DoCommand('no')<cr>
@@ -1146,7 +1145,7 @@ endif
 " Description: This function is made public so it can be called by the
 "              SetTeXOptions() function in main.vim
 function! Tex_SetFastCommandMaps()
-  if g:tex_promptCmds != ''
+  if !empty(g:tex_promptCmds)
     if !hasmapto('<Plug>Tex_FastCommandInsert', 'i')
       imap <silent> <buffer> <F7> <Plug>Tex_FastCommandInsert
     endif
@@ -1172,10 +1171,10 @@ function! <SID>SetEnvMacrosOptions()
     return
   endif
   let b:doneTexEnvMaps = 1
-  if g:tex_promptEnvs != '' || g:tex_hotkeyMaps != ''
+  if !empty(g:tex_promptEnvs) || !empty(g:tex_hotkeyMaps)
     call Tex_SetFastEnvironmentMaps()
   endif
-  if g:tex_promptCmds != ''
+  if !empty(g:tex_promptCmds)
     call Tex_SetFastCommandMaps()
   endif
   call Tex_SetItemMaps()

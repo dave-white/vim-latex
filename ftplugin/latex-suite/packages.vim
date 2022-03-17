@@ -438,7 +438,7 @@ func! Tex_ScanForPkgs(...)
 	endif
 
 	let newcommand = matchstr(getline('.'), '\\newcommand\*\?{\\\zs.\{-}\ze}')
-	let g:tex_promptCmds = g:tex_promptCmds . ',' . newcommand
+	call add(g:tex_promptCmds, newcommand)
 
   endwhile
 
@@ -456,7 +456,7 @@ func! Tex_ScanForPkgs(...)
 	endif
 
 	let newenvironment = matchstr(getline('.'), '\\newenvironment\*\?{\zs.\{-}\ze}')
-	let g:tex_promptEnvs = g:tex_promptEnvs . ',' . newenvironment
+	call add(g:tex_promptEnvs, newenvironment)
 
   endwhile
 

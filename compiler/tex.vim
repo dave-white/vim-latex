@@ -77,14 +77,15 @@ let b:doneTexCompiler = 1
 " patterns which will be ignored in the TeX compiler's output. Use this
 " carefully, otherwise you might end up losing valuable information.
 if !exists('g:tex_ignWarnPats')
-  let g:tex_ignWarnPats =
-		\'Underfull'."\n".
-		\'Overfull'."\n".
-		\'specifier changed to'."\n".
-		\'You have requested'."\n".
-		\'Missing number, treated as zero.'."\n".
-		\'There were undefined references'."\n".
-		\'Citation %.%# undefined'
+  let g:tex_ignWarnPats = [
+	\ 'Underfull',
+	\ 'Overfull',
+	\ 'specifier changed to',
+	\ 'You have requested',
+	\ 'Missing number, treated as zero.',
+	\ 'There were undefined references',
+	\ 'Citation %.%# undefined'
+	\ ]
 endif
 " This is the number of warnings in the g:tex_ignWarnPats string which
 " will be ignored.
@@ -152,26 +153,26 @@ else
   " otherwize the same for global variable with same name, else it will be 
   " LaTeX
   if exists("b:tex_flavor")
-	let current_compiler = b:tex_flavor
+    let current_compiler = b:tex_flavor
   elseif exists("g:tex_flavor")
-	let current_compiler = g:tex_flavor
+    let current_compiler = g:tex_flavor
   else
-	let current_compiler = "latex"
+    let current_compiler = "latex"
   endif
   if has('win32')
-	let escChars = ''
+    let escChars = ''
   else
-	let escChars = '{}\'
+    let escChars = '{}\'
   endif
   " Furthermore, if 'win32' is detected, then we want to set the arguments 
   " up so that miktex can handle it.
   if has('win32')
-	let options = '--src-specials'
+    let options = '--src-specials'
   else
-	let options = ''
+    let options = ''
   endif
   let &l:makeprg = current_compiler . ' ' . options .
-		\ escape(' \nonstopmode \input{$*}', escChars)
+	\ escape(' \nonstopmode \input{$*}', escChars)
 endif
 
 " }}}
@@ -183,26 +184,25 @@ endif
 func! <SID>IgnoreWarnings()
   let s:Ignored_Overfull = 0
 
-  let i = 1
-  while s:Strntok(g:tex_ignWarnPats, "\n", i) != '' &&
-		\ i <= g:tex_ignLvl
-	let warningPat = s:Strntok(g:tex_ignWarnPats, "\n", i)
-	let warningPat = escape(substitute(warningPat, '[\,]', '%\\\\&', 'g'), ' ')
+  let i = 0
+  while (i < len(g:tex_ignWarnPats)) && (i < g:tex_ignLvl)
+    let warningPat = g:tex_ignWarnPats[i]
+    let warningPat = escape(substitute(warningPat, '[\,]', '%\\\\&', 'g'), ' ')
 
-	if warningPat =~? 'overfull'
-	  let s:Ignored_Overfull = 1
-	  if ( v:version > 800 || v:version == 800 && has("patch26") )
-		" Overfull warnings are ignored as 'warnings'. Therefore, we can gobble
-		" some of the following lines with %-C (see below)
-		exe 'setlocal efm+=%-W%.%#'.warningPat.'%.%#'
-	  else
-		exe 'setlocal efm+=%-G%.%#'.warningPat.'%.%#'
-	  endif
-	else
-	  exe 'setlocal efm+=%-G%.%#'.warningPat.'%.%#'
-	endif
+    if warningPat =~? 'overfull'
+      let s:Ignored_Overfull = 1
+      if ( v:version > 800 || v:version == 800 && has("patch26") )
+	" Overfull warnings are ignored as 'warnings'. Therefore, we can gobble
+	" some of the following lines with %-C (see below)
+	exe 'setlocal efm+=%-W%.%#'.warningPat.'%.%#'
+      else
+	exe 'setlocal efm+=%-G%.%#'.warningPat.'%.%#'
+      endif
+    else
+      exe 'setlocal efm+=%-G%.%#'.warningPat.'%.%#'
+    endif
 
-	let i += 1
+    let i += 1
   endwhile
 endfunc 
 
@@ -217,7 +217,7 @@ func! <SID>SetLatexEfm()
   setlocal efm=dummy_value
 
   if !g:tex_showAllLns
-	call s:IgnoreWarnings()
+    call s:IgnoreWarnings()
   endif
 
   setlocal efm+=%E!\ LaTeX\ %trror:\ %m
@@ -227,8 +227,8 @@ func! <SID>SetLatexEfm()
   " If we do not ignore 'overfull \hbox' messages, we care for them to get the
   " line number.
   if s:Ignored_Overfull == 0
-	setlocal efm+=%+WOverfull\ %mat\ lines\ %l--%*\\d
-	setlocal efm+=%+WOverfull\ %mat\ line\ %l
+    setlocal efm+=%+WOverfull\ %mat\ lines\ %l--%*\\d
+    setlocal efm+=%+WOverfull\ %mat\ line\ %l
   endif
 
   " Add some generic warnings
@@ -270,7 +270,7 @@ func! <SID>SetLatexEfm()
   " Due to a bug in old versions of vim, this cannot be used if we ignore the
   " 'overfull \hbox' messages, see vim/vim#1126.
   if s:Ignored_Overfull == 0 || ( v:version > 800 || v:version == 800 && has("patch26") )
-	exec 'setlocal efm+=%'.pm.'C%.%#'
+    exec 'setlocal efm+=%'.pm.'C%.%#'
   endif
 
   " Now, we try to trace the used files.
@@ -330,7 +330,7 @@ func! <SID>SetLatexEfm()
   let PQO = '%'.pm.'P(%f%r,%'.pm.'Q)%r,%'.pm.'O(%f)%r,%'.pm.'O[%*\\d]%r'
   let PQOs = PQO
   for xxx in range(3)
-	let PQOs .= ',' . PQO
+    let PQOs .= ',' . PQO
   endfor
   exec 'setlocal efm+=' . PQOs
 
@@ -343,10 +343,10 @@ func! <SID>SetLatexEfm()
   exec 'setlocal efm+=%'.pm.'O'
 
   if g:tex_ignUnmatched && !g:tex_showAllLns
-	" Ignore all lines which are unmatched so far.
-	setlocal efm+=%-G%.%#
-	" Sometimes, there is some garbage after a ')'
-	setlocal efm+=%-O%.%#
+    " Ignore all lines which are unmatched so far.
+    setlocal efm+=%-G%.%#
+    " Sometimes, there is some garbage after a ')'
+    setlocal efm+=%-O%.%#
   endif
 
   " Finally, remove the dummy entry.
@@ -365,23 +365,23 @@ endfun
 " SetTexCompilerLevel: sets the "level" for the latex compiler {{{
 func! <SID>SetTexCompilerLevel(...)
   if a:0 > 0
-	let level = a:1
+    let level = a:1
   else
-	call Tex_ResetIncrementNumber(0)
-	echo substitute(g:tex_ignWarnPats, 
-		  \ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
-	let level = input("\nChoose an ignore level: ")
-	if level == ''
-	  return
-	endif
+    call Tex_ResetIncrementNumber(0)
+    echo substitute(g:tex_ignWarnPats, 
+	  \ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
+    let level = input("\nChoose an ignore level: ")
+    if level == ''
+      return
+    endif
   endif
   if level == 'strict'
-	let g:tex_showAllLns = 1
+    let g:tex_showAllLns = 1
   elseif level =~ '^\d\+$'
-	let g:tex_showAllLns = 0
-	let g:tex_ignLvl = level
+    let g:tex_showAllLns = 0
+    let g:tex_ignLvl = level
   else
-	echoerr "SetTexCompilerLevel: Unkwown option [".level."]"
+    echoerr "SetTexCompilerLevel: Unkwown option [".level."]"
   endif
   call s:SetLatexEfm()
 endfunc 
@@ -397,7 +397,7 @@ call s:SetLatexEfm()
 " Set the errorfile if not already set by somebody else
 if &errorfile ==# ''  ||  &errorfile ==# 'errors.err'
   try
-	execute 'set errorfile=' . fnameescape(Tex_GetMainFileName(':p:r') . '.log')
+    execute 'set errorfile=' . fnameescape(Tex_GetMainFileName(':p:r') . '.log')
   catch
   endtry
 endif

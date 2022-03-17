@@ -58,7 +58,8 @@ func! Tex_BldCmd(cmd, optDict)
   return rslt
 endfunc
 " }}}
-func! Tex_CompileRun(file, cmd, ...)
+" Tex_CompileRun: {{{
+func Tex_CompileRun(file, cmd, ...)
   if a:0 > 0
     let ignLvl = a:1
     if a:0 > 1
@@ -95,6 +96,7 @@ func! Tex_CompileRun(file, cmd, ...)
 
   return 0
 endfunc
+" }}}
 " Tex_Compile: compilation function this function runs the latex {{{ 
 " command on the currently open file. often times the file being currently 
 " edited is only a fragment being \input'ed into some master tex file. in 
@@ -115,7 +117,7 @@ func! Tex_Compile(...)
     let mainTarg = a:2
   endif
 
-  if b:tex_useMake
+  if &makeprg =~ "make"
     let cwd = getcwd()
     call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
     exec 'make!'
@@ -196,7 +198,6 @@ func! Tex_Compile(...)
     endif
 
     if b:tex_doMultCompile && (index(g:tex_multCompileFmts, targ) >= 0)
-      call confirm(string(rerun), "cont.")
       " Recompile up to four times as necessary.
       while rerun && (runCnt < 5)
 	let rerun = 0
@@ -238,11 +239,11 @@ func! Tex_Compile(...)
 endfunc
 
 " }}}
-" Tex_ViewOutp: opens viewer {{{
+" Tex_View: opens viewer {{{
 " Description: opens the DVI viewer for the file being currently edited.
 " Again, if the current file is a \input in a master file, see text above
 " Tex_Compile() to see how to set this information.
-func! Tex_ViewOutp(...)
+func! Tex_View(...)
   if a:0 < 1
     let targ = b:tex_dfltTarg
     let viewer = g:tex_viewPrg_{targ}
@@ -303,7 +304,7 @@ func! Tex_ViewOutp(...)
   endif
 
   let cmd = substitute(cmd, '\V$*', fpath, 'g')
-  call Tex_Debug("Tex_ViewOutp: cmd = ".cmd, "comp")
+  call Tex_Debug("Tex_View: cmd = ".cmd, "comp")
 
   exec 'silent! !'.cmd
 
@@ -757,38 +758,11 @@ func! Tex_GotoErrorLocation(filename)
     pclose!
   endif
 endfunc " }}}
-" Tex_SetCompilerMaps: sets maps for compiling/viewing/searching {{{
-" Description:
-func! <SID>Tex_SetCompilerMaps()
-  if exists('b:Tex_doneCompilerMaps')
-    return
-  endif
-  let s:ml = '<Leader>'
-
-  nnoremap <buffer> <Plug>Tex_Compile :up \| call Tex_Compile()<cr>
-  xnoremap <buffer> <Plug>Tex_Compile :call Tex_PartCompile()<cr>
-  nnoremap <buffer> <Plug>Tex_View :call Tex_ViewOutp()<cr>
-  nnoremap <buffer> <Plug>Tex_ForwardSearch :call Tex_ForwardSearchLaTeX()<cr>
-
-  call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'n', '<buffer>')
-  call Tex_MakeMap(s:ml."c", "<Plug>Tex_Compile", 'v', '<buffer>')
-  call Tex_MakeMap(s:ml."v", "<Plug>Tex_View", 'n', '<buffer>')
-  call Tex_MakeMap(s:ml."a", '<Plug>Tex_Compile \| <Plug>Tex_View', 'n', '<buffer>')
-  call Tex_MakeMap(s:ml."s", "<Plug>Tex_ForwardSearch", 'n', '<buffer>')
-endfunc
-" }}}
-
-augroup LatexSuite
-  au LatexSuite User LatexSuiteFileType
-   \ call Tex_Debug('compiler.vim: '
-		   \.'Catching LatexSuiteFileType event', 'comp')
-   \ | call <SID>Tex_SetCompilerMaps()
-augroup END
 
 command! -nargs=0 -range=% TPartCompile
       \ :<line1>, <line2> silent! call Tex_PartCompile()
-" Setting b:fragmentFile = 1 makes Tex_CompileLatex consider the present file
-" the _main_ file irrespective of the presence of a .latexmain file.
+" Setting b:fragmentFile = 1 makes Tex_CompileLatex consider the present 
+" file the _main_ file irrespective of the presence of a .latexmain file.
 command! -nargs=0 TCompileThis let b:fragmentFile = 1
 command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
 
