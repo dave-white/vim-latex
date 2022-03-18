@@ -7,11 +7,13 @@
 "               and various common commands such ref/label/footnote.
 "===========================================================================
 
+let b:tex_fontMaps = 1
+let b:tex_fontMenus = 1
+
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
-if exists('s:lastEltLoc')
-	  \ && b:tex_eltMenuLoc == s:lastEltLoc
+if exists('s:lastEltLoc') && (b:tex_eltMenuLoc == s:lastEltLoc)
   finish
 endif
 

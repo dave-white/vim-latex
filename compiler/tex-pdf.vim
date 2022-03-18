@@ -1,13 +1,36 @@
+let b:tex_compilePrg_dvi = 'latex -interaction=nonstopmode '
+      \.'-file-line-error-style "$*"'
 
-if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
-  finish
-endif
+let b:tex_escChars = '{}\'
+
+let b:tex_compilePrg_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
+
+" ways to generate pdf files. there are soo many...
+" NOTE: pdflatex generates the same output as latex. therefore quickfix is
+"       possible.
+" Synctex is now supported by pdflatex.
+
+
+" let b:tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
+" let b:tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
+" let b:tex_CompileRule_pdf = 'dvipdf "$*.dvi"'
+
+let b:tex_CompilePrg_html = 'latex2html "$*.tex"'
 
 let b:tex_targ = "pdf"
+let b:tex_flavor = 'latex'
 
-let strMkPrg = escape(Tex_BldCmd(b:tex_compilePrg_pdf,
-      \ b:tex_compilePrgOptDict_pdf), " '\"\\")
-exe "CompilerSet makeprg=".strMkPrg
+let strMkPrg = 'pdflatex'
+      \.' -file-line-error-style'
+      \.' -interaction=nonstopmode'
+if exists('b:tex_outpDir')
+  let strMkPrg .= ' -output-directory="'.b:tex_outpDir.'"'
+endif
+if exists('b:tex_jobNm')
+  let strMkPrg .= ' -jobname="'.b:tex_jobNm.'"'
+endif
+
+exe "CompilerSet makeprg=".escape(strMkPrg, " '\"\\")
 
 " ==========================================================================
 " Customization of 'efm':  {{{
@@ -32,6 +55,21 @@ endif
 if !exists('b:tex_showAllLns')
   let b:tex_showAllLns = 0
 endif
+
+let b:tex_ignWarnPats = [
+      \ 'Underfull',
+      \ 'Overfull',
+      \ 'specifier changed to',
+      \ 'You have requested',
+      \ 'Missing number, treated as zero.',
+      \ 'There were undefined references',
+      \ 'Citation %.%# undefined',
+      \ ]
+
+" the 'ignore level' of the 'efm'. A value of 4 says that the first 4 kinds 
+" of warnings in the list above will be ignored. Use the command TCLevel to 
+" set a level dynamically.
+let b:tex_ignLvl = len(b:tex_ignWarnPats)
 " }}}
 " ==========================================================================
 " Functions for setting up a customized 'efm' {{{

@@ -1,10 +1,130 @@
-" vim:ft=vim:fdm=marker
+" ==========================================================================
+" Settings
+" ==========================================================================
+" Buffer and script variables. {{{
+let useIMAP = 0
+let useRunningImap = 1
+let b:tex_envMaps = 1
+let b:tex_envMenus = 1
+let b:tex_envEndWithCR = 1
+let b:tex_labelAfterContent = 0
+let b:tex_itemsWithCR = 0
+let b:tex_envLabelPrefix_tab = "tab:"
+let b:tex_envLabelPrefix_fig = "fig:"
+let b:tex_promptEnvs = [
+      \ 'equation*',
+      \ 'align*',
+      \ 'equation',
+      \ 'align',
+      \ 'enumerate',
+      \ 'itemize',
+      \ 'displaymath',
+      \ 'figure',
+      \ 'table'
+      \ ]
+let b:tex_promptCmds = [
+      \ 'footnote',
+      \ 'cite',
+      \ 'pageref',
+      \ 'label'
+      \ ]
+let b:tex_smartKeyBS = 1
+let smart_bs_pat =
+      \ '\(' .
+      \ "\\\\[\"^'=v]{\\S}"      . '\|' .
+      \ "\\\\[\"^'=]\\S"         . '\|' .
+      \ '\\v \S'                 . '\|' .
+      \ "\\\\[\"^'=v]{\\\\[iI]}" . '\|' .
+      \ '\\v \\[iI]'             . '\|' .
+      \ '\\q \S'                 . '\|' .
+      \ '\\-'                    .
+      \ '\)' . "$"
+let smart_quote = 1
+let b:tex_smartQuoteOpen = "``"
+let b:tex_smartQuoteClose = "''"
+let smart_space = 0
+let smart_dot = 1
+let b:tex_advMath = 0
+let b:tex_outlineWinHeight = 15
+let b:tex_viewerCwinHeight = 5 
+let b:tex_viewerPreviewHeight = 10 
+let b:tex_ExplorerHeight = 10
+let b:tex_useOutlineCompletion = 1
+let b:tex_projSrcFiles = v:null
+let b:tex_useSimpleLabelSearch = 0
+let b:tex_useCiteCompletionVer2 = 1
+let b:tex_bibFieldPrompt =
+      \ "Field acronyms: (`:let b:tex_EchoBibFields= 0` to avoid ".
+      \ "this message)\n" .
+      \ " [t] title         [a] author        [b] booktitle     \n" .
+      \ " [j] journal       [y] year          [p] bibtype       \n" .
+      \ " (you can also enter the complete field name)    \n"
+let b:tex_echoBibFields = 1
+let b:tex_useJabref = 0
+let b:tex_rememberCiteSearch = 0
+let b:tex_BIBINPUTS = v:null
+let b:tex_TEXINPUTS = v:null
+let b:tex_menus = 0
+let b:tex_mainMenuLoc = 80
+let b:tex_mathMenus = 1 
+let b:tex_nestEltMenus = 1
+let b:tex_pkgMenu = 0
+let b:tex_nestPkgMenu = 1
+let b:tex_menuPrefix = 'TeX-'
+let b:tex_useUtfMenus = 0
+let b:tex_folding = 1
+let b:tex_autoFolding = 1
+let b:tex_tagListSupport = 1
+let b:tex_internalTagDfns = 1
+
+let b:tex_foldedMisc = 'item,slide,preamble,<<<'
+let b:tex_foldedCmds = ''
+let b:tex_foldedEnvs = 'verbatim,comment,eq,gather,align,figure,table,'
+      \.'thebibliography,keywords,abstract,titlepage'
+let b:tex_foldedSecs = 'part,chapter,section,subsection,subsubsection,'
+      \.'paragraph'
+" }}}
+
+command! -nargs=0 -range=% TPartCompile
+      \ :<line1>, <line2> silent! call tex#compiler#PartCompile()
+" Setting b:fragmentFile = 1 makes RunLatex consider the present 
+" file the _main_ file irrespective of the presence of a .latexmain file.
+command! -nargs=0 TCompileThis let b:fragmentFile = 1
+command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
+
+nnoremap <Plug>Tex_RefreshFolds :call tex#folding#MakeFolds(1, 1)<cr>
+nnoremap <silent> <buffer> <Leader>rf :call tex#folding#MakeFolds(1, 1)<CR>
+
+command! -nargs=0 TProjectEdit :call tex#project#EditProj()
+
+com! -nargs=0 TVersion echo tex#version#GetVersion()
 
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
 let s:path = expand('<sfile>:p:h')
 
+call tex#project#SourceProj()
+exe 'source '.fnameescape(s:path.'/texmenuconf.vim')
+if b:tex_envMaps || b:tex_envMenus
+  exe 'source '.fnameescape(s:path.'/envmacros.vim')
+endif
+exe 'source '.fnameescape(s:path.'/elementmacros.vim')
+if b:tex_folds
+  call tex#folding#SetupFolding()
+endif
+exe 'source '.fnameescape(s:path.'/templates.vim')
+" source advanced math functions
+if b:tex_advMath
+  exe 'source '.fnameescape(s:path.'/brackets.vim')
+endif
+if smart_space
+  exe 'source '.fnameescape(s:path.'/smartspace.vim')
+endif
+if b:tex_diacritics
+  exe 'source '.fnameescape(s:path.'/diacritics.vim')
+endif
+exe 'source '.fnameescape(s:path.'/texviewer.vim')
 exe 'setlocal dict^='.fnameescape(s:path.'/dictionaries/dictionary')
 
 " ========================================================================
@@ -18,14 +138,14 @@ nnoremap <buffer> <Leader>a :up \| call Tex_Compile()
       \ \| call Tex_View()<cr>
 nnoremap <buffer> <Leader>s :call Tex_ForwardSearch()<cr>
 
-if b:tex_useRunningImap
+if useRunningImap
 exe 'source '.s:path.'/imaps.vim'
 endif
 
 " Set the mapping leader character symbol.
 let s:ml = '<Leader>'
 
-if b:tex_useIMAP " {{{
+if useIMAP " {{{
   if !exists('s:doneMappings') || s:doneMappings != 1
     let s:doneMappings = 1
     " short forms for latex formatting and math elements. {{{
@@ -55,7 +175,7 @@ if b:tex_useIMAP " {{{
     call IMAP (b:tex_leader.'0', '^\circ', "tex")
     call IMAP (b:tex_leader.'=', '\equiv', "tex")
     call IMAP (b:tex_leader."\\",'\setminus', "tex")
-    if !b:tex_smartKeyDot
+    if !smart_dot
       call IMAP (b:tex_leader.'.', '\cdot', "tex")
     endif
     call IMAP (b:tex_leader.'*', '\times', "tex")
@@ -147,8 +267,8 @@ if b:tex_useIMAP " {{{
       for i in range(a:first, a:last)
 	let l:char = nr2char(i)
 	if l:char =~ '[[:print:]]'
-	      \ && !((b:tex_smartKeyDot && l:char == '.')
-	      \		|| (b:tex_smartKeyQuote && l:char == '"'))
+	      \ && !((smart_dot && l:char == '.')
+	      \		|| (smart_quote && l:char == '"'))
 	  call IMAP('``'.l:char, '``'.l:char, 'tex')
 	  call IMAP('\`'.l:char, '\`'.l:char, 'tex')
 	  call IMAP('"`'.l:char, '"`'.l:char, 'tex')
@@ -188,7 +308,7 @@ endif
 " Smart key-mappings
 " ======================================================================== 
 " TexQuotes: inserts `` or '' instead of " {{{
-if b:tex_smartKeyQuote
+if smart_quote
 
   " TexQuotes: inserts `` or '' instead of "
   " Taken from texmacro.vim by Benji Fisher <benji@e-math.AMS.org>
@@ -298,11 +418,6 @@ if b:tex_smartKeyBS
   " 7x. Strings like "\v{s}", "\'{y}" are considered like one character 
   " and are
   " deleted with one <BS>.
-  let s:smartBS_pat = Tex_GetVarValue('tex_smartBSPattern')
-
-  func! s:SmartBS_pat()
-    return s:smartBS_pat
-  endfunc
 
   " This function comes from Benji Fisher <benji@e-math.AMS.org>
   " http://vim.sourceforge.net/scripts/download.php?src_id=409 
@@ -324,7 +439,7 @@ endif
 " SmartDots: inserts \cdots instead of ... in math mode otherwise {{{ 
 " \ldots if amsmath package is detected then just use \dots and let amsmath 
 " take care of it.
-if b:tex_smartKeyDot
+if smart_dot
 
   func! <SID>SmartDots()
     if strpart(getline('.'), col('.')-3, 2) == '..'
@@ -344,16 +459,18 @@ if b:tex_smartKeyDot
 endif
 " }}}
 " smart functions
-if b:tex_smartKeyQuote
+if smart_quote
   inoremap <buffer> <silent> " "<Left><C-R>=<SID>TexQuotes()<CR>
 endif
 if b:tex_smartKeyBS
-  inoremap <buffer> <silent> <BS>
-	\ <C-R>=<SID>SmartBS(<SID>SmartBS_pat())<CR>
+  exe "inoremap <buffer> <silent> <BS>"
+	\."<C-R>=<SID>SmartBS(".smart_bs_pat.")<CR>"
 endif
-if b:tex_smartKeyDot
+if smart_dot
   inoremap <buffer> <silent> . <C-R>=<SID>SmartDots()<CR>
 endif
 
 " Mappings defined in package files will overwrite all other
 exe 'source '.fnameescape(s:path.'/packages.vim')
+
+" vim:ft=vim:fdm=marker

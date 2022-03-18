@@ -5,13 +5,14 @@
 "  Description: mappings/menus for environments. 
 "=============================================================================
 
-if !b:tex_envMaps && !b:tex_envMenus
-  finish
-endif
-
-" line continuation used here.
-let s:save_cpo = &cpo
-set cpo&vim
+let b:tex_secMaps = 1
+let b:tex_secMenus = 1
+let b:tex_hotkeyMaps = [
+      \ 'equation*',
+      \ 'align*',
+      \ 'displaymath',
+      \ 'enumerate'
+      \ ]
 
 exe 'so '.fnameescape(expand('<sfile>:p:h').'/wizardfuncs.vim')
 
@@ -1176,10 +1177,5 @@ function! <SID>SetEnvMacrosOptions()
 endfunction " }}}
 
 call s:SetEnvMacrosOptions()
-
-let &cpo = s:save_cpo
-
-" this statement has to be at the end.
-let s:doneOnce = 1
 
 " vim:fdm=marker:nowrap:noet:ff=unix

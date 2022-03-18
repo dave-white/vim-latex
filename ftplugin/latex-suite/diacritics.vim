@@ -6,10 +6,6 @@
 "  Description: shortcuts for all diacritics. 
 "===========================================================================
 
-if !b:tex_diacritics
-  finish
-endif
-
 " \'{a} {{{
 call IMAP ('=a', "\\\'{a}", 'tex')
 call IMAP ('=b', "\\'{b}", 'tex')

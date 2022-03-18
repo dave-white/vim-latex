@@ -17,13 +17,13 @@ function! <SID>SetTemplateMenu()
   let flist = <SID>FindInTemplateDir('')
   let i = 1
   while 1
-	let fname = Tex_Strntok(flist, ',', i)
-	if fname == ''
-	  break
-	endif
-	exe "amenu ".b:tex_templateMenuLoc."&".i.":<Tab>".fname." ".
-		  \":call <SID>ReadTemplate('".fname."')<CR>"
-	let i = i + 1
+    let fname = Tex_Strntok(flist, ',', i)
+    if fname == ''
+      break
+    endif
+    exe "amenu ".b:tex_templateMenuLoc."&".i.":<Tab>".fname." ".
+	  \":call <SID>ReadTemplate('".fname."')<CR>"
+    let i = i + 1
   endwhile
 endfunction 
 
@@ -31,14 +31,14 @@ endfunction
 " ReadTemplate: reads in the template file from the template directory. {{{
 function! <SID>ReadTemplate(...)
   if a:0 > 0
-	let filename = a:1
+    let filename = a:1
   else
-	let filelist = <SID>FindInTemplateDir('')
-	let filename = 
-		  \ Tex_ChooseFromPrompt("Choose a template file:\n" . 
-		  \ Tex_CreatePrompt(filelist, 2, ',') . 
-		  \ "\nEnter number or name of file :", 
-		  \ filelist, ',')
+    let filelist = <SID>FindInTemplateDir('')
+    let filename = 
+	  \ Tex_ChooseFromPrompt("Choose a template file:\n" . 
+	  \ Tex_CreatePrompt(filelist, 2, ',') . 
+	  \ "\nEnter number or name of file :", 
+	  \ filelist, ',')
   endif
 
   let fname = <SID>FindInTemplateDir(filename.'.tex', ':p')
@@ -60,7 +60,7 @@ function! <SID>ReadTemplate(...)
 
   call s:ProcessTemplate()
   if exists('*Tex_pack_updateall')
-	call Tex_pack_updateall(1)
+    call Tex_pack_updateall(1)
   endif
 
   " Do not handle the placeholders here. Let IMAP_PutTextWithMovement do it
@@ -96,9 +96,9 @@ function! <SID>FindInTemplateDir(filename, ...)
   let pattern = (a:filename != '' ? a:filename : '*.tex')
 
   if exists("b:tex_customTemplateDirectory") && b:tex_customTemplateDirectory != ''
-	return call("Tex_FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
+    return call("Tex_FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
   else
-	return call("Tex_FindInDirectory", [pattern, 1, 'templates'] + a:000 )
+    return call("Tex_FindInDirectory", [pattern, 1, 'templates'] + a:000 )
   endif
 endfunction
 " }}}
@@ -109,12 +109,12 @@ endfunction
 function! <SID>ProcessTemplate()
   if exists('s:phsTemp') && s:phsTemp != ''
 
-	exec 'silent! %s/^'.s:comTemp.'\(\_.\{-}\)'.s:comTemp.'$/\=<SID>Compute(submatch(1))/ge'
-	exec 'silent! %s/'.s:exeTemp.'\(.\{-}\)'.s:exeTemp.'/\=<SID>Exec(submatch(1))/ge'
-	exec 'silent! g/'.s:comTemp.s:comTemp.'/d'
+    exec 'silent! %s/^'.s:comTemp.'\(\_.\{-}\)'.s:comTemp.'$/\=<SID>Compute(submatch(1))/ge'
+    exec 'silent! %s/'.s:exeTemp.'\(.\{-}\)'.s:exeTemp.'/\=<SID>Exec(submatch(1))/ge'
+    exec 'silent! g/'.s:comTemp.s:comTemp.'/d'
 
-	" A function only puts one item into the search history...
-	call Tex_CleanSearchHistory()
+    " A function only puts one item into the search history...
+    call Tex_CleanSearchHistory()
   endif
 endfunction
 
@@ -126,9 +126,9 @@ endfunction
 function! <SID>Compute(what)
   exe a:what
   if exists('s:comTemp')
-	return s:comTemp.s:comTemp
+    return s:comTemp.s:comTemp
   else
-	return ''
+    return ''
   endif
 endfunction
 
@@ -142,17 +142,17 @@ if v:version >= 602
   "	and return list of names separated with newlines.
   "
   function! Tex_CompleteTemplateName(A,P,L)
-	" Get name of macros from all runtimepath directories
-	let tmplnames = <SID>FindInTemplateDir('')
-	" Separate names with \n not ,
-	let tmplnames = substitute(tmplnames,',','\n','g')
-	return tmplnames
+    " Get name of macros from all runtimepath directories
+    let tmplnames = <SID>FindInTemplateDir('')
+    " Separate names with \n not ,
+    let tmplnames = substitute(tmplnames,',','\n','g')
+    return tmplnames
   endfunction
   " }}}
 
 else
   com! -nargs=? TTemplate :call <SID>ReadTemplate(<f-args>)
-		\| :startinsert
+	\| :startinsert
 
 endif
 

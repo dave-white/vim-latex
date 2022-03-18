@@ -1,10 +1,10 @@
-"=============================================================================
+"===========================================================================
 " 	       File: bibtex.vim
 "      Function: BibT
 "        Author: Alan G Isaac <aisaac@american.edu>
 "                modified by Srinath Avadhanula for latex-suite.
 "       License: Vim Charityware license.
-"=============================================================================
+"===========================================================================
 
 " Fields:
 " Define what field type each letter denotes {{{
@@ -118,17 +118,6 @@ let s:{'unpublished'}_optional2="m"
 let s:{'unpublished'}_retval = '@UNPUBLISHED{' . s:key . ','."\n"
 
 " }}}
-
-if exists('s:done')
-	finish
-endif
-let s:done = 1
-
-call IMAP ('BBB', "\<C-r>=BibT('', '', 0)\<CR>", 'bib')
-call IMAP ('BBL', "\<C-r>=BibT('', 'o', 0)\<CR>", 'bib')
-call IMAP ('BBH', "\<C-r>=BibT('', 'O', 0)\<CR>", 'bib')
-call IMAP ('BBX', "\<C-r>=BibT('', 'Ox', 0)\<CR>", 'bib')
-
 " BibT: function to generate a formatted bibtex entry {{{
 " three sample usages:
 "   :call BibT()                    will request type choice
@@ -150,104 +139,109 @@ call IMAP ('BBX', "\<C-r>=BibT('', 'Ox', 0)\<CR>", 'bib')
 " Returns:
 " a string containing a formatted bib entry
 function BibT(type, options, prompt)
-	if a:type != ''
-		let choosetype = a:type
-	else
-		let types = 
-			\ 'article'."\n".
-			\ 'booklet'."\n".
-			\ 'book'."\n".
-			\ 'conference'."\n".
-			\ 'inbook'."\n".
-			\ 'incollection'."\n".
-			\ 'inproceedings'."\n".
-			\ 'manual'."\n".
-			\ 'msthesis'."\n".
-			\ 'misc'."\n".
-			\ 'phdthesis'."\n".
-			\ 'proceedings'."\n".
-			\ 'techreport'."\n".
-			\ 'unpublished'
-		let choosetype = Tex_ChooseFromPrompt(
-					\ "Choose the type of bibliographic entry: \n" . 
-					\ Tex_CreatePrompt(types, 3, "\n") .
-					\ "\nEnter number or filename :", 
-					\ types, "\n")
-		if choosetype == ''
-			let choosetype = 'article'
-		endif
-		if types !~ '^\|\n'.choosetype.'$\|\n'
-			echomsg 'Please choose only one of the given types'
-			return
-		endif
+  if a:type != ''
+	let choosetype = a:type
+  else
+	let types = 
+		  \ 'article'."\n".
+		  \ 'booklet'."\n".
+		  \ 'book'."\n".
+		  \ 'conference'."\n".
+		  \ 'inbook'."\n".
+		  \ 'incollection'."\n".
+		  \ 'inproceedings'."\n".
+		  \ 'manual'."\n".
+		  \ 'msthesis'."\n".
+		  \ 'misc'."\n".
+		  \ 'phdthesis'."\n".
+		  \ 'proceedings'."\n".
+		  \ 'techreport'."\n".
+		  \ 'unpublished'
+	let choosetype = Tex_ChooseFromPrompt(
+		  \ "Choose the type of bibliographic entry: \n" . 
+		  \ Tex_CreatePrompt(types, 3, "\n") .
+		  \ "\nEnter number or filename :", 
+		  \ types, "\n")
+	if choosetype == ''
+	  let choosetype = 'article'
 	endif
-	if a:options != ''
-		let options = a:options
-	else
-		let options = ""
+	if types !~ '^\|\n'.choosetype.'$\|\n'
+	  echomsg 'Please choose only one of the given types'
+	  return
+	endif
+  endif
+  if a:options != ''
+	let options = a:options
+  else
+	let options = ""
+  endif
+
+  let fields = ''
+  let extras=""
+  let retval = ""
+
+  " define fields
+  let fields = s:{choosetype}_required
+  if options =~ 'o' && exists('s:'.choosetype.'_optional1')
+	let fields = fields . s:{choosetype}_optional1
+  endif
+  if options =~ "O" && exists('s:'.choosetype.'_optional2')
+	if options !~ 'o'&& exists('s:'.choosetype.'_optional1') 
+	  let fields = fields . s:{choosetype}_optional1
+	endif
+	let fields = fields . s:{choosetype}_optional2
+  endif
+  if options =~ "x" && exists('s:'.choosetype.'_extras')
+	let fields = fields . extras
+  endif
+  if exists('g:Bib_'.choosetype.'_options')
+	let fields = fields . g:Bib_{choosetype}_options
+  endif
+
+  let retval = s:{choosetype}_retval
+
+  let i = 0
+  while i < strlen(fields)
+	let field = strpart(fields, i, 1)
+
+	if exists('s:'.field.'_standsfor')
+	  let field_name = s:{field}_standsfor
+	  let retval = retval.field_name." = {<++>},\n"
 	endif
 
-	let fields = ''
-	let extras=""
-	let retval = ""
+	let i = i + 1
+  endwhile
 
-	" define fields
-	let fields = s:{choosetype}_required
-	if options =~ 'o' && exists('s:'.choosetype.'_optional1')
-		let fields = fields . s:{choosetype}_optional1
-	endif
-	if options =~ "O" && exists('s:'.choosetype.'_optional2')
-		if options !~ 'o'&& exists('s:'.choosetype.'_optional1') 
-			let fields = fields . s:{choosetype}_optional1
-		endif
-		let fields = fields . s:{choosetype}_optional2
-	endif
-	if options =~ "x" && exists('s:'.choosetype.'_extras')
-		let fields = fields . extras
-	endif
-	if exists('g:Bib_'.choosetype.'_options')
-		let fields = fields . g:Bib_{choosetype}_options
-	endif
+  " If the user wants even more fine-tuning...
+  if Tex_GetVarValue('Bib_'.choosetype.'_extrafields') != ''
 
-	let retval = s:{choosetype}_retval
-	
-	let i = 0
-	while i < strlen(fields)
-		let field = strpart(fields, i, 1)
+	let extrafields = Tex_GetVarValue('Bib_'.choosetype.'_extrafields')
 
-		if exists('s:'.field.'_standsfor')
-			let field_name = s:{field}_standsfor
-			let retval = retval.field_name." = {<++>},\n"
-		endif
+	let i = 1
+	while 1
+	  let field_name = Tex_Strntok(extrafields, "\n", i)
+	  if field_name == ''
+		break
+	  endif
 
-		let i = i + 1
+	  let retval = retval.field_name." = {<++>},\n"
+
+	  let i = i + 1
 	endwhile
-	
-	" If the user wants even more fine-tuning...
-	if Tex_GetVarValue('Bib_'.choosetype.'_extrafields') != ''
 
-		let extrafields = Tex_GetVarValue('Bib_'.choosetype.'_extrafields')
-		
-		let i = 1
-		while 1
-			let field_name = Tex_Strntok(extrafields, "\n", i)
-			if field_name == ''
-				break
-			endif
+  endif
 
-			let retval = retval.field_name." = {<++>},\n"
+  let retval = retval.'otherinfo = {<++>}'."\n"
+  let retval = retval."}<++>"."\n"
 
-			let i = i + 1
-		endwhile
-
-	endif
-
-	let retval = retval.'otherinfo = {<++>}'."\n"
-	let retval = retval."}<++>"."\n"
-
-	return IMAP_PutTextWithMovement(retval)
+  return IMAP_PutTextWithMovement(retval)
 endfunction
 
 " }}}
 
-" vim:fdm=marker:ff=unix:noet:ts=4:sw=4
+call IMAP ('BBB', "\<C-r>=BibT('', '', 0)\<CR>", 'bib')
+call IMAP ('BBL', "\<C-r>=BibT('', 'o', 0)\<CR>", 'bib')
+call IMAP ('BBH', "\<C-r>=BibT('', 'O', 0)\<CR>", 'bib')
+call IMAP ('BBX', "\<C-r>=BibT('', 'Ox', 0)\<CR>", 'bib')
+
+" vim:fdm=marker:ff=unix:noet

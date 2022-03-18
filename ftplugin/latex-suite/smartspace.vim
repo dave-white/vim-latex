@@ -9,13 +9,6 @@
 "     lines.
 "===========================================================================
 
-" Avoid reinclusion or if the user doesn't want us.
-if exists('b:done_smartspace') 
-	  \ || (exists('b:tex_smartKeySpace') && !b:tex_smartKeySpace)
-  finish
-endif
-let b:done_smartspace = 1
-
 " Smart space relies on taking over vim's insertion of carriage returns in
 " order to keep $$'s on the same line. The only way to get vim not to break
 " lines is to set tw=0. 

@@ -1,5 +1,26 @@
 " vim:ft=vim:fdm=marker
 
+let b:tex_debug_lvl = 0
+let b:tex_debug_log = v:null
+let b:tex_mainFileXpr = "main"
+
+let g:imap_usePlaceHolders = 1
+let g:imap_placeHolderStart = '<+'
+let g:imap_placeHolderEnd = '+>'
+let g:imap_delEmptyPlaceHolders = 1
+let g:imap_stickyPlaceHolders = 1
+
+let b:tex_useMenuWiz = 0
+
+let b:tex_catchVisMapErrs = 1
+
+let b:tex_diacritics = 0
+
+let b:tex_leader = '`'
+let b:tex_leader2 = ','
+
+let b:tex_usePython = 0
+
 nmap <silent> <script> <plug> i
 imap <silent> <script> <C-o><plug> <Nop>
 
@@ -21,6 +42,15 @@ endif
 func! Tex_UsePython()
   return b:tex_pythonVersion && b:tex_usePython
 endfunc
+
+if b:tex_usePython
+  if has("python3")
+  let b:tex_pythonCmd = 'python3'
+  elseif has("python")
+  let b:tex_pythonCmd = 'python'
+  endif
+endif
+let s:tex_usePython = b:tex_usePython && (has("python3") || has("python"))
 
 " Define the functions in python if available.
 if Tex_UsePython()
@@ -653,30 +683,17 @@ endif
 " }}}
 " Source vim files. {{{
 " source texproject.vim before other files
-exe 'source '.fnameescape(s:path.'/texproject.vim')
-exe 'source '.fnameescape(s:path.'/texmenuconf.vim')
-exe 'source '.fnameescape(s:path.'/envmacros.vim')
-exe 'source '.fnameescape(s:path.'/elementmacros.vim')
-" source utf-8 or plain math menus
-if exists("b:tex_useUtfMenus") && b:tex_useUtfMenus != 0
-      \ && has("gui_running")
-  exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
-else
-  exe 'source '.fnameescape(s:path.'/mathmacros.vim')
+if has('gui_running') && b:tex_mathMenus && b:tex_menus
+  " source utf-8 or plain math menus
+  if b:tex_useUtfMenus
+    set encoding=utf-8
+    exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
+  else
+    exe 'source '.fnameescape(s:path.'/mathmacros.vim')
+  endif
 endif
-exe 'source '.fnameescape(s:path.'/compiler.vim')
-exe 'source '.fnameescape(s:path.'/folding.vim')
-exe 'source '.fnameescape(s:path.'/templates.vim')
 exe 'source '.fnameescape(s:path.'/custommacros.vim')
 exe 'source '.fnameescape(s:path.'/bibtex.vim')
-" source advanced math functions
-exe 'source '.fnameescape(s:path.'/brackets.vim')
-exe 'source '.fnameescape(s:path.'/smartspace.vim')
-if b:tex_diacritics != 0
-  exe 'source '.fnameescape(s:path.'/diacritics.vim')
-endif
-exe 'source '.fnameescape(s:path.'/texviewer.vim')
-exe 'source '.fnameescape(s:path.'/version.vim')
 " }}}
 " =========================================================================
 " Settings for taglist.vim plugin

@@ -13,14 +13,15 @@ set cpo&vim
 
 let s:path = fnameescape(expand('<sfile>:p:h'))
 
-" TEXRC: Set default global settings. {{{
-if !exists("g:did_tex_plugin") || g:did_tex_plugin != 1
-  runtime ftplugin/latex-suite/texrc
-  runtime ftplugin/tex/texrc
+" TEXRC: Load user's settings. {{{
+" Global settings.
+runtime ftplugin/tex/texrc
 
 " Tex_FindFileAbove: {{{
 " Search up the path from current file's directory for file matching expr.
 " Return str = absolute path to file matching expr
+if !exists("g:did_tex_plugin") || g:did_tex_plugin != 1
+
 func Tex_FindFileAbove(xpr, ...)
   if a:0 < 1
     let curr_dir = fnameescape(expand('%:p:h'))
@@ -43,14 +44,17 @@ func Tex_FindFileAbove(xpr, ...)
   endwhile
   return ""
 endfunc
-" }}}
-endif
 
+endif
+" }}}
+
+" Settings local to project.
 let fpath = fnameescape(expand('%:p'))
 let proj_texrc = Tex_FindFileAbove('texrc', fpath)
 if filereadable(proj_texrc)
   exe 'so '.proj_texrc
 endif
+" Settings local to tex file.
 let fpath_r = fnameescape(expand('%:p:r'))
 let file_texrc = glob(fpath_r.".vim")
 if filereadable(file_texrc)
@@ -58,24 +62,12 @@ if filereadable(file_texrc)
 endif
 " }}}
 
-exe 'so '.s:path.'/latex-suite/glob2loc.vim'
-
 if !exists("g:did_tex_plugin") || g:did_tex_plugin != 1
   exe 'so '.s:path.'/latex-suite/setup-glob.vim'
 endif
 let g:did_tex_plugin = 1
 
 exe 'so '.s:path.'/latex-suite/setup-loc.vim'
-
-if exists("b:tex_jobNm") && !empty(b:tex_jobNm)
-  let b:tex_compilePrgOptDict_pdf["-jobname"] = b:tex_jobNm
-endif
-
-if b:tex_outpDir != v:null
-  let b:tex_compilePrgOptDict_pdf["-output-directory"] = b:tex_outpDir
-  let b:tex_bibPrgOptDict["--input-directory"] = b:tex_outpDir
-  let b:tex_bibPrgOptDict["--output-directory"] = b:tex_outpDir
-endif
 
 let &cpo = s:save_cpo
 

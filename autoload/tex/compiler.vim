@@ -6,208 +6,77 @@
 "  Description: functions for compiling/viewing/searching latex documents
 "===========================================================================
 
-" line continuation used here.
-let s:save_cpo = &cpo
-set cpo&vim
+" == Settings =============================================================
+" Script variables {{{
+let use_make = 0
+let mult_cmpl = 1
+" A comma seperated list of formats which need multiple compilations to be
+" correctly compiled.
+let mult_cmpl_fmts = ["dvi", "pdf"]
 
-func! Tex_GetJobName(...) " {{{
-  if a:0 > 0
-    let isForMain = a:1
-  else
-    let isForMain = 0
-  endif
+" Uncomment this line if you compile ps files via dvi files.
+let fmt_deps_ps = ['dvi', 'ps']
+let fmt_deps_pdf = []
 
-  if !empty(b:tex_jobNm)
-    return b:tex_jobNm
-  elseif isForMain
-    return fnamemodify(Tex_GetMainFileName(), ':r')
+let make_idx_cmd = 'makeindex "$*.idx"'
+
+let bib_cmd = 'biber'
+if exists('b:tex_outpDir')
+  let bib_cmd .= ' --input-directory="'.b:tex_outpDir.'"'
+	       \.' --output-directory="'.b:tex_outpDir.'"'
+endif
+
+if has('win32')
+  let view_prg_ps = 'gsview32'
+  let view_prg_pdf = 'AcroRd32'
+  let view_prg_dvi = 'yap -1'
+elseif has('osx') || has('macunix')
+  " Let the system pick.  If you want, you can override the choice here.
+  let view_prg_ps = v:null
+  let view_prg_pdf = v:null
+  " let view_prg_pdf = 'Acrobat\ Reader\ 5.1'
+  let view_prg_dvi = v:null
+  " Set this to 1 to disable opening a viewer with 'open -a'
+  " Note: If you do this, you need to specify viewers above
+  let mac_as_nix = 0
+else
+  if executable('xdg-open')
+    let view_prg_ps = 'xdg-open'
+    let view_prg_pdf = 'xdg-open'
+    let view_prg_dvi = 'xdg-open'
   else
-    return expand('%:r')
+    let view_prg_ps = 'gv'
+    let view_prg_pdf = 'xpdf'
+    let view_prg_dvi = 'xdvi'
   endif
-endfunc
+  " the option below specifies an editor for the dvi viewer while starting
+  " up the dvi viewer according to Dimitri Antoniou's tip on vim.sf.net 
+  " (tip
+  " #225)
+endif
+let b:tex_useEditorSettingInDVIViewer = 0
+" For unix systems or macunix systens with enabled Tex_TreatMacViewerAsUNIX:
+" Set this to 1 if you do not want to execute the viewer in the background
+let b:tex_execNixViewerInForeground = 0
+
+" view_rule_* takes precedence over view_prg_* and is executed as is (up to 
+" file name substitution).
+let view_rule_html = 'MozillaFirebird "$*/index.html" &'
+let view_rule_dvi = v:null
+
+let goto_err = 0
+
+" If set to 1, then latex-suite shows the context of the error in a preview
+" window beneath the window showing the actual errors.
+let show_err_cntxt = 0
+
+" Remove temp files created during part compilations when vim exits.
+let rmv_tmp_files = 1
 " }}}
-func! Tex_GetOutpDir(...) " {{{
-  if a:0 < 1
-    let fpathHead = expand('%:p:h')
-    let mod = ':p'
-  elseif a:0 < 2
-    let fpathHead = fnamemodify(a:1, ':p:h')
-    let mod = ':p'
-  else
-    let fpathHead = fnamemodify(a:1, ':p:h')
-    let mod = a:2
-  endif
 
-  if !empty(b:tex_outpDir)
-    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpDir)
-    return fnamemodify(out_dir, mod)
-  else
-    return fnamemodify(fpathHead, mod)
-  endif
-endfunc
-" }}}
-" Tex_BldCmd: {{{
-func Tex_BldCmd(cmd, optDict)
-  let rslt = a:cmd
-  for [opt, val] in items(a:optDict)
-    if val != v:null
-      if type(val) == v:t_bool
-	if val == v:true
-	  let rslt .= " ".opt
-	else
-	  let rslt .= ""
-	endif
-      elseif type(val) == v:t_list
-	let rslt .= " ".opt.'="'.join(val, ",").'"'
-      elseif type(val) == v:t_string
-	let rslt .= " ".opt.'="'.val.'"'
-      else
-	let rslt .= " ".opt.'="'.string(val).'"'
-      endif
-    endif
-  endfor
-  return rslt
-endfunc
-" }}}
-" Tex_CompileRun: {{{
-func Tex_CompileRun(file, ...)
-  if a:0 > 0
-    let ignWarnPats = a:1
-    if a:0 > 1
-      let ignLvl = a:2
-    else
-      let ignLvl = -1
-    endif
-  else
-    let ignLvl = -1
-    let ignWarnPats = []
-  endif
-
-  let origLvl = b:tex_ignLvl
-  let origPats = b:tex_ignWarnPats
-
-  let b:tex_ignWarnPats = extendnew(ignWarnPats, b:tex_ignWarnPats)
-  let newIgnLvl = origLvl
-  if ignLvl >= 0
-    let newIgnLvl = ignLvl
-  else
-    let newIgnLvl = len(ignWarnPats)+origLvl
-  endif
-  exe "TCLevel ".string(newIgnLvl)
-
-  silent! exe "make! ".a:file
-
-  let b:tex_ignLvl = origLvl
-  let b:tex_ignWarnPats = origPats
-
-  " If there are any errors, then break from the rest of the steps
-  let errLst = Tex_GetErrorList()
-  if b:tex_debug
-    call Tex_Debug("Tex_CompileRun: errLst = [".errLst."]", "comp")
-  endif
-  if errLst =~  'error'
-    redraw!
-    return 1
-  endif
-
-  return 0
-endfunc
-" }}}
-" Tex_CompileProc: {{{
-func Tex_CompileProc(fpath, depChain, outpDir, jobNm)
-  let auxfile = a:outpDir.'/'.a:jobNm.'.aux'
-  let bcffile = a:outpDir.'/'.a:jobNm.'.bcf'
-  let bblfile = a:outpDir.'/'.a:jobNm.'.bbl'
-  let idxFile = a:outpDir.'/'.a:jobNm.'.idx'
-
-  if getftime(a:fpath) <= getftime(auxfile)
-    echo "Nothing to do."
-    return 0
-  endif
-  
-  if !empty(a:outpDir)
-    call mkdir(a:outpDir, "p")
-  endif
-
-  if has('win32')
-    let md5cmd = "Get-FileHash -Algorithm MD5"
-  elseif has('osx')
-    let md5cmd = "md5 -q"
-  else
-    let md5cmd = "md5sum"
-  endif
-
-  let fname = fnamemodify(a:fpath, ":t")
-  " now compile to the final target format via each dependency.
-  for targ in a:depChain
-    " close any preview windows left open.
-    pclose!
-    " Record the 'state' of auxilliary files before compilation.
-    let auxPreHash = system(md5cmd." ".auxfile)
-    let idxPreHash = system(md5cmd." ".idxFile)
-    let bcfPreHash = system(md5cmd." ".bcffile)
-
-    " Run the composed compiler command
-    let err = Tex_CompileRun(fname, [
-	  \ 'Reference %.%# undefined',
-	  \ 'Rerun to get cross-references right'
-	  \ ])
-    if err
-      return 1
-    endif
-
-    let rerun = 0
-    let runCnt = 1
-
-    " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
-      call confirm(bcffile, "cont")
-    if filereadable(bcffile)
-     \ && (!filereadable(bblfile)
-	  \ || (getftime(bblfile) <= getftime(bcffile)))
-      let bblPreHash = system(md5cmd." ".bblfile)
-      let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
-      silent! exec '!'.bibCmd.' "'.a:jobNm.'"'
-      if system(md5cmd." ".bblfile) != bblPreHash
-	let rerun = 1
-      endif
-    endif
-
-    if b:tex_doMultCompile && (index(b:tex_multCompileFmts, targ) >= 0)
-      " Recompile up to four times as necessary.
-      while rerun && (runCnt < 5)
-	let rerun = 0
-	let runCnt += 1
-
-	let err = Tex_CompileRun(fname)
-	if err
-	  return 1
-	endif
-
-	let auxPostHash = system(md5cmd." ".auxfile)
-	if auxPostHash != auxPreHash
-	  let rerun = 1
-	  let auxPreHash = auxPostHash
-	endif
-      endwhile
-    endif
-
-    let timeWrd = "time"
-    if runCnt != 1
-      let timeWrd .= "s"
-    endif
-    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd."."
-  endfor
-endfunc
-" }}}
-" Tex_Compile: compilation function this function runs the latex {{{ 
-" command on the currently open file. often times the file being currently 
-" edited is only a fragment being \input'ed into some master tex file. in 
-" this case, make a file called mainfile.latexmain in the directory 
-" containig the file. in other words, if the current file is 
-" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
-" then make a file called main.tex.latexmain in the ~/thesis directory.  
-" this will then run "latex main.tex" when Tex_Compile() is called.
-func! Tex_Compile(...)
+" == Externalized functions ===============================================
+" Run: Sets off the compilation process. {{{
+func! tex#compiler#Run(...)
   if a:0 < 1
     let fpath = expand('%:p')
     let mainTarg = b:tex_targ
@@ -229,12 +98,12 @@ func! Tex_Compile(...)
   endif
 
   if fnamemodify(fpath, ":e") != 'tex'
-    echo "calling Tex_Compile from a non-tex file"
+    echo "calling Run from a non-tex file"
     return
   endif
 
-  let jobNm = Tex_GetJobName()
-  let outpDir = Tex_GetOutpDir(a:fpath)
+  let jobNm = GetJobNm()
+  let outpDir = GetOutpDir(a:fpath)
 
   if getftime(a:fpath) <= getftime(outpDir.'/'.jobNm.'.aux')
     echo "Nothing to do."
@@ -250,18 +119,18 @@ func! Tex_Compile(...)
   let cwd = getcwd()
   call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
 
-  call Tex_CompileProc(fpath, depChain, outpDir, jobNm)
+  call s:Compile(fpath, depChain, outpDir, jobNm)
 
   call chdir(cwd)
   redraw!
   call Tex_SetupErrorWindow()
 endfunc
 " }}}
-" Tex_View: opens viewer {{{
+" View: opens viewer {{{
 " Description: opens the DVI viewer for the file being currently edited.
 " Again, if the current file is a \input in a master file, see text above
-" Tex_Compile() to see how to set this information.
-func! Tex_View(...)
+" tex#compiler#Run() to see how to set this information.
+func! tex#compiler#View(...)
   if a:0 < 1
     let targ = b:tex_targ
     let viewer = b:tex_viewPrg_{targ}
@@ -273,16 +142,16 @@ func! Tex_View(...)
     let viewer = a:2
   endif
 
-  if exists("b:tex_viewPrgComplete_".targ)
-	\ && !empty(b:tex_viewPrgComplete_{targ})
-    let cmd = substitute(b:tex_viewPrgComplete_{targ},
+  if exists("view_rule_".targ)
+	\ && !empty(view_rule_{targ})
+    let cmd = substitute(view_rule_{targ},
 	  \ '{v:servername}', v:servername, 'g')
   elseif has('win32')
     " unfortunately, yap does not allow the specification of an external
     " editor from the command line. that would have really helped ensure
     " that this particular vim and yap are connected.
     let cmd = 'start '.viewer.' "$*.'.targ.'"'
-  elseif (has('osx') || has('macunix')) && !b:tex_treatMacViewerAsUNIX
+  elseif (has('osx') || has('macunix')) && !mac_as_nix
     let cmd = 'open'
     if !empty(viewer)
       let cmd .= ' -a '.viewer
@@ -307,7 +176,7 @@ func! Tex_View(...)
   endif
 
 
-  let fpath = Tex_GetOutpDir(expand('%:p'))
+  let fpath = GetOutpDir(expand('%:p'))
   if !empty(b:tex_jobNm)
     let fpath .= b:tex_jobNm
   else
@@ -316,7 +185,7 @@ func! Tex_View(...)
 
   let cmd = substitute(cmd, '\V$*', fpath, 'g')
   if b:tex_debug
-    call Tex_Debug("Tex_View: cmd = ".cmd, "comp")
+    call Tex_Debug("View: cmd = ".cmd, "comp")
   endif
 
   exec 'silent! !'.cmd
@@ -327,9 +196,9 @@ func! Tex_View(...)
 endfunc
 
 " }}}
-" Tex_ForwardSearchLaTeX: searches for current location in dvi file. {{{
+" SeekFoward: searches for current location in dvi file. {{{
 " Description: if the DVI viewer is compatible, then take the viewer to that
-"              position in the dvi file. see docs for Tex_Compile() to set a
+"              position in the dvi file. see docs for tex#compiler#Run() to set a
 "              master file if this is an \input'ed file.
 " Tip: With YAP on Windows, it is possible to do forward and inverse searches
 "      on DVI files. to do forward search, you'll have to compile the file
@@ -338,12 +207,7 @@ endfunc
 "           gvim --servername LATEX --remote-silent +%l "%f"
 "      For inverse search, if you are reading this, then just pressing \ls
 "      will work.
-func! Tex_ForwardSearchLaTeX(...)
-  if &ft != 'tex'
-    echo "calling Tex_ForwardSeachLaTeX from a non-tex file"
-    return
-  endif
-
+func tex#compiler#SeekFoward(...)
   if a:0 > 0
     let targ = a:1
   else
@@ -468,7 +332,7 @@ func! Tex_ForwardSearchLaTeX(...)
   endif
 
   if b:tex_debug
-    call Tex_Debug("Tex_ForwardSearchLaTeX: execString = ".execString, "comp")
+    call Tex_Debug("tex#compiler#SeekFoward: execString = ".execString, "comp")
   endif
   execute execString
   if !has('gui_running')
@@ -479,17 +343,13 @@ func! Tex_ForwardSearchLaTeX(...)
 endfunc
 
 " }}}
-
-" ==========================================================================
-" Functions for compiling parts of a file.
-" ==========================================================================
-" Tex_PartCompile: compiles selected fragment {{{
+" PartCompile: compiles selected fragment {{{
 " Description: creates a temporary file from the selected fragment of text
-"       prepending the preamble and \end{document} and then asks Tex_Compile() to
+"       prepending the preamble and \end{document} and then asks tex#compiler#Run() to
 "       compile it.
-func! Tex_PartCompile() range
+func! tex#compiler#Parts:Compile() range
   if b:tex_debug
-    call Tex_Debug('+Tex_PartCompile', 'comp')
+    call Tex_Debug('+PartCompile', 'comp')
   endif
 
   " Get a temporary file in the same directory as the file from which
@@ -512,7 +372,7 @@ func! Tex_PartCompile() range
   if b:tex_removeTempFiles
     augroup RemoveTmpFiles
       au!
-      au VimLeave * :call Tex_RemoveTempFiles()
+      au VimLeave * :call RmvTmpFiles()
     augroup END
   endif
 
@@ -539,27 +399,192 @@ func! Tex_PartCompile() range
   " set this as a fragment file.
   let b:fragmentFile = 1
 
-  silent! call Tex_Compile()
+  silent! call tex#compiler#Run()
 endfunc " }}}
-" Tex_RemoveTempFiles: cleans up temporary files created during part compilation {{{
+
+" == Internal helper functions ============================================
+" GetJobNm: Return the pdftex -jobname option value if it is set. {{{
+func GetJobNm()
+  if exists('b:tex_jobNm')
+    return b:tex_jobNm
+  elseif exists('b:tex_main_fxpr')
+    return glob(b:tex_main_fxpr)
+  else
+    return expand('%:r')
+  endif
+endfunc
+" }}}
+func GetOutpDir(...) " {{{
+  if a:0 < 1
+    let fpathHead = expand('%:p:h')
+    let mod = ':p'
+  elseif a:0 < 2
+    let fpathHead = fnamemodify(a:1, ':p:h')
+    let mod = ':p'
+  else
+    let fpathHead = fnamemodify(a:1, ':p:h')
+    let mod = a:2
+  endif
+
+  if !empty(b:tex_outpDir)
+    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpDir)
+    return fnamemodify(out_dir, mod)
+  else
+    return fnamemodify(fpathHead, mod)
+  endif
+endfunc
+" }}}
+" ExeCompiler: {{{
+func s:ExeCompiler(file, ...)
+  if a:0 > 0
+    let ignWarnPats = a:1
+    if a:0 > 1
+      let ignLvl = a:2
+    else
+      let ignLvl = -1
+    endif
+  else
+    let ignLvl = -1
+    let ignWarnPats = []
+  endif
+
+  let origLvl = b:tex_ignLvl
+  let origPats = b:tex_ignWarnPats
+
+  let b:tex_ignWarnPats = extendnew(ignWarnPats, b:tex_ignWarnPats)
+  let newIgnLvl = origLvl
+  if ignLvl >= 0
+    let newIgnLvl = ignLvl
+  else
+    let newIgnLvl = len(ignWarnPats)+origLvl
+  endif
+  exe "TCLevel ".string(newIgnLvl)
+
+  silent! exe "make! ".a:file
+
+  let b:tex_ignLvl = origLvl
+  let b:tex_ignWarnPats = origPats
+
+  " If there are any errors, then break from the rest of the steps
+  let errLst = Tex_GetErrorList()
+  if b:tex_debug
+    call Tex_Debug("ExeCompiler: errLst = [".errLst."]", "comp")
+  endif
+  if errLst =~  'error'
+    redraw!
+    return 1
+  endif
+
+  return 0
+endfunc
+" }}}
+" Compile: {{{
+func s:Compile(fpath, depChain, outpDir, jobNm)
+  let auxfile = a:outpDir.'/'.a:jobNm.'.aux'
+  let bcffile = a:outpDir.'/'.a:jobNm.'.bcf'
+  let bblfile = a:outpDir.'/'.a:jobNm.'.bbl'
+  let idxFile = a:outpDir.'/'.a:jobNm.'.idx'
+
+  if getftime(a:fpath) <= getftime(auxfile)
+    echo "Nothing to do."
+    return 0
+  endif
+  
+  if !empty(a:outpDir)
+    call mkdir(a:outpDir, "p")
+  endif
+
+  if has('win32')
+    let md5cmd = "Get-FileHash -Algorithm MD5"
+  elseif has('osx')
+    let md5cmd = "md5 -q"
+  else
+    let md5cmd = "md5sum"
+  endif
+
+  let fname = fnamemodify(a:fpath, ":t")
+  " now compile to the final target format via each dependency.
+  for targ in a:depChain
+    " close any preview windows left open.
+    pclose!
+    " Record the 'state' of auxilliary files before compilation.
+    let auxPreHash = system(md5cmd." ".auxfile)
+    let idxPreHash = system(md5cmd." ".idxFile)
+    let bcfPreHash = system(md5cmd." ".bcffile)
+
+    " Run the composed compiler command
+    let err = s:ExeCompiler(fname, [
+	  \ 'Reference %.%# undefined',
+	  \ 'Rerun to get cross-references right'
+	  \ ])
+    if err
+      return 1
+    endif
+
+    let rerun = 0
+    let runCnt = 1
+
+    " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
+      call confirm(bcffile, "cont")
+    if filereadable(bcffile)
+     \ && (!filereadable(bblfile)
+	  \ || (getftime(bblfile) <= getftime(bcffile)))
+      let bblPreHash = system(md5cmd." ".bblfile)
+
+      silent! exec '!'.bib_cmd.' "'.a:jobNm.'"'
+      if system(md5cmd." ".bblfile) != bblPreHash
+	let rerun = 1
+      endif
+    endif
+
+    if mult_cmpl && (index(mult_cmpl_fmts, targ) >= 0)
+      " Recompile up to four times as necessary.
+      while rerun && (runCnt < 5)
+	let rerun = 0
+	let runCnt += 1
+
+	let err = s:ExeCompiler(fname)
+	if err
+	  return 1
+	endif
+
+	let auxPostHash = system(md5cmd." ".auxfile)
+	if auxPostHash != auxPreHash
+	  let rerun = 1
+	  let auxPreHash = auxPostHash
+	endif
+      endwhile
+    endif
+
+    let timeWrd = "time"
+    if runCnt != 1
+      let timeWrd .= "s"
+    endif
+    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd."."
+  endfor
+endfunc
+" }}}
+
+" == Functions for compiling parts of a file.  ============================
+" RmvTmpFiles: cleans up temporary files created during part {{{ 
+" compilation
 " Description: During part compilation, temporary files containing the
 "              visually selected text are created. These files need to be
 "              removed when Vim exits to avoid "file leakage".
-func! Tex_RemoveTempFiles()
-  if !exists('s:tmpFileCnt') || !b:tex_rmvTmpFiles
-    return
+func! RmvTmpFiles()
+  if rmv_tmp_files && exists('s:tmp_file_cnt')
+    let i = 1
+    while i <= s:tmpFileCnt
+      let tmpFile = s:tmpFile_{i}
+      " Remove the tmp file and all other associated files such as the
+      " .log files etc.
+      let rmFileLst = glob(fnamemodify(tmpFile, ':p:r').'.*', 1, 1)
+      for file in rmFileLst
+	call delete(file)
+      endfor
+      let i += 1
+    endwhile
   endif
-  let i = 1
-  while i <= s:tmpFileCnt
-    let tmpFile = s:tmpFile_{i}
-    " Remove the tmp file and all other associated files such as the
-    " .log files etc.
-    let rmFileLst = glob(fnamemodify(tmpFile, ':p:r').'.*', 1, 1)
-    for file in rmFileLst
-      call delete(file)
-    endfor
-    let i += 1
-  endwhile
 endfunc " }}}
 
 " ==========================================================================
@@ -574,8 +599,6 @@ endfunc " }}}
 func! Tex_SetupErrorWindow()
   " Must capture buffer vars before opening the error win (new buf).
   let debug = b:tex_debug
-  let goto_err = b:tex_gotoErr
-  let show_err_cntxt = b:tex_showErrCntxt
 
   let mainfname = Tex_GetMainFileName()
 
@@ -780,18 +803,9 @@ func! Tex_GotoErrorLocation(filename)
   exec winnum.' wincmd w'
   exec 'silent! '.linenum.' | normal! '.normcmd
 
-  if !b:tex_showErrCntxt
+  if !show_err_cntxt
     pclose!
   endif
 endfunc " }}}
-
-command! -nargs=0 -range=% TPartCompile
-      \ :<line1>, <line2> silent! call Tex_PartCompile()
-" Setting b:fragmentFile = 1 makes Tex_CompileLatex consider the present 
-" file the _main_ file irrespective of the presence of a .latexmain file.
-command! -nargs=0 TCompileThis let b:fragmentFile = 1
-command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
-
-let &cpo = s:save_cpo
 
 " vim:fdm=marker:ff=unix:noet

@@ -34,20 +34,20 @@
 " Tex_MathBF: encloses te previous letter/number in \mathbf{} {{{
 " Description: 
 function! Tex_MathBF()
-	return "\<Left>\\mathbf{\<Right>}"
+  return "\<Left>\\mathbf{\<Right>}"
 endfunction " }}}
 " Tex_MathCal: enclose the previous letter/number in \mathcal {{{
 " Description:
 " 	if the last character is not a letter/number, then insert \cite{}
 function! Tex_MathCal()
-	let line = getline(line("."))
-	let char = line[col(".")-2]
+  let line = getline(line("."))
+  let char = line[col(".")-2]
 
-	if char =~ '[a-zA-Z0-9]'
-		return "\<BS>".'\mathcal{'.toupper(char).'}'
-	else
-		return IMAP_PutTextWithMovement('\cite{<++>}<++>')
-	endif
+  if char =~ '[a-zA-Z0-9]'
+    return "\<BS>".'\mathcal{'.toupper(char).'}'
+  else
+    return IMAP_PutTextWithMovement('\cite{<++>}<++>')
+  endif
 endfunction
 " }}}
 " Tex_LeftRight: maps <M-l> in insert mode. {{{
@@ -63,51 +63,50 @@ endfunction
 " 	3. q<M-l>		\lefteqn{<++>}<++>
 " otherwise insert  \label{<++>}<++>
 function! Tex_LeftRight()
-	let line = getline(line("."))
-	let char = line[col(".")-2]
-	let previous = line[col(".")-3]
+  let line = getline(line("."))
+  let char = line[col(".")-2]
+  let previous = line[col(".")-3]
 
-	let matchedbrackets = '()[]{}||'
-	if char =~ '(\|\[\|{\||'
-		let add = ''
-		if char =~ '{'
-			let add = "\\"
-		endif
-		let rhs = matchstr(matchedbrackets, char.'\zs.\ze')
-		return "\<BS>".IMAP_PutTextWithMovement('\left'.add.char.'<++>\right'.add.rhs.'<++>')
-	elseif char == '<'
-		return "\<BS>".IMAP_PutTextWithMovement('\langle <++>\rangle<++>')
-	elseif char == 'q'
-		return "\<BS>".IMAP_PutTextWithMovement('\lefteqn{<++>}<++>')
-	else
-		return IMAP_PutTextWithMovement('\label{<++>}<++>')
-	endif
+  let matchedbrackets = '()[]{}||'
+  if char =~ '(\|\[\|{\||'
+    let add = ''
+    if char =~ '{'
+      let add = "\\"
+    endif
+    let rhs = matchstr(matchedbrackets, char.'\zs.\ze')
+    return "\<BS>".IMAP_PutTextWithMovement('\left'.add.char.'<++>\right'.add.rhs.'<++>')
+  elseif char == '<'
+    return "\<BS>".IMAP_PutTextWithMovement('\langle <++>\rangle<++>')
+  elseif char == 'q'
+    return "\<BS>".IMAP_PutTextWithMovement('\lefteqn{<++>}<++>')
+  else
+    return IMAP_PutTextWithMovement('\label{<++>}<++>')
+  endif
 endfunction " }}}
 " Tex_PutLeftRight: maps <M-l> in normal mode {{{
 " Description:
 " Put \left...\right in front of the matched brackets.
 function! Tex_PutLeftRight()
-	let previous = getline(line("."))[col(".") - 2]
-	let char = getline(line("."))[col(".") - 1]
-	if previous == '\'
-		if char == '{'
-			exe "normal! ileft\\\<Esc>l%iright\\\<Esc>l%"
-		elseif char == '}'
-			exe "normal! iright\\\<Esc>l%ileft\\\<Esc>l%"
-		endif
-	elseif char =~ '\[\|('
-		exe "normal! i\\left\<Esc>l%i\\right\<Esc>l%"
-	elseif char =~ '\]\|)'
-		exe "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
-	endif
+  let previous = getline(line("."))[col(".") - 2]
+  let char = getline(line("."))[col(".") - 1]
+  if previous == '\'
+    if char == '{'
+      exe "normal! ileft\\\<Esc>l%iright\\\<Esc>l%"
+    elseif char == '}'
+      exe "normal! iright\\\<Esc>l%ileft\\\<Esc>l%"
+    endif
+  elseif char =~ '\[\|('
+    exe "normal! i\\left\<Esc>l%i\\right\<Esc>l%"
+  elseif char =~ '\]\|)'
+    exe "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
+  endif
 endfunction " }}}
 
-if b:tex_advMath
-  inoremap <buffer> <silent> <M-b> <C-r>=Tex_MathBF()<CR>
-  inoremap <buffer> <silent> <M-c> <C-r>=Tex_MathCal()<CR>
-  inoremap <buffer> <silent> <M-l> <C-r>=Tex_LeftRight()<CR>
-  vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
-  vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
-  nnoremap <buffer> <silent> <M-l> :call Tex_PutLeftRight()<CR>
-endif
+inoremap <buffer> <silent> <M-b> <C-r>=Tex_MathBF()<CR>
+inoremap <buffer> <silent> <M-c> <C-r>=Tex_MathCal()<CR>
+inoremap <buffer> <silent> <M-l> <C-r>=Tex_LeftRight()<CR>
+vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
+nnoremap <buffer> <silent> <M-l> :call Tex_PutLeftRight()<CR>
+
 " vim:ft=vim:fdm=marker
