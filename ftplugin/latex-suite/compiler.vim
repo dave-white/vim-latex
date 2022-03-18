@@ -95,7 +95,7 @@ func Tex_CompileRun(file, ...)
   endif
   exe "TCLevel ".string(newIgnLvl)
 
-  exec "make! ".a:file
+  silent! exe "make! ".a:file
 
   let b:tex_ignLvl = origLvl
   let b:tex_ignWarnPats = origPats
@@ -106,6 +106,7 @@ func Tex_CompileRun(file, ...)
     call Tex_Debug("Tex_CompileRun: errLst = [".errLst."]", "comp")
   endif
   if errLst =~  'error'
+    redraw!
     return 1
   endif
 
@@ -146,20 +147,10 @@ func! Tex_Compile(...)
     return
   endif
 
-  if b:tex_debug
-    call Tex_Debug("Tex_Run: "
-	  \."compiling to target [".mainTarg."]", "comp")
-  endif
-
   " first get the dependency chain of this format.
   let depChain = [mainTarg]
   if !empty(b:tex_fmtDeps_{mainTarg})
     let depChain = extendnew(b:tex_fmtDeps_{mainTarg}, [mainTarg])
-  endif
-
-  if b:tex_debug
-    call Tex_Debug('Tex_Run: '
-	  \.'getting dependency chain = ['.string(depChain).']', 'comp')
   endif
 
   let cwd = getcwd()
@@ -172,10 +163,15 @@ func! Tex_Compile(...)
 
   let jobNm = Tex_GetJobName()
   let outpDir = Tex_GetOutpDir(fpath)
-  let auxFile = outpDir.jobNm.'.aux'
-  let bcfFile = outpDir.jobNm.'.bcf'
-  let bblFile = outpDir.jobNm.'.bbl'
+  let auxfile = outpDir.jobNm.'.aux'
+  let bcffile = outpDir.jobNm.'.bcf'
+  let bblfile = outpDir.jobNm.'.bbl'
   let idxFile = outpDir.jobNm.'.idx'
+
+  if getftime(fpath) <= getftime(auxfile)
+    echo "Nothing to do."
+    return 0
+  endif
 
   if has('win32')
     let md5cmd = "Get-FileHash -Algorithm MD5"
@@ -187,15 +183,12 @@ func! Tex_Compile(...)
 
   " now compile to the final target format via each dependency.
   for targ in depChain
-    if b:tex_debug
-      call Tex_Debug('Tex_Run: setting target to '.mainTarg, 'comp')
-    endif
     " close any preview windows left open.
     pclose!
     " Record the 'state' of auxilliary files before compilation.
-    let auxPreHash = system(md5cmd." ".auxFile)
+    let auxPreHash = system(md5cmd." ".auxfile)
     let idxPreHash = system(md5cmd." ".idxFile)
-    let bcfPreHash = system(md5cmd." ".bcfFile)
+    let bcfPreHash = system(md5cmd." ".bcffile)
 
     " Run the composed compiler command
     let err = Tex_CompileRun(fname, [
@@ -211,11 +204,14 @@ func! Tex_Compile(...)
     let runCnt = 1
 
     " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
-    if filereadable(bcfFile) && system(md5cmd." ".bcfFile) != bcfPreHash
-      let bblPreHash = system(md5cmd." ".bblFile)
+    if filereadable(bcffile)
+     \ && (!filereadable(bblfile)
+	  \ || (getftime(bblfile) <= getftime(bcffile)))
+      let bblPreHash = system(md5cmd." ".bblfile)
       let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
-      exec 'silent! !'.bibCmd.' "'.jobNm.'"'
-      if system(md5cmd." ".bblFile) != bblPreHash
+      silent! exec '!'.bibCmd.' "'.jobNm.'"'
+      redraw!
+      if system(md5cmd." ".bblfile) != bblPreHash
 	let rerun = 1
       endif
     endif
@@ -232,7 +228,7 @@ func! Tex_Compile(...)
 	  return 1
 	endif
 
-	let auxPostHash = system(md5cmd." ".auxFile)
+	let auxPostHash = system(md5cmd." ".auxfile)
 	if auxPostHash != auxPreHash
 	  let rerun = 1
 	  let auxPreHash = auxPostHash
@@ -570,6 +566,11 @@ endfunc " }}}
 " Tex_SetupErrorWindow: sets up the cwindow and preview of the .log file {{{
 " Description:
 func! Tex_SetupErrorWindow()
+  " Must capture buffer vars before opening the error win (new buf).
+  let debug = b:tex_debug
+  let goto_err = b:tex_gotoErr
+  let show_err_cntxt = b:tex_showErrCntxt
+
   let mainfname = Tex_GetMainFileName()
 
   let main_winnr = winnr()
@@ -581,12 +582,12 @@ func! Tex_SetupErrorWindow()
   cwindow
   " create log file name from mainfname
   let mfnlog = fnamemodify(mainfname, ":t:r").'.log'
-  if b:tex_debug
+  if debug
     call Tex_Debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
   endif
   " if we moved to a different window, then it means we had some errors.
   if main_winnr != winnr()
-    if b:tex_showErrCntxt
+    if show_err_cntxt
       call Tex_UpdatePreviewWindow(mfnlog)
       exe 'nnoremap <buffer> <silent> j j:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
       exe 'nnoremap <buffer> <silent> k k:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
@@ -599,10 +600,10 @@ func! Tex_SetupErrorWindow()
 
     " resize the window to just fit in with the number of lines.
     exec ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
-    if b:tex_gotoErr
+    if goto_err
       call Tex_GotoErrorLocation(mfnlog)
     else
-      exec winnum.' wincmd w'
+      exec main_winnr.' wincmd w'
     endif
   endif
 

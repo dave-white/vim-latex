@@ -105,6 +105,7 @@ let g:tex_compilePrg_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 let g:tex_compilePrg_pdf = 'pdflatex'
 let g:tex_outpDir = v:null
 let g:tex_compilePrgOptDict_pdf = {}
+let g:tex_compilePrgOptDict_pdf["-interaction"] = "nonstopmode"
 let g:tex_compilePrgOptDict_pdf["-file-line-error-style"] = v:true
 
 let g:tex_useMake = 0
@@ -704,7 +705,7 @@ let g:tex_TEXINPUTS = v:null
 " Setting this variable to zero will immediately disable _all_ menus. For 
 " finer control set this to 1 and then play with the other options.
 " Default: 1
-let g:tex_menus = 1
+let g:tex_menus = 0
 
 " The location of the main menu
 let g:tex_mainMenuLoc = 80
@@ -729,7 +730,7 @@ let g:tex_nestEltMenus = 1
 " menu. You can still goto TeX-Suite.Configure Menu and load this after 
 " startup.
 " Default: 1
-let g:tex_pkgMenu = 1
+let g:tex_pkgMenu = 0
 " The following option will create the packages option within the TeX-Suite
 " menu.
 " Default: 1

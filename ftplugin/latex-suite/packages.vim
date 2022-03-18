@@ -6,11 +6,9 @@
 "  Description: handling packages from within vim
 "===========================================================================
 
-" avoid reinclusion.
-if !b:tex_pkgMenu || exists('s:doneOnce')
+if !b:tex_pkgMenu
   finish
 endif
-let s:doneOnce = 1
 
 let s:path = fnameescape(expand("<sfile>:p:h"))
 
@@ -36,12 +34,12 @@ if v:version >= 602
   "	and return list of names separated with newlines.
   "
   func! Tex_CompletePackageName(A,P,L)
-	" Get name of packages from all runtimepath directories
-	let pkgNms = Tex_FindInRtp('', 'packages')
-	let pkgNms = substitute(packnames, '^,', '', 'e')
-	" Separate names with \n not ,
-	let pkgNms = substitute(packnames,',','\n','g')
-	return pkgNms
+    " Get name of packages from all runtimepath directories
+    let pkgNms = Tex_FindInRtp('', 'packages')
+    let pkgNms = substitute(packnames, '^,', '', 'e')
+    " Separate names with \n not ,
+    let pkgNms = substitute(packnames,',','\n','g')
+    return pkgNms
   endfunc
   " }}}
 
@@ -70,26 +68,26 @@ func! Tex_pack_check(package)
   " Store names in variables to process functions only once.
   let pkgNm = Tex_FindInRtp(a:pkg, 'packages')
   if pkgNm != ''
-	exe 'runtime! ftplugin/latex-suite/packages/' . a:pkg
-	if has("gui_running")
-	  call Tex_pack(a:pkg)
-	endif
-	if b:tex_pkgSupported !~ a:pkg
-	  let b:tex_pkgSupported = b:tex_pkgSupported.','.a:pkg
-	endif
+    exe 'runtime! ftplugin/latex-suite/packages/' . a:pkg
+    if has("gui_running")
+      call Tex_pack(a:pkg)
+    endif
+    if b:tex_pkgSupported !~ a:pkg
+      let b:tex_pkgSupported = b:tex_pkgSupported.','.a:pkg
+    endif
   endif
   " Return full list of dictionaries (separated with ,) for package in &rtp
   call Tex_Debug("Tex_pack_check: searching for ".a:pkg." in dictionaries/ in &rtp", "pack")
   let dictname = Tex_FindInRtp(a:pkg, 'dictionaries', ':p')
   if dictname != ''
-	exe 'setlocal dict^=' . dictname
-	call Tex_Debug('Tex_pack_check: setlocal dict^=' . dictname, 'pack')
-	if b:tex_pkgSupported !~ a:pkg
-	  let b:tex_pkgSupported = b:tex_pkgSupported.','.a:pkg
-	endif
+    exe 'setlocal dict^=' . dictname
+    call Tex_Debug('Tex_pack_check: setlocal dict^=' . dictname, 'pack')
+    if b:tex_pkgSupported !~ a:pkg
+      let b:tex_pkgSupported = b:tex_pkgSupported.','.a:pkg
+    endif
   endif
   if b:tex_pkgDetected !~ '\<'.a:pkg.'\>'
-	let b:tex_pkgDetected = b:tex_pkgDetected.','.a:pkg
+    let b:tex_pkgDetected = b:tex_pkgDetected.','.a:pkg
   endif
   let b:tex_pkgDetected = substitute(b:tex_pkgDetected, '^,', '', '')
   let b:tex_pkgSupported = substitute(b:tex_pkgSupported, '^,', '', '')
@@ -99,12 +97,12 @@ endfunc
 " Tex_pack_uncheck: removes package from menu and 'dict' settings. {{{
 func! Tex_pack_uncheck(package)
   if has("gui_running") && Tex_FindInRtp(a:pkg, 'packages') != ''
-	exe 'silent! aunmenu '.b:tex_pkgMenuLoc.'-sep'.a:pkg.'-'
-	exe 'silent! aunmenu '.b:tex_pkgMenuLoc.a:pkg.'\ Options'
-	exe 'silent! aunmenu '.b:tex_pkgMenuLoc.a:pkg.'\ Commands'
+    exe 'silent! aunmenu '.b:tex_pkgMenuLoc.'-sep'.a:pkg.'-'
+    exe 'silent! aunmenu '.b:tex_pkgMenuLoc.a:pkg.'\ Options'
+    exe 'silent! aunmenu '.b:tex_pkgMenuLoc.a:pkg.'\ Commands'
   endif
   if Tex_FindInRtp(a:pkg, 'dictionaries') != ''
-	exe 'setlocal dict-='.Tex_FindInRtp(a:pkg, 'dictionaries')
+    exe 'setlocal dict-='.Tex_FindInRtp(a:pkg, 'dictionaries')
   endif
 endfunc
 
@@ -122,17 +120,17 @@ func! Tex_pack_updateall(force)
 
   " If this is the same as last time, don't repeat.
   if !a:force && exists('s:lastScannedFile') &&
-		\ s:lastScannedFile == fname
-	return
+	\ s:lastScannedFile == fname
+    return
   endif
   " Remember which file we scanned for next time.
   let s:lastScannedFile = fname
 
   " Remember which packages we detected last time.
   if exists('b:tex_pkgDetected')
-	let oldpackages = b:tex_pkgDetected
+    let oldpackages = b:tex_pkgDetected
   else
-	let oldpackages = ''
+    let oldpackages = ''
   endif
 
   " This sets up a global variable of all detected packages.
@@ -142,15 +140,15 @@ func! Tex_pack_updateall(force)
   let b:tex_promptCmds = b:tex_promptCmdsDefault
 
   if expand('%:p') != fname
-	call Tex_Debug(':tex_pack_updateall: sview '.fnameescape(fname), 'pack')
-	exe 'sview '.fnameescape(fname)
+    call Tex_Debug(':tex_pack_updateall: sview '.fnameescape(fname), 'pack')
+    exe 'sview '.fnameescape(fname)
   else
-	call Tex_Debug(':tex_pack_updateall: split', 'pack')
-	split
+    call Tex_Debug(':tex_pack_updateall: split', 'pack')
+    split
   endif
 
   call Tex_ScanForPkgs()
-  q
+  quit
 
   call Tex_Debug(':tex_pack_updateall: detected ['.b:tex_pkgDetected.'] in first run', 'pack')
 
@@ -176,66 +174,66 @@ func! Tex_pack_updateall(force)
   let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
   while pkgNm != ''
 
-	call Tex_Debug(':tex_pack_updateall: scanning package '.pkgNm, 'pack')
+    call Tex_Debug(':tex_pack_updateall: scanning package '.pkgNm, 'pack')
 
-	" Scan this package only if we have not scanned it before in this
-	" run.
-	if scannedPackages =~ '\<'.pkgNm.'\>'
-	  let i = i + 1
+    " Scan this package only if we have not scanned it before in this
+    " run.
+    if scannedPackages =~ '\<'.pkgNm.'\>'
+      let i = i + 1
 
-	  call Tex_Debug(':tex_pack_updateall: '.pkgNm.' already scanned', 'pack')
-	  let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
-	  continue
-	endif 
+      call Tex_Debug(':tex_pack_updateall: '.pkgNm.' already scanned', 'pack')
+      let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
+      continue
+    endif 
 
-	" Split this window in two. The packages/files being found will open
-	" in this new window and we also need not bother with files being
-	" modified etc.
-	split
+    " Split this window in two. The packages/files being found will open
+    " in this new window and we also need not bother with files being
+    " modified etc.
+    split
 
-	let thisbufnum = bufnr('%')
-	call Tex_Debug(':tex_pack_updateall: findfile("'.fnameescape(pkgNm).'.sty")', 'pack')
-	let package_file = findfile( fnameescape(pkgNm) .'.sty' )
+    let thisbufnum = bufnr('%')
+    call Tex_Debug(':tex_pack_updateall: findfile("'.fnameescape(pkgNm).'.sty")', 'pack')
+    let package_file = findfile( fnameescape(pkgNm) .'.sty' )
 
-	if package_file != ""
-	  call Tex_Debug(':tex_pack_updateall: found "'. package_file .'"', 'pack')
-	  exec 'view ' . package_file
-	else
-	  call Tex_Debug(':tex_pack_updateall: did not find "'. fnameescape(pkgNm) .'.sty' .'" in "' . &path . '"', 'pack')
-	endif
-	call Tex_Debug(':tex_pack_updateall: present file = '.bufname('%'), 'pack')
+    if package_file != ""
+      call Tex_Debug(':tex_pack_updateall: found "'. package_file .'"', 'pack')
+      exec 'view ' . package_file
+    else
+      call Tex_Debug(':tex_pack_updateall: did not find "'. fnameescape(pkgNm) .'.sty' .'" in "' . &path . '"', 'pack')
+    endif
+    call Tex_Debug(':tex_pack_updateall: present file = '.bufname('%'), 'pack')
 
-	" If this file was not found, assume that it means its not a
-	" custom package and mark it "scanned".
-	" A package is not found if we stay in the same buffer as before and
-	" its not the one where we want to go.
-	if bufnr('%') == thisbufnum && bufnr('%') != bufnr(pkgNm.'.sty')
-	  let scannedPackages = scannedPackages.','.pkgNm
-	  q
+    " If this file was not found, assume that it means its not a
+    " custom package and mark it "scanned".
+    " A package is not found if we stay in the same buffer as before and
+    " its not the one where we want to go.
+    if bufnr('%') == thisbufnum && bufnr('%') != bufnr(pkgNm.'.sty')
+      let scannedPackages = scannedPackages.','.pkgNm
+      q
 
-	  call Tex_Debug(':tex_pack_updateall: '.pkgNm.' not found anywhere', 'pack')
-	  let i = i + 1
-	  let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
-	  continue
-	endif
+      call Tex_Debug(':tex_pack_updateall: '.pkgNm.' not found anywhere', 'pack')
+      let i = i + 1
+      let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
+      continue
+    endif
 
-	" otherwise we are presently editing a custom package, scan it for
-	" more \usepackage lines from the first line to the last.
-	let packpath = expand('%:p')
-	let &complete = &complete.'s'.packpath
+    " otherwise we are presently editing a custom package, scan it for
+    " more \usepackage lines from the first line to the last.
+    let packpath = expand('%:p')
+    let &complete = &complete.'s'.packpath
 
-	call Tex_Debug(':tex_pack_updateall: found custom package '.packpath, 'pack')
-	call Tex_ScanForPkgs(line('$'), line('$'))
-	call Tex_Debug(':tex_pack_updateall: After scanning, b:tex_pkgDetected = '.b:tex_pkgDetected, 'pack')
+    call Tex_Debug(':tex_pack_updateall: found custom package '.packpath, 'pack')
+    call Tex_ScanForPkgs(line('$'), line('$'))
+    call Tex_Debug(':tex_pack_updateall: After scanning, b:tex_pkgDetected = '.b:tex_pkgDetected, 'pack')
 
-	let scannedPackages = scannedPackages.','.pkgNm
-	" Do not use bwipe, but that leads to excessive buffer number
-	" consumption. Besides, its intuitive for a custom package to remain
-	" on the buffer list.
-	q
+    let scannedPackages = scannedPackages.','.pkgNm
+    " Do not use bwipe, but that leads to excessive buffer number
+    " consumption. Besides, its intuitive for a custom package to remain
+    " on the buffer list.
+    q
 
-	let i = i + 1
-	let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
+    let i = i + 1
+    let pkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
   endwhile
 
   let &path = _path
@@ -246,11 +244,11 @@ func! Tex_pack_updateall(force)
   let i = 1
   let oldpkgNm = Tex_Strntok(oldpackages, ',', i)
   while oldpkgNm != ''
-	if b:tex_pkgDetected !~ oldpkgNm
-	  call Tex_pack_uncheck(oldpkgNm)
-	endif
-	let i = i + 1
-	let oldpkgNm = Tex_Strntok(oldpackages, ',', i)
+    if b:tex_pkgDetected !~ oldpkgNm
+      call Tex_pack_uncheck(oldpkgNm)
+    endif
+    let i = i + 1
+    let oldpkgNm = Tex_Strntok(oldpackages, ',', i)
   endwhile
 
   " Then support packages which are used this time but weren't used last
@@ -258,11 +256,11 @@ func! Tex_pack_updateall(force)
   let i = 1
   let newpkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
   while newpkgNm != ''
-	if oldpackages !~ newpkgNm
-	  call Tex_pack_one(newpkgNm)
-	endif
-	let i = i + 1
-	let newpkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
+    if oldpackages !~ newpkgNm
+      call Tex_pack_one(newpkgNm)
+    endif
+    let i = i + 1
+    let newpkgNm = Tex_Strntok(b:tex_pkgDetected, ',', i)
   endwhile
 
   " Throw an event that we are done scanning packages. Some packages might
@@ -280,38 +278,38 @@ endfunc
 "   packages found in the packages/ directory
 func! Tex_pack_one(...)
   if a:0 == 0 || (a:0 > 0 && a:1 == '')
-	let packlist = Tex_FindInRtp('', 'packages')
-	let pkgNm = Tex_ChooseFromPrompt(
-		  \ "Choose a package: \n" . 
-		  \ Tex_CreatePrompt(packlist, '3', ',') .
-		  \ "\nEnter number or filename :", 
-		  \ packlist, ',')
-	if pkgNm != ''
-	  return Tex_pack_one(pkgNm)
-	else
-	  return ''
-	endif
+    let packlist = Tex_FindInRtp('', 'packages')
+    let pkgNm = Tex_ChooseFromPrompt(
+	  \ "Choose a package: \n" . 
+	  \ Tex_CreatePrompt(packlist, '3', ',') .
+	  \ "\nEnter number or filename :", 
+	  \ packlist, ',')
+    if pkgNm != ''
+      return Tex_pack_one(pkgNm)
+    else
+      return ''
+    endif
   else
-	" Support the packages supplied. This function can be called with
-	" multiple arguments in which case, support each of them in turn.
-	let retVal = ''
-	let omega = 1
-	while omega <= a:0
-	  let pkgNm = a:{omega}
-	  if Tex_FindInRtp(pkgNm, 'packages') != ''
-		call Tex_pack_check(pkgNm)
-		if exists('g:TeX_package_option_'.pkgNm)
-			  \ && g:TeX_package_option_{pkgNm} != ''
-		  let retVal = retVal.'\usepackage[<++>]{'.pkgNm.'}<++>'
-		else
-		  let retVal = retVal.'\usepackage{'.pkgNm.'}'."\<CR>"
-		endif
-	  else
-		let retVal = retVal.'\usepackage{'.pkgNm.'}'."\<CR>"
-	  endif
-	  let omega = omega + 1
-	endwhile
-	return IMAP_PutTextWithMovement(substitute(retVal, "\<CR>$", '', ''), '<+', '+>')
+    " Support the packages supplied. This function can be called with
+    " multiple arguments in which case, support each of them in turn.
+    let retVal = ''
+    let omega = 1
+    while omega <= a:0
+      let pkgNm = a:{omega}
+      if Tex_FindInRtp(pkgNm, 'packages') != ''
+	call Tex_pack_check(pkgNm)
+	if exists('g:TeX_package_option_'.pkgNm)
+	      \ && g:TeX_package_option_{pkgNm} != ''
+	  let retVal = retVal.'\usepackage[<++>]{'.pkgNm.'}<++>'
+	else
+	  let retVal = retVal.'\usepackage{'.pkgNm.'}'."\<CR>"
+	endif
+      else
+	let retVal = retVal.'\usepackage{'.pkgNm.'}'."\<CR>"
+      endif
+      let omega = omega + 1
+    endwhile
+    return IMAP_PutTextWithMovement(substitute(retVal, "\<CR>$", '', ''), '<+', '+>')
   endif
 endfunc
 " }}}
@@ -328,13 +326,13 @@ func! Tex_ScanForPkgs(...)
   " For package files without \begin and \end{document}, we might be told to
   " search from beginning to end.
   if a:0 < 2
-	0
-	let beginline = search('\\begin{document}', 'W')
-	let endline = search('\\end{document}', 'W')
-	0
+    0
+    let beginline = search('\\begin{document}', 'W')
+    let endline = search('\\end{document}', 'W')
+    0
   else
-	let beginline = a:1
-	let endline = a:2
+    let beginline = a:1
+    let endline = a:2
   endif
 
   call Tex_Debug("s:Tex_ScanForPkgs: Begining scans in [".bufname('%')."], beginline = ".beginline, "pack")
@@ -352,66 +350,66 @@ func! Tex_ScanForPkgs(...)
   " well.
   let wrap = 'w'
   while search('^\s*\\usepackage\_.\{-}{\_.\+}', wrap)
-	let wrap = 'W'
+    let wrap = 'W'
 
-	if line('.') > beginline 
-	  break
-	endif
+    if line('.') > beginline 
+      break
+    endif
 
-	let saveUnnamed = @"
-	let saveA = @a
+    let saveUnnamed = @"
+    let saveA = @a
 
-	" If there are options, then find those.
-	if getline('.') =~ '\\usepackage\[.\{-}\]'
-	  let options = matchstr(getline('.'), '\\usepackage\[\zs.\{-}\ze\]')
-	elseif getline('.') =~ '\\usepackage\['
-	  " Entering here means that the user has split the \usepackage
-	  " across newlines. Therefore, use yank.
-	  exec "normal! /{\<CR>\"ayi}"
-	  let options = @a
-	else
-	  let options = ''
-	endif
+    " If there are options, then find those.
+    if getline('.') =~ '\\usepackage\[.\{-}\]'
+      let options = matchstr(getline('.'), '\\usepackage\[\zs.\{-}\ze\]')
+    elseif getline('.') =~ '\\usepackage\['
+      " Entering here means that the user has split the \usepackage
+      " across newlines. Therefore, use yank.
+      exec "normal! /{\<CR>\"ayi}"
+      let options = @a
+    else
+      let options = ''
+    endif
 
-	" The following statement puts the stuff between the { }'s of a
-	" \usepackage{stuff,foo} into @a. Do not use matchstr() and the like
-	" because we can have things split across lines and such.
-	exec "normal! /{\<CR>\"ay/}\<CR>"
+    " The following statement puts the stuff between the { }'s of a
+    " \usepackage{stuff,foo} into @a. Do not use matchstr() and the like
+    " because we can have things split across lines and such.
+    exec "normal! /{\<CR>\"ay/}\<CR>"
 
-	" now remove all whitespace from @a. We need to remove \n and \r
-	" because we can encounter stuff like
-	" \usepackage{pack1,
-	"             newpackonanotherline}
-	let @a = substitute(@a, "[ \t\n\r]", '', 'g')
+    " now remove all whitespace from @a. We need to remove \n and \r
+    " because we can encounter stuff like
+    " \usepackage{pack1,
+    "             newpackonanotherline}
+    let @a = substitute(@a, "[ \t\n\r]", '', 'g')
 
-	" Now we have something like pack1,pack2,pack3 with possibly commas
-	" and stuff before the first package and after the last package name.
-	" Remove those.
-	let @a = substitute(@a, '\(^\W*\|\W*$\)', '', 'g')
+    " Now we have something like pack1,pack2,pack3 with possibly commas
+    " and stuff before the first package and after the last package name.
+    " Remove those.
+    let @a = substitute(@a, '\(^\W*\|\W*$\)', '', 'g')
 
-	" This gets us a string like 'pack1,pack2,pack3'
-	" TODO: This will contain duplicates if the user has duplicates.
-	"       Should we bother taking care of this?
-	let b:tex_pkgDetected = b:tex_pkgDetected.','.@a
+    " This gets us a string like 'pack1,pack2,pack3'
+    " TODO: This will contain duplicates if the user has duplicates.
+    "       Should we bother taking care of this?
+    let b:tex_pkgDetected = b:tex_pkgDetected.','.@a
 
-	" For each package found, form a global variable of the form
-	" g:Tex_{packagename}_options 
-	" which contains a list of the options.
-	let j = 1
-	while Tex_Strntok(@a, ',', j) != ''
-	  let g:Tex_{Tex_Strntok(@a, ',', j)}_options = options
-	  let j = j + 1
-	endwhile
+    " For each package found, form a global variable of the form
+    " g:Tex_{packagename}_options 
+    " which contains a list of the options.
+    let j = 1
+    while Tex_Strntok(@a, ',', j) != ''
+      let g:Tex_{Tex_Strntok(@a, ',', j)}_options = options
+      let j = j + 1
+    endwhile
 
-	" Finally convert @a into something like '"pack1","pack2"'
-	let @a = substitute(@a, '^\|$', '"', 'g')
-	let @a = substitute(@a, ',', '","', 'g')
+    " Finally convert @a into something like '"pack1","pack2"'
+    let @a = substitute(@a, '^\|$', '"', 'g')
+    let @a = substitute(@a, ',', '","', 'g')
 
-	call Tex_Debug("s:Tex_ScanForPkgs: found package(s) [".@a."] on line ".line('.'), "pack")
+    call Tex_Debug("s:Tex_ScanForPkgs: found package(s) [".@a."] on line ".line('.'), "pack")
 
-	" restore @a
-	call setreg("a", saveA, "c")
-	call setreg("\"", saveUnnamed, "c")
+    " restore @a
+    call setreg("a", saveA, "c")
+    call setreg("\"", saveUnnamed, "c")
   endwhile
   call Tex_Debug("s:Tex_ScanForPkgs: End scan \\usepackage, detected packages = ".b:tex_pkgDetected, "pack")
 
@@ -433,12 +431,12 @@ func! Tex_ScanForPkgs(...)
   0 
   while search('^\s*\\newcommand\*\?{.\{-}}', 'W')
 
-	if line('.') > endline 
-	  break
-	endif
+    if line('.') > endline 
+      break
+    endif
 
-	let newcommand = matchstr(getline('.'), '\\newcommand\*\?{\\\zs.\{-}\ze}')
-	call add(b:tex_promptCmds, newcommand)
+    let newcommand = matchstr(getline('.'), '\\newcommand\*\?{\\\zs.\{-}\ze}')
+    call add(b:tex_promptCmds, newcommand)
 
   endwhile
 
@@ -449,14 +447,14 @@ func! Tex_ScanForPkgs(...)
   call Tex_Debug("s:Tex_ScanForPkgs: Beginning scan for \\newenvironment's", 'pack')
 
   while search('^\s*\\newenvironment\*\?{.\{-}}', 'W')
-	call Tex_Debug('found newenvironment on '.line('.'), 'pack')
+    call Tex_Debug('found newenvironment on '.line('.'), 'pack')
 
-	if line('.') > endline 
-	  break
-	endif
+    if line('.') > endline 
+      break
+    endif
 
-	let newenvironment = matchstr(getline('.'), '\\newenvironment\*\?{\zs.\{-}\ze}')
-	call add(b:tex_promptEnvs, newenvironment)
+    let newenvironment = matchstr(getline('.'), '\\newenvironment\*\?{\zs.\{-}\ze}')
+    call add(b:tex_promptEnvs, newenvironment)
 
   endwhile
 
@@ -480,7 +478,7 @@ func! Tex_pack_supp_menu()
   let suplist = Tex_FindInRtp('', 'packages')
 
   call Tex_MakeSubmenu(suplist, b:tex_pkgMenuLoc.'Supported.', 
-		\ '<plug><C-r>=Tex_pack_one("', '")<CR>')
+	\ '<plug><C-r>=Tex_pack_one("', '")<CR>')
 endfunc 
 
 " }}}
@@ -488,30 +486,30 @@ endfunc
 func! Tex_pack(pack)
   if exists('g:TeX_package_'.a:pack)
 
-	let optionList = g:TeX_package_option_{a:pack}.','
-	let commandList = g:TeX_package_{a:pack}.','
+    let optionList = g:TeX_package_option_{a:pack}.','
+    let commandList = g:TeX_package_{a:pack}.','
 
-	" Don't create separator if in package file are only Vim commands. 
-	" Rare but possible.
-	if !(commandList == ',' && optionList == ',')
-	  exec 'amenu '.b:tex_pkgMenuLoc.'-sep'.a:pack.'- <Nop>'
-	endif
+    " Don't create separator if in package file are only Vim commands. 
+    " Rare but possible.
+    if !(commandList == ',' && optionList == ',')
+      exec 'amenu '.b:tex_pkgMenuLoc.'-sep'.a:pack.'- <Nop>'
+    endif
 
-	if optionList != ''
+    if optionList != ''
 
-	  let mainMenuName = b:tex_pkgMenuLoc.a:pack.'\ Options.'
-	  call s:GroupPackageMenuItems(optionList, mainMenuName, 
-			\ '<plug><C-r>=IMAP_PutTextWithMovement("', ',")<CR>')
+      let mainMenuName = b:tex_pkgMenuLoc.a:pack.'\ Options.'
+      call s:GroupPackageMenuItems(optionList, mainMenuName, 
+	    \ '<plug><C-r>=IMAP_PutTextWithMovement("', ',")<CR>')
 
-	endif
+    endif
 
-	if commandList != ''
+    if commandList != ''
 
-	  let mainMenuName = b:tex_pkgMenuLoc.a:pack.'\ Commands.'
-	  call s:GroupPackageMenuItems(commandList, mainMenuName, 
-			\ '<plug><C-r>=Tex_ProcessPackageCommand("', '")<CR>',
-			\ '<SID>FilterPackageMenuLHS')
-	endif
+      let mainMenuName = b:tex_pkgMenuLoc.a:pack.'\ Commands.'
+      call s:GroupPackageMenuItems(commandList, mainMenuName, 
+	    \ '<plug><C-r>=Tex_ProcessPackageCommand("', '")<CR>',
+	    \ '<SID>FilterPackageMenuLHS')
+    endif
   endif
 endfunc 
 
@@ -533,7 +531,7 @@ endfunc
 "   the menu items to generate better names for the menu display.
 "
 func! Tex_MakeSubmenu(menuList, mainMenuName, 
-	  \ handlerFuncLHS, handlerFuncRHS, ...)
+      \ handlerFuncLHS, handlerFuncRHS, ...)
 
   let extractFunc = (a:0 > 0 ? a:1 : '' )
   let menuList = substitute(a:menuList, '[^,]$', ',', '')
@@ -542,35 +540,35 @@ func! Tex_MakeSubmenu(menuList, mainMenuName,
 
   while menuList != ''
 
-	" Extract upto s:menu_div menus at once.
-	let menuBunch = matchstr(menuList, '\v(.{-},){,'.s:menu_div.'}')
+    " Extract upto s:menu_div menus at once.
+    let menuBunch = matchstr(menuList, '\v(.{-},){,'.s:menu_div.'}')
 
-	" The remaining menus go into the list.
-	let menuList = strpart(menuList, strlen(menuBunch))
+    " The remaining menus go into the list.
+    let menuList = strpart(menuList, strlen(menuBunch))
 
-	let submenu = ''
-	" If there is something remaining, then we got s:menu_div items.
-	" therefore put these menu items into a submenu.
-	if strlen(menuList) || doneMenuSubmenu
-	  exec 'let firstMenu = '.extractFunc."(matchstr(menuBunch, '\\v^.{-}\\ze,'))"
-	  exec 'let lastMenu = '.extractFunc."(matchstr(menuBunch, '\\v[^,]{-}\\ze,$'))"
+    let submenu = ''
+    " If there is something remaining, then we got s:menu_div items.
+    " therefore put these menu items into a submenu.
+    if strlen(menuList) || doneMenuSubmenu
+      exec 'let firstMenu = '.extractFunc."(matchstr(menuBunch, '\\v^.{-}\\ze,'))"
+      exec 'let lastMenu = '.extractFunc."(matchstr(menuBunch, '\\v[^,]{-}\\ze,$'))"
 
-	  let submenu = firstMenu.'\ \-\ '.lastMenu.'.'
+      let submenu = firstMenu.'\ \-\ '.lastMenu.'.'
 
-	  let doneMenuSubmenu = 1
-	endif
+      let doneMenuSubmenu = 1
+    endif
 
-	" Now for each menu create a menu under the submenu
-	let i = 1
-	let menuName = Tex_Strntok(menuBunch, ',', i)
-	while menuName != ''
-	  exec 'let menuItem = '.extractFunc.'(menuName)'
-	  execute 'amenu '.a:mainMenuName.submenu.menuItem
-			\ '       '.a:handlerFuncLHS.menuName.a:handlerFuncRHS
+    " Now for each menu create a menu under the submenu
+    let i = 1
+    let menuName = Tex_Strntok(menuBunch, ',', i)
+    while menuName != ''
+      exec 'let menuItem = '.extractFunc.'(menuName)'
+      execute 'amenu '.a:mainMenuName.submenu.menuItem
+	    \ '       '.a:handlerFuncLHS.menuName.a:handlerFuncRHS
 
-	  let i = i + 1
-	  let menuName = Tex_Strntok(menuBunch, ',', i)
-	endwhile
+      let i = i + 1
+      let menuName = Tex_Strntok(menuBunch, ',', i)
+    endwhile
   endwhile
 endfunc 
 
@@ -581,32 +579,32 @@ endfunc
 "   special sbr: tag and then calls Tex_MakeSubmenu 
 " 
 func! <SID>GroupPackageMenuItems(menuList, menuName, 
-	  \ handlerFuncLHS, handlerFuncRHS,...)
+      \ handlerFuncLHS, handlerFuncRHS,...)
 
   if a:0 > 0
-	let extractFunc = a:1
+    let extractFunc = a:1
   else
-	let extractFunc = ''
+    let extractFunc = ''
   endif
   let menuList = a:menuList
 
   while matchstr(menuList, 'sbr:') != ''
-	let groupName = matchstr(menuList, '\v^sbr:\zs.{-}\ze,')
-	let menuList = strpart(menuList, strlen('sbr:'.groupName.','))
-	if matchstr(menuList, 'sbr:') != ''
-	  let menuGroup = matchstr(menuList, '\v^.{-},\zesbr:')
-	else
-	  let menuGroup = menuList
-	endif
+    let groupName = matchstr(menuList, '\v^sbr:\zs.{-}\ze,')
+    let menuList = strpart(menuList, strlen('sbr:'.groupName.','))
+    if matchstr(menuList, 'sbr:') != ''
+      let menuGroup = matchstr(menuList, '\v^.{-},\zesbr:')
+    else
+      let menuGroup = menuList
+    endif
 
-	call Tex_MakeSubmenu(menuGroup, a:menuName.groupName.'.', 
-		  \ a:handlerFuncLHS, a:handlerFuncRHS, extractFunc)
+    call Tex_MakeSubmenu(menuGroup, a:menuName.groupName.'.', 
+	  \ a:handlerFuncLHS, a:handlerFuncRHS, extractFunc)
 
-	let menuList = strpart(menuList, strlen(menuGroup))
+    let menuList = strpart(menuList, strlen(menuGroup))
   endwhile
 
   call Tex_MakeSubmenu(menuList, a:menuName,
-		\ a:handlerFuncLHS, a:handlerFuncRHS, extractFunc)
+	\ a:handlerFuncLHS, a:handlerFuncRHS, extractFunc)
 
 endfunc " }}}
 " Definition of what to do for various package commands {{{
@@ -642,13 +640,13 @@ let s:MenuLHS_    = '\\&<+replace+>'
 " Description: 
 func! Tex_ProcessPackageCommand(command)
   if a:command =~ ':'
-	let commandType = matchstr(a:command, '^\w\+\ze:')
-	let commandName = matchstr(a:command, '^\w\+:\zs[^:]\+\ze:\?')
-	let extrapart = strpart(a:command, strlen(commandType.':'.commandName.':'))
+    let commandType = matchstr(a:command, '^\w\+\ze:')
+    let commandName = matchstr(a:command, '^\w\+:\zs[^:]\+\ze:\?')
+    let extrapart = strpart(a:command, strlen(commandType.':'.commandName.':'))
   else
-	let commandType = ''
-	let commandName = a:command
-	let extrapart = ''
+    let commandType = ''
+    let commandName = a:command
+    let extrapart = ''
   endif
 
   let command = s:CommandSpec_{commandType}
@@ -662,9 +660,9 @@ endfunc
 func! <SID>FilterPackageMenuLHS(command)
   let commandType = matchstr(a:command, '^\w\+\ze:')
   if commandType != ''
-	let commandName = strpart(a:command, strlen(commandType.':'))
+    let commandName = strpart(a:command, strlen(commandType.':'))
   else
-	let commandName = a:command
+    let commandName = a:command
   endif
 
   return substitute(s:MenuLHS_{commandType}, '<+replace+>', commandName, 'g')

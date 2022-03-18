@@ -68,6 +68,10 @@ endif
 
 let &cpo = s:save_cpo
 
-compiler tex
+if b:tex_targ == "pdf"
+  compiler tex-pdf
+else
+  compiler tex
+endif
 
 " vim:ft=vim:fdm=marker
