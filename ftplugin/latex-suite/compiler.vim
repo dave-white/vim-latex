@@ -113,32 +113,20 @@ func Tex_CompileRun(file, ...)
   return 0
 endfunc
 " }}}
-" Tex_Compile: compilation function this function runs the latex {{{ 
-" command on the currently open file. often times the file being currently 
-" edited is only a fragment being \input'ed into some master tex file. in 
-" this case, make a file called mainfile.latexmain in the directory 
-" containig the file. in other words, if the current file is 
-" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
-" then make a file called main.tex.latexmain in the ~/thesis directory.  
-" this will then run "latex main.tex" when Tex_Compile() is called.
 " Tex_CompileProc: {{{
-func Tex_CompileProc(fpath, depChain)
-  let fname = fnamemodify(a:fpath, ":t")
-
-  let jobNm = Tex_GetJobName()
-  let outpDir = Tex_GetOutpDir(a:fpath)
-  let auxfile = outpDir.'/'.jobNm.'.aux'
-  let bcffile = outpDir.'/'.jobNm.'.bcf'
-  let bblfile = outpDir.'/'.jobNm.'.bbl'
-  let idxFile = outpDir.'/'.jobNm.'.idx'
+func Tex_CompileProc(fpath, depChain, outpDir, jobNm)
+  let auxfile = a:outpDir.'/'.a:jobNm.'.aux'
+  let bcffile = a:outpDir.'/'.a:jobNm.'.bcf'
+  let bblfile = a:outpDir.'/'.a:jobNm.'.bbl'
+  let idxFile = a:outpDir.'/'.a:jobNm.'.idx'
 
   if getftime(a:fpath) <= getftime(auxfile)
     echo "Nothing to do."
     return 0
   endif
   
-  if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
-    call mkdir(b:tex_outpDir, "p")
+  if !empty(a:outpDir)
+    call mkdir(a:outpDir, "p")
   endif
 
   if has('win32')
@@ -149,6 +137,7 @@ func Tex_CompileProc(fpath, depChain)
     let md5cmd = "md5sum"
   endif
 
+  let fname = fnamemodify(a:fpath, ":t")
   " now compile to the final target format via each dependency.
   for targ in a:depChain
     " close any preview windows left open.
@@ -177,7 +166,7 @@ func Tex_CompileProc(fpath, depChain)
 	  \ || (getftime(bblfile) <= getftime(bcffile)))
       let bblPreHash = system(md5cmd." ".bblfile)
       let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
-      silent! exec '!'.bibCmd.' "'.jobNm.'"'
+      silent! exec '!'.bibCmd.' "'.a:jobNm.'"'
       if system(md5cmd." ".bblfile) != bblPreHash
 	let rerun = 1
       endif
@@ -210,6 +199,14 @@ func Tex_CompileProc(fpath, depChain)
   endfor
 endfunc
 " }}}
+" Tex_Compile: compilation function this function runs the latex {{{ 
+" command on the currently open file. often times the file being currently 
+" edited is only a fragment being \input'ed into some master tex file. in 
+" this case, make a file called mainfile.latexmain in the directory 
+" containig the file. in other words, if the current file is 
+" ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
+" then make a file called main.tex.latexmain in the ~/thesis directory.  
+" this will then run "latex main.tex" when Tex_Compile() is called.
 func! Tex_Compile(...)
   if a:0 < 1
     let fpath = expand('%:p')
@@ -236,6 +233,14 @@ func! Tex_Compile(...)
     return
   endif
 
+  let jobNm = Tex_GetJobName()
+  let outpDir = Tex_GetOutpDir(a:fpath)
+
+  if getftime(a:fpath) <= getftime(outpDir.'/'.jobNm.'.aux')
+    echo "Nothing to do."
+    return 0
+  endif
+
   " first get the dependency chain of this format.
   let depChain = [mainTarg]
   if !empty(b:tex_fmtDeps_{mainTarg})
@@ -245,13 +250,12 @@ func! Tex_Compile(...)
   let cwd = getcwd()
   call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
 
-  call Tex_CompileProc(fpath, depChain)
+  call Tex_CompileProc(fpath, depChain, outpDir, jobNm)
 
   call chdir(cwd)
   redraw!
   call Tex_SetupErrorWindow()
 endfunc
-
 " }}}
 " Tex_View: opens viewer {{{
 " Description: opens the DVI viewer for the file being currently edited.
