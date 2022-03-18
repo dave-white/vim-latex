@@ -121,6 +121,95 @@ endfunc
 " ~/thesis/chapter.tex so that doing "latex chapter.tex" doesnt make sense, 
 " then make a file called main.tex.latexmain in the ~/thesis directory.  
 " this will then run "latex main.tex" when Tex_Compile() is called.
+" Tex_CompileProc: {{{
+func Tex_CompileProc(fpath, depChain)
+  let fname = fnamemodify(a:fpath, ":t")
+
+  let jobNm = Tex_GetJobName()
+  let outpDir = Tex_GetOutpDir(a:fpath)
+  let auxfile = outpDir.'/'.jobNm.'.aux'
+  let bcffile = outpDir.'/'.jobNm.'.bcf'
+  let bblfile = outpDir.'/'.jobNm.'.bbl'
+  let idxFile = outpDir.'/'.jobNm.'.idx'
+
+  if getftime(a:fpath) <= getftime(auxfile)
+    echo "Nothing to do."
+    return 0
+  endif
+  
+  if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
+    call mkdir(b:tex_outpDir, "p")
+  endif
+
+  if has('win32')
+    let md5cmd = "Get-FileHash -Algorithm MD5"
+  elseif has('osx')
+    let md5cmd = "md5 -q"
+  else
+    let md5cmd = "md5sum"
+  endif
+
+  " now compile to the final target format via each dependency.
+  for targ in a:depChain
+    " close any preview windows left open.
+    pclose!
+    " Record the 'state' of auxilliary files before compilation.
+    let auxPreHash = system(md5cmd." ".auxfile)
+    let idxPreHash = system(md5cmd." ".idxFile)
+    let bcfPreHash = system(md5cmd." ".bcffile)
+
+    " Run the composed compiler command
+    let err = Tex_CompileRun(fname, [
+	  \ 'Reference %.%# undefined',
+	  \ 'Rerun to get cross-references right'
+	  \ ])
+    if err
+      return 1
+    endif
+
+    let rerun = 0
+    let runCnt = 1
+
+    " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
+      call confirm(bcffile, "cont")
+    if filereadable(bcffile)
+     \ && (!filereadable(bblfile)
+	  \ || (getftime(bblfile) <= getftime(bcffile)))
+      let bblPreHash = system(md5cmd." ".bblfile)
+      let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
+      silent! exec '!'.bibCmd.' "'.jobNm.'"'
+      if system(md5cmd." ".bblfile) != bblPreHash
+	let rerun = 1
+      endif
+    endif
+
+    if b:tex_doMultCompile && (index(b:tex_multCompileFmts, targ) >= 0)
+      " Recompile up to four times as necessary.
+      while rerun && (runCnt < 5)
+	let rerun = 0
+	let runCnt += 1
+
+	let err = Tex_CompileRun(fname)
+	if err
+	  return 1
+	endif
+
+	let auxPostHash = system(md5cmd." ".auxfile)
+	if auxPostHash != auxPreHash
+	  let rerun = 1
+	  let auxPreHash = auxPostHash
+	endif
+      endwhile
+    endif
+
+    let timeWrd = "time"
+    if runCnt != 1
+      let timeWrd .= "s"
+    endif
+    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd."."
+  endfor
+endfunc
+" }}}
 func! Tex_Compile(...)
   if a:0 < 1
     let fpath = expand('%:p')
@@ -155,99 +244,12 @@ func! Tex_Compile(...)
 
   let cwd = getcwd()
   call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
-  let fname = fnamemodify(fpath, ":t")
 
-  if exists('b:tex_outpDir') && strlen(b:tex_outpDir) > 0
-    call mkdir(b:tex_outpDir, "p")
-  endif
+  call Tex_CompileProc(fpath, depChain)
 
-  let jobNm = Tex_GetJobName()
-  let outpDir = Tex_GetOutpDir(fpath)
-  let auxfile = outpDir.jobNm.'.aux'
-  let bcffile = outpDir.jobNm.'.bcf'
-  let bblfile = outpDir.jobNm.'.bbl'
-  let idxFile = outpDir.jobNm.'.idx'
-
-  if getftime(fpath) <= getftime(auxfile)
-    echo "Nothing to do."
-    return 0
-  endif
-
-  if has('win32')
-    let md5cmd = "Get-FileHash -Algorithm MD5"
-  elseif has('osx')
-    let md5cmd = "md5 -q"
-  else
-    let md5cmd = "md5sum"
-  endif
-
-  " now compile to the final target format via each dependency.
-  for targ in depChain
-    " close any preview windows left open.
-    pclose!
-    " Record the 'state' of auxilliary files before compilation.
-    let auxPreHash = system(md5cmd." ".auxfile)
-    let idxPreHash = system(md5cmd." ".idxFile)
-    let bcfPreHash = system(md5cmd." ".bcffile)
-
-    " Run the composed compiler command
-    let err = Tex_CompileRun(fname, [
-	  \ 'Reference %.%# undefined',
-	  \ 'Rerun to get cross-references right'
-	  \ ])
-    if err
-      call Tex_SetupErrorWindow()
-      return 1
-    endif
-
-    let rerun = 0
-    let runCnt = 1
-
-    " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
-    if filereadable(bcffile)
-     \ && (!filereadable(bblfile)
-	  \ || (getftime(bblfile) <= getftime(bcffile)))
-      let bblPreHash = system(md5cmd." ".bblfile)
-      let bibCmd = Tex_BldCmd(b:tex_bibPrg, b:tex_bibPrgOptDict)
-      silent! exec '!'.bibCmd.' "'.jobNm.'"'
-      redraw!
-      if system(md5cmd." ".bblfile) != bblPreHash
-	let rerun = 1
-      endif
-    endif
-
-    if b:tex_doMultCompile && (index(b:tex_multCompileFmts, targ) >= 0)
-      " Recompile up to four times as necessary.
-      while rerun && (runCnt < 5)
-	let rerun = 0
-	let runCnt += 1
-
-	let err = Tex_CompileRun(fname)
-	if err
-	  call Tex_SetupErrorWindow()
-	  return 1
-	endif
-
-	let auxPostHash = system(md5cmd." ".auxfile)
-	if auxPostHash != auxPreHash
-	  let rerun = 1
-	  let auxPreHash = auxPostHash
-	endif
-      endwhile
-    endif
-    call chdir(cwd)
-    redraw!
-
-    let timeWrd = "time"
-    if runCnt != 1
-      let timeWrd .= "s"
-    endif
-    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd."."
-  endfor
-
-  if b:tex_debug
-    call Tex_Debug("-Tex_Run", "comp")
-  endif
+  call chdir(cwd)
+  redraw!
+  call Tex_SetupErrorWindow()
 endfunc
 
 " }}}
