@@ -13,7 +13,7 @@
 " template
 func tex#project#EditProj()
   let file = expand("%:p")
-  let mainfname = Tex_GetMainFileName()
+  let mainfname = tex#lib#GetMainFileName()
   if glob(mainfname.'.latexmain') != ''
     exec 'split '.fnameescape(mainfname.'.latexmain')
   else
@@ -31,9 +31,9 @@ func tex#project#SourceProj()
   let l:origdir = fnameescape(getcwd())
   exe 'cd '.fnameescape(expand('%:p:h'))
 
-  if glob(Tex_GetMainFileName(':p').'.latexmain') != ''
-    call Tex_Debug("tex#project#SourceProj: sourcing [".Tex_GetMainFileName().".latexmain]", "proj")
-    exec 'source '.fnameescape(Tex_GetMainFileName().'.latexmain')
+  if glob(tex#lib#GetMainFileName(':p').'.latexmain') != ''
+    call tex#lib#Debug("tex#project#SourceProj: sourcing [".Tex_GetMainFileName().".latexmain]", "proj")
+    exec 'source '.fnameescape(tex#lib#GetMainFileName().'.latexmain')
   endif
 
   exe 'cd '.l:origdir

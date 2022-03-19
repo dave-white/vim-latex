@@ -1,73 +1,12 @@
-" vim:ft=vim:fdm=marker
-
-let b:tex_debug_lvl = 0
-let b:tex_debug_log = v:null
-let b:tex_mainFileXpr = "main"
-
-let g:imap_usePlaceHolders = 1
-let g:imap_placeHolderStart = '<+'
-let g:imap_placeHolderEnd = '+>'
-let g:imap_delEmptyPlaceHolders = 1
-let g:imap_stickyPlaceHolders = 1
-
-let b:tex_useMenuWiz = 0
-
-let b:tex_catchVisMapErrs = 1
-
-let b:tex_diacritics = 0
-
-let b:tex_leader = '`'
-let b:tex_leader2 = ','
-
-let b:tex_usePython = 0
-
-nmap <silent> <script> <plug> i
-imap <silent> <script> <C-o><plug> <Nop>
-
-let s:path = expand('<sfile>:p:h')
-
-" Python {{{
-if has('python3')
-  let b:tex_pythonVersion = 3
-  let b:tex_pythonCmd = 'python3'
-  let b:tex_pythonFileCmd = 'py3file'
-elseif has('python')
-  let b:tex_pythonVersion = 2
-  let b:tex_pythonCmd = 'python'
-  let b:tex_pythonFileCmd = 'pyfile'
-else
-  let b:tex_pythonVersion = 0
-endif
-
-func! Tex_UsePython()
-  return b:tex_pythonVersion && b:tex_usePython
-endfunc
-
-if b:tex_usePython
-  if has("python3")
-  let b:tex_pythonCmd = 'python3'
-  elseif has("python")
-  let b:tex_pythonCmd = 'python'
-  endif
-endif
-let s:tex_usePython = b:tex_usePython && (has("python3") || has("python"))
-
-" Define the functions in python if available.
-if Tex_UsePython()
-  exec b:tex_pythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h'))
-	\ . '/pytools.py'
-endif
-" }}}
-" Define functions. {{{
 " =========================================================================
 " Helper functions for debugging
 " =========================================================================
-" Tex_Debug: appends the argument into s:debugString {{{
+" Debug: appends the argument into s:debugString {{{
 " Description: 
 " 
 " Do not want a memory leak! Set this to zero so that latex-suite always
 " starts out in a non-debugging mode.
-function! Tex_Debug(str, ...)
+func tex#lib#Debug(str, ...)
   if !b:tex_debug
     return
   endif
@@ -94,11 +33,11 @@ function! Tex_Debug(str, ...)
     endif
     let s:debugString_ = s:debugString_ . pattern.' : '.a:str."\n"
   endif
-endfunction " }}}
-" Tex_PrintDebug: prings s:debugString {{{
+endfunc " }}}
+" PrintDebug: prings s:debugString {{{
 " Description: 
 " 
-function! Tex_PrintDebug(...)
+func tex#lib#PrintDebug(...)
   if a:0 > 0
     let pattern = a:1
   else
@@ -107,11 +46,11 @@ function! Tex_PrintDebug(...)
   if exists('s:debugString_'.pattern)
     echo s:debugString_{pattern}
   endif
-endfunction " }}}
-" Tex_ClearDebug: clears the s:debugString string {{{
+endfunc " }}}
+" ClearDebug: clears the s:debugString string {{{
 " Description: 
 " 
-function! Tex_ClearDebug(...)
+func tex#lib#ClearDebug(...)
   if a:0 > 0
     let pattern = a:1
   else
@@ -120,11 +59,11 @@ function! Tex_ClearDebug(...)
   if exists('s:debugString_'.pattern)
     let s:debugString_{pattern} = ''
   endif
-endfunction " }}}
-" Tex_ShowVariableValue: debugging help {{{
+endfunc " }}}
+" ShowVariableValue: debugging help {{{
 " provides a way to examine script local variables from outside the script.
 " very handy for debugging.
-function! Tex_ShowVariableValue(...)
+func tex#lib#ShowVariableValue(...)
   let i = 1
   while i <= a:0
     exe 'let arg = a:'.i
@@ -135,36 +74,61 @@ function! Tex_ShowVariableValue(...)
     endif
     let i = i + 1
   endwhile
-endfunction
+endfunc
 
 " }}}
 " ========================================================================
 " Helper functions for grepping
 " ======================================================================== 
-" Tex_Grep: shorthand for :vimgrep {{{
-function! Tex_Grep(string, where)
+" Grep: shorthand for :vimgrep {{{
+func tex#lib#Grep(string, where)
   exec 'silent! vimgrep! /'.a:string.'/ '.a:where
-endfunction
+endfunc
 
 " }}}
-" Tex_Grepadd: shorthand for :vimgrepadd {{{
-function! Tex_Grepadd(string, where)
+" Grepadd: shorthand for :vimgrepadd {{{
+func tex#lib#Grepadd(string, where)
   exec 'silent! vimgrepadd! /'.a:string.'/ '.a:where
-endfunction
+endfunc
 
 " }}}
 " ========================================================================
 " Uncategorized helper functions
 " ======================================================================== 
-" Tex_Strntok: extract the n^th token from a list {{{
+" FindFileAbove: Search up the path from current file's directory for {{{ 
+" file matching expr.  Return str = absolute path to file matching expr.
+func tex#lib#FindFileAbove(xpr, ...)
+  if a:0 < 1
+    let curr_dir = fnameescape(expand('%:p:h'))
+  else
+    let curr_dir = fnameescape(fnamemodify(a:1, ':p:h'))
+  endif
+
+  let max_depth = 31
+  let last_dir = ""
+  let cnt = 0
+  while (cnt < max_depth) && (curr_dir != last_dir)
+    let cnt += 1
+    let fpath = glob(curr_dir.'/'.a:xpr)
+    if !empty(fpath)
+      return fpath
+    else
+      let last_dir = curr_dir
+      let curr_dir = fnameescape(fnamemodify(curr_dir, ':h'))
+    endif
+  endwhile
+  return ""
+endfunc
+" }}}
+" Strntok: extract the n^th token from a list {{{
 " example: Strntok('1,23,3', ',', 2) = 23
-fun! Tex_Strntok(s, tok, n)
+func! tex#lib#Strntok(s, tok, n)
   return matchstr(a:s . a:tok[0], '\v(\zs([^' . a:tok . ']*)\ze['
 	\ . a:tok . ']){' . a:n . '}')
-endfun
+endfunc
 " }}}
-" Tex_CountMatches: count number of matches of pat in string {{{
-fun! Tex_CountMatches( string, pat )
+" CountMatches: count number of matches of pat in string {{{
+func! tex#lib#CountMatches( string, pat )
   let pos = 0
   let cnt = 0
   while pos >= 0
@@ -173,10 +137,10 @@ fun! Tex_CountMatches( string, pat )
   endwhile
   " We have counted one match to much
   return cnt - 1
-endfun
+endfunc
 
 " }}}
-" Tex_CreatePrompt: creates a prompt string {{{
+" CreatePrompt: creates a prompt string {{{
 " Description: Arguments:
 "     promptList: This is a string of the form:
 "         'item1,item2,item3,item4'
@@ -184,12 +148,12 @@ endfun
 "     sep: the list seperator token
 "
 " Example:
-" Tex_CreatePrompt('item1,item2,item3,item4', 2, ',')
+" CreatePrompt('item1,item2,item3,item4', 2, ',')
 " returns
 " "(1) item1\t(2)item2\n(3)item3\t(4)item4"
 "
 " This string can be used in the input() function.
-func Tex_CreatePrompt(promptList, cols)
+func tex#lib#CreatePrompt(promptList, cols)
   " There is one more item than matches of the seperator
   let num_common = len(a:promptList)
 
@@ -213,24 +177,24 @@ func Tex_CreatePrompt(promptList, cols)
 endfunc
 
 " }}}
-" Tex_CleanSearchHistory: removes last search item from search history {{{
+" CleanSearchHistory: removes last search item from search history {{{
 " Description: This function needs to be globally visible because its
 "              called from outside the script during expansion.
-function! Tex_CleanSearchHistory()
+func tex#lib#CleanSearchHistory()
   call histdel("/", -1)
   let @/ = histget("/", -1)
-endfunction
+endfunc
 nmap <silent> <script> <plug>cleanHistory
-      \ :call Tex_CleanSearchHistory()<CR>
+      \ :call tex#lib#CleanSearchHistory()<CR>
 
 " }}}
-" Tex_GetVarValue: gets the value of the variable {{{
+" GetVarValue: gets the value of the variable {{{
 " Description: See if a window-local, buffer-local or global variable with 
 " the given name
 " 	exists and if so, returns the corresponding value. If none exist, 
 " 	return
 " 	an empty string.
-function! Tex_GetVarValue(varname, ...)
+func tex#lib#GetVarValue(varname, ...)
   if exists('w:'.a:varname)
     return w:{a:varname}
   elseif exists('b:'.a:varname)
@@ -242,8 +206,8 @@ function! Tex_GetVarValue(varname, ...)
   else
     return ''
   endif
-endfunction " }}}
-" Tex_GetMainFileName: gets the name of the main file being compiled. {{{
+endfunc " }}}
+" GetMainFileName: gets the name of the main file being compiled. {{{
 " Description:  returns the full path name of the main file.
 "               This function checks for the existence of a .latexmain file
 "               which might point to the location of a "main" latex file.
@@ -257,7 +221,7 @@ endfunction " }}}
 "               returning.
 " NOTE: From version 1.6 onwards, this function always trims away the 
 " .latexmain part of the file name before applying the modifier argument.
-function! Tex_GetMainFileName(...)
+func tex#lib#GetMainFileName(...)
   if a:0 > 0
     let modifier = a:1
   else
@@ -272,17 +236,17 @@ function! Tex_GetMainFileName(...)
     endif
   else
     " Relative path/name.
-    let l:fname = Tex_FindFileAbove(b:tex_mainFileXpr)
+    let l:fname = tex#lib#FindFileAbove(b:tex_mainFileXpr)
     if filereadable(l:fname)
       return fnamemodify(l:fname, modifier)
     endif
   endif
-endfunction 
+endfunc 
 
 " }}}
-" Tex_ChooseFromPrompt: process a user input to a prompt string {{{
+" ChooseFromPrompt: process a user input to a prompt string {{{
 " " Description: 
-function! Tex_ChooseFromPrompt(dialog, list)
+func tex#lib#ChooseFromPrompt(dialog, list)
   let inp = input(a:dialog)
   " This is a workaround for a bug(?) in vim, see
   " https://github.com/vim/vim/issues/778
@@ -292,24 +256,24 @@ function! Tex_ChooseFromPrompt(dialog, list)
   else
     return inp
   endif
-endfunction
+endfunc
 " }}}
-" Tex_IncrementNumber: returns an incremented number each time {{{
+" IncrementNumber: returns an incremented number each time {{{
 " Description: 
 let s:incnum = 0
-function! Tex_IncrementNumber(increm)
+func tex#lib#IncrementNumber(increm)
   let s:incnum = s:incnum + a:increm
   return s:incnum
-endfunction 
+endfunc 
 
 " }}}
-" Tex_ResetIncrementNumber: increments s:incnum to zero {{{
+" ResetIncrementNumber: increments s:incnum to zero {{{
 " Description: 
-function! Tex_ResetIncrementNumber(val)
+func tex#lib#ResetIncrementNumber(val)
   let s:incnum = a:val
-endfunction
+endfunc
 " }}}
-" Tex_FindInDirectory: check if file exists in a directory {{{
+" FindInDirectory: check if file exists in a directory {{{
 " Description:	Checks if file exists in globpath(directory, ...) and cuts 
 " off the rest of returned names. This guarantees that sourced file is from 
 " $HOME.  If the argument a:rtp is set, we interpret a:directory as a 
@@ -319,10 +283,10 @@ endfunction
 "trailing path-names without extenions.
 " NOTE: This function is very slow when a large number of matches are found 
 " because of a while loop which modifies each filename found.  Some speedup 
-" was acheived by using a tokenizer approach rather than using Tex_Strntok 
+" was acheived by using a tokenizer approach rather than using Strntok 
 " which would have been more obvious.
 "
-function! Tex_FindInDirectory(filename, rtp, directory, ...)
+func tex#lib#FindInDirectory(filename, rtp, directory, ...)
   " how to expand each filename. ':p:t:r' modifies each filename to its
   " trailing part without extension.
   let expand = (a:0 > 0 ? a:1 : ':p:t:r')
@@ -343,7 +307,7 @@ function! Tex_FindInDirectory(filename, rtp, directory, ...)
   if pattern !~ '\*'
     " If we are not looking for a 'real' pattern, we return the first
     " match.
-    return fnamemodify(Tex_Strntok(filelist, "\n", 1), expand)
+    return fnamemodify(Strntok(filelist, "\n", 1), expand)
   endif
 
   " Now cycle through the files modifying each filename in the desired
@@ -369,21 +333,21 @@ function! Tex_FindInDirectory(filename, rtp, directory, ...)
   endwhile
 
   return substitute(retfilelist, ',$', '', '')
-endfunction
+endfunc
 
 " }}}
-" Tex_FindInRtp: check if file exists in &rtp {{{
-" Description:	Wrapper around Tex_FindInDirectory, using a:rtp
-function! Tex_FindInRtp(filename, directory, ...)
-  return call("Tex_FindInDirectory",
+" FindInRtp: check if file exists in &rtp {{{
+" Description:	Wrapper around FindInDirectory, using a:rtp
+func tex#lib#FindInRtp(filename, directory, ...)
+  return call("tex#lib#FindInDirectory",
 	\ [ a:filename, 1, a:directory ] + a:000 )
-endfunction
+endfunc
 
 " }}}
-" Tex_GetErrorList: returns vim's clist {{{
+" GetErrorList: returns vim's clist {{{
 " Description: returns the contents of the error list available via the 
 "			   :clist command.
-function! Tex_GetErrorList()
+func tex#lib#GetErrorList()
   let _a = @a
   redir @a | silent! clist | redir END
   let errlist = @a
@@ -394,13 +358,13 @@ function! Tex_GetErrorList()
   endif
 
   return errlist
-endfunction " }}}
-" Tex_GetTempName: get the name of a temporary file in specified {{{ 
+endfunc " }}}
+" GetTempName: get the name of a temporary file in specified {{{ 
 " directory.
 " Description: Unlike vim's native tempname(), this function returns the 
 " name of a temporary file in the directory specified. This enables us to 
 " create temporary files in a specified directory.
-function! Tex_GetTempName(dirname)
+func tex#lib#GetTempName(dirname)
   let prefix = 'latexSuiteTemp'
   let slash = (a:dirname =~ '\\$\|/$' ? '' : '/')
   let i = 0
@@ -412,21 +376,10 @@ function! Tex_GetTempName(dirname)
     return ''
   endif
   return expand(a:dirname.slash.prefix.i.'.tex', ':p')
-endfunction
+endfunc
 " }}}
-" Tex_MakeMap: creates a mapping from lhs to rhs if rhs is not already {{{
-" mapped.
-function! Tex_MakeMap(lhs, rhs, mode, extraargs)
-  if !hasmapto(a:rhs, a:mode)
-    exec a:mode.'map '.a:extraargs.' '.a:lhs.' '.a:rhs
-  endif
-endfunction " }}}
-" Tex_CD: cds to given directory escaping spaces if necessary {{{
-function! Tex_CD(dirname)
-  exec 'cd '.fnameescape(a:dirname)
-endfunction " }}}
-" Tex_FindFile: finds a file in the vim's 'path' {{{
-function! Tex_FindFile(fname, path, suffixesadd)
+" FindFile: finds a file in the vim's 'path' {{{
+func tex#lib#FindFile(fname, path, suffixesadd)
   if exists('*findfile')
     let _suffixesadd = &suffixesadd
     let &suffixesadd = a:suffixesadd
@@ -455,9 +408,9 @@ function! Tex_FindFile(fname, path, suffixesadd)
     let &path = _path
   endif
   return retval
-endfunction " }}}
-" Tex_GetPos: gets position of cursor {{{
-function! Tex_GetPos()
+endfunc " }}}
+" GetPos: gets position of cursor {{{
+func tex#lib#GetPos()
   if exists('*getcurpos')
     return getcurpos()
   elseif exists('*getpos')
@@ -465,15 +418,15 @@ function! Tex_GetPos()
   else
     return line('.').' | normal! '.virtcol('.').'|'
   endif
-endfunction " }}}
-" Tex_SetPos: sets position of cursor {{{
-function! Tex_SetPos(pos)
+endfunc " }}}
+" SetPos: sets position of cursor {{{
+func tex#lib#SetPos(pos)
   if exists('*setpos')
     call setpos('.', a:pos)
   else
     exec a:pos
   endif
-endfunction " }}}
+endfunc " }}}
 " s:RemoveLastHistoryItem: removes last search item from search history {{{
 " Description: Execute this string to clean up the search history.
 let s:RemoveLastHistoryItem = ':call histdel("/", -1)'
@@ -484,7 +437,7 @@ let s:RemoveLastHistoryItem = ':call histdel("/", -1)'
 " Description: allows for differing action based on visual line wise
 "              selection or visual characterwise selection. preserves the
 "              marks and search history.
-function! VEnclose(vstart, vend, VStart, VEnd)
+func! VEnclose(vstart, vend, VStart, VEnd)
   " it is characterwise if
   " 1. characterwise selection and valid values for vstart and vend.
   " OR
@@ -553,7 +506,7 @@ function! VEnclose(vstart, vend, VStart, VEnd)
     endif
     silent! normal! `>
   endif
-endfunction
+endfunc
 
 " }}}
 " ExecMap: adds the ability to correct an normal/visual mode mapping.  {{{
@@ -633,18 +586,18 @@ endfunc
 " If python is available (and allowed), then these functions utilize python
 " library functions without making calls to external programs.
 " =========================================================================
-" Tex_GotoTempFile: open a temp file. reuse from next time on {{{
-function! Tex_GotoTempFile()
+" GotoTempFile: open a temp file. reuse from next time on {{{
+func tex#lib#GotoTempFile()
   if !exists('s:tempFileName')
     let s:tempFileName = tempname()
   endif
   exec 'silent! split '.s:tempFileName
-endfunction " }}}
-" Tex_FileContains: finds if a regexp, is present in filename {{{
+endfunc " }}}
+" FileContains: finds if a regexp, is present in filename {{{
 
-if Tex_UsePython()
+if b:tex_usePython
 
-  func Tex_FileContains(regex, fpath)
+  func tex#lib#FileContains(regex, fpath)
     exec b:tex_pythonCmd . ' isPresentInFile(r"'.a:regex.'", r"'
 	  \.a:fpath.'")'
 
@@ -653,7 +606,7 @@ if Tex_UsePython()
   
 elseif executable('awk')
 
-  func Tex_FileContains(regex, fpath)
+  func tex#lib#FileContains(regex, fpath)
     let l:awkCmd = "awk "
     let l:awkCmd .= "'BEGIN { ret = 0 } "
     let l:awkCmd .= "/".a:regex."/ "
@@ -665,7 +618,7 @@ elseif executable('awk')
 
 else
 
-  func Tex_FileContains(regex, fpath)
+  func tex#lib#FileContains(regex, fpath)
     let ln_lst = readfile(a:fpath)
     let idx = 0
     let found = 0
@@ -680,60 +633,5 @@ else
 
 endif
 " }}}
-" }}}
-" Source vim files. {{{
-" source texproject.vim before other files
-if has('gui_running') && b:tex_mathMenus && b:tex_menus
-  " source utf-8 or plain math menus
-  if b:tex_useUtfMenus
-    set encoding=utf-8
-    exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
-  else
-    exe 'source '.fnameescape(s:path.'/mathmacros.vim')
-  endif
-endif
-exe 'source '.fnameescape(s:path.'/custommacros.vim')
-exe 'source '.fnameescape(s:path.'/bibtex.vim')
-" }}}
-" =========================================================================
-" Settings for taglist.vim plugin
-" =========================================================================
-" Sets Tlist_Ctags_Cmd for taglist.vim and regexps for ctags {{{
-if b:tex_tagListSupport
-  if !exists("g:tlist_tex_settings")
-    let g:tlist_tex_settings = 'tex;s:section;c:chapter;l:label;r:ref'
-  endif
 
-  if exists("Tlist_Ctags_Cmd")
-    let s:tex_ctags = Tlist_Ctags_Cmd
-  else
-    let s:tex_ctags = 'ctags' " Configurable in texrc?
-  endif
-
-  if b:tex_internalTagDfns == 1
-    let Tlist_Ctags_Cmd = s:tex_ctags
-	  \." --langdef=tex --langmap=tex:.tex.ltx.latex"
-	  \.' --regex-tex="/\\\\begin{abstract}'
-	  \.'/Abstract/s,abstract/"'
-	  \.' --regex-tex="/\\\\part[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,part/"'
-	  \.' --regex-tex="/\\\\chapter[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,chapter/"'
-	  \.' --regex-tex="/\\\\section[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,section/"'
-	  \.' --regex-tex="/\\\\subsection[ \t]*\*?\{[ \t]*([^}]*)\}/+ \1/s,subsection/"'
-	  \.' --regex-tex="/\\\\subsubsection[ \t]*\*?\{[ \t]*([^}]*)\}/+  \1/s,subsubsection/"'
-	  \.' --regex-tex="/\\\\paragraph[ \t]*\*?\{[ \t]*([^}]*)\}/+   \1/s,paragraph/"'
-	  \.' --regex-tex="/\\\\subparagraph[ \t]*\*?\{[ \t]*([^}]*)\}/+    \1/s,subparagraph/"'
-	  \.' --regex-tex="/\\\\begin{thebibliography}/BIBLIOGRAPHY/s,thebibliography/"'
-	  \.' --regex-tex="/\\\\tableofcontents/TABLE OF CONTENTS/s,tableofcontents/"'
-	  \.' --regex-tex="/\\\\frontmatter/FRONTMATTER/s,frontmatter/"'
-	  \.' --regex-tex="/\\\\mainmatter/MAINMATTER/s,mainmatter/"'
-	  \.' --regex-tex="/\\\\backmatter/BACKMATTER/s,backmatter/"'
-	  \.' --regex-tex="/\\\\appendix/APPENDIX/s,appendix/"'
-	  \.' --regex-tex="/\\\\label[ \t]*\*?\{[ \t]*([^}]*)\}/\1/l,label/"'
-	  \.' --regex-tex="/\\\\ref[ \t]*\*?\{[ \t]*([^}]*)\}/\1/r,ref/"'
-  endif
-endif
-" }}}
-
-" commands to completion
-let b:tex_completion_explorer = ','
-
+" vim:ft=vim:fdm=marker

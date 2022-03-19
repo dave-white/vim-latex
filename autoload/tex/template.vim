@@ -10,40 +10,38 @@
 "               directory.
 "===========================================================================
 
-let s:path = fnameescape(expand("<sfile>:p:h"))
-
 " SetTemplateMenu: sets up the menu for templates {{{
-function! <SID>SetTemplateMenu()
-  let flist = <SID>FindInTemplateDir('')
+func! tex#template#SetTemplateMenu()
+  let flist = s:FindInTemplateDir('')
   let i = 1
   while 1
-    let fname = Tex_Strntok(flist, ',', i)
+    let fname = tex#lib#Strntok(flist, ',', i)
     if fname == ''
       break
     endif
     exe "amenu ".b:tex_templateMenuLoc."&".i.":<Tab>".fname." ".
-	  \":call <SID>ReadTemplate('".fname."')<CR>"
+	  \":call s:ReadTemplate('".fname."')<CR>"
     let i = i + 1
   endwhile
-endfunction 
+endfunc 
 
 " }}}
 " ReadTemplate: reads in the template file from the template directory. {{{
-function! <SID>ReadTemplate(...)
+func! s:ReadTemplate(...)
   if a:0 > 0
     let filename = a:1
   else
-    let filelist = <SID>FindInTemplateDir('')
+    let filelist = s:FindInTemplateDir('')
     let filename = 
-	  \ Tex_ChooseFromPrompt("Choose a template file:\n" . 
-	  \ Tex_CreatePrompt(filelist, 2, ',') . 
+	  \ tex#lib#ChooseFromPrompt("Choose a template file:\n" . 
+	  \ tex#lib#Tex_CreatePrompt(filelist, 2, ',') . 
 	  \ "\nEnter number or name of file :", 
 	  \ filelist, ',')
   endif
 
-  let fname = <SID>FindInTemplateDir(filename.'.tex', ':p')
+  let fname = s:FindInTemplateDir(filename.'.tex', ':p')
   let fname = fnameescape(fname)
-  call Tex_Debug("0read ".fname, 'templates')
+  call tex#lib#Debug("0read ".fname, 'templates')
 
   silent! exe "0read ".fname
 
@@ -74,7 +72,7 @@ function! <SID>ReadTemplate(...)
   " indentation can get duplicated in strange ways if ``formatoptions`` is non-empty.
   set formatoptions=
 
-  call Tex_Debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>", 'templates')
+  call tex#lib#Debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>", 'templates')
   silent exec "normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>"
 
   let &formatoptions = _formatoptions
@@ -82,84 +80,71 @@ function! <SID>ReadTemplate(...)
   " Restore register a
   call setreg("a", _a, "c")
 
-  call Tex_Debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '.s:exeTemp.', com = '.s:comTemp, 'templates')
+  call tex#lib#Debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '.s:exeTemp.', com = '.s:comTemp, 'templates')
 
-endfunction
+endfunc
 
 " }}}
 " FindInTemplateDir: Searches for template files. {{{
 " Description:	This function looks for template files either in a custom
 " 				directory, or in the latex-suite default directory.
 " 				Uses Tex_FindInDirectory().
-function! <SID>FindInTemplateDir(filename, ...)
+func! s:FindInTemplateDir(filename, ...)
   " The pattern used... An empty filename should be regarded as '*.tex'
   let pattern = (a:filename != '' ? a:filename : '*.tex')
 
   if exists("b:tex_customTemplateDirectory") && b:tex_customTemplateDirectory != ''
-    return call("Tex_FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
+    return call("tex#lib#FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
   else
-    return call("Tex_FindInDirectory", [pattern, 1, 'templates'] + a:000 )
+    return call("tex#lib#FindInDirectory", [pattern, 1, 'templates'] + a:000 )
   endif
-endfunction
+endfunc
 " }}}
 " ProcessTemplate: processes the special characters in template file. {{{
 "                  This implementation follows from Gergely Kontra's
 "                  mu-template.vim
 "                  http://vim.sourceforge.net/scripts/script.php?script_id=222
-function! <SID>ProcessTemplate()
+func! s:ProcessTemplate()
   if exists('s:phsTemp') && s:phsTemp != ''
 
-    exec 'silent! %s/^'.s:comTemp.'\(\_.\{-}\)'.s:comTemp.'$/\=<SID>Compute(submatch(1))/ge'
-    exec 'silent! %s/'.s:exeTemp.'\(.\{-}\)'.s:exeTemp.'/\=<SID>Exec(submatch(1))/ge'
+    exec 'silent! %s/^'.s:comTemp.'\(\_.\{-}\)'.s:comTemp.'$/\=s:Compute(submatch(1))/ge'
+    exec 'silent! %s/'.s:exeTemp.'\(.\{-}\)'.s:exeTemp.'/\=s:Exec(submatch(1))/ge'
     exec 'silent! g/'.s:comTemp.s:comTemp.'/d'
 
     " A function only puts one item into the search history...
-    call Tex_CleanSearchHistory()
+    call tex#viewer#CleanSearchHistory()
   endif
-endfunction
+endfunc
 
-function! <SID>Exec(what)
+func! s:Exec(what)
   exec 'return '.a:what
-endfunction
+endfunc
 
 " Back-Door to trojans !!!
-function! <SID>Compute(what)
+func! s:Compute(what)
   exe a:what
   if exists('s:comTemp')
     return s:comTemp.s:comTemp
   else
     return ''
   endif
-endfunction
+endfunc
 
 " }}}
 " Command definitions {{{
 if v:version >= 602
-  com! -complete=custom,Tex_CompleteTemplateName -nargs=? TTemplate :call <SID>ReadTemplate(<f-args>)
-
   " Tex_CompleteTemplateName: for completing names in TTemplate command {{{
   "	Description: get list of template names with FindInTemplateDir(), remove full path
   "	and return list of names separated with newlines.
   "
-  function! Tex_CompleteTemplateName(A,P,L)
+  func! tex#template#CompleteTemplateName(A,P,L)
     " Get name of macros from all runtimepath directories
-    let tmplnames = <SID>FindInTemplateDir('')
+    let tmplnames = s:FindInTemplateDir('')
     " Separate names with \n not ,
     let tmplnames = substitute(tmplnames,',','\n','g')
     return tmplnames
-  endfunction
+  endfunc
   " }}}
-
-else
-  com! -nargs=? TTemplate :call <SID>ReadTemplate(<f-args>)
-	\| :startinsert
-
-endif
-
-" }}}
-" Set up the menus {{{
-if b:tex_menus
-  call <SID>SetTemplateMenu()
 endif
 
 " }}}

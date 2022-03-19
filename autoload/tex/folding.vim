@@ -14,14 +14,14 @@ func! tex#folding#SetupFolding()
   setlocal foldtext=SetFoldTxt()
 
   if b:tex_folding
-    call MakeFolds(0, 0)
+    call tex#folding#MakeFolds(0, 0)
   endif
 
 
   " Setup a local autocommand, if FileChangedShellPost is available
   if exists('##FileChangedShellPost')
     augroup LatexSuite
-      autocmd FileChangedShellPost <buffer> call MakeFolds(1, 0)
+      autocmd FileChangedShellPost <buffer> call tex#folding#MakeFolds(1, 0)
     augroup END
   endif
 

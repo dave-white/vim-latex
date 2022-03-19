@@ -68,12 +68,12 @@
 " Therefore by placing the <++> characters appropriately, you can minimize the
 " use of movement keys.
 "
-" NOTE: Set g:Imap_UsePlaceHolders to 0 to disable placeholders altogether.
+" NOTE: Set use_placeholders to 0 to disable placeholders altogether.
 " Set 
-" 	g:Imap_PlaceHolderStart and g:Imap_PlaceHolderEnd
+" 	ph_start and ph_end
 " to something else if you want different place holder characters.
 " Also, b:Imap_PlaceHolderStart and b:Imap_PlaceHolderEnd override the values
-" of g:Imap_PlaceHolderStart and g:Imap_PlaceHolderEnd respectively. This is
+" of ph_start and ph_end respectively. This is
 " useful for setting buffer specific place hoders.
 " 
 " Example Two:
@@ -83,23 +83,25 @@
 " sets up the map for date` to insert the current date.
 " }}}
 
-if exists('b:suppress_latex_suite') && b:suppress_latex_suite == 1
-  finish
-endif
+let use_placeholders = 1
+let ph_start = '<+'
+let ph_end = '+>'
+let del_empty_ph = 1
+let sticky_ph = 1
 
 " line continuation used here.
 let s:save_cpo = &cpo
 set cpo&vim
 
-" ==============================================================================
+" ==========================================================================
 " Script Options / Variables
-" ============================================================================== 
+" ==========================================================================
 " Options {{{
-if !exists('g:Imap_StickyPlaceHolders')
-  let g:Imap_StickyPlaceHolders = 1
+if !exists('sticky_ph')
+  let sticky_ph = 1
 endif
-if !exists('g:Imap_DeleteEmptyPlaceHolders')
-  let g:Imap_DeleteEmptyPlaceHolders = 1
+if !exists('del_empty_ph')
+  let del_empty_ph = 1
 endif
 if !exists('g:Imap_GoToSelectMode')
   let g:Imap_GoToSelectMode = 1
@@ -120,9 +122,9 @@ endif
 "
 " }}}
 
-" ==============================================================================
+" ==========================================================================
 " functions for easy insert mode mappings.
-" ==============================================================================
+" ==========================================================================
 " IMAP: Adds a "fake" insert mode mapping. {{{
 "       For example, doing
 "           IMAP('abc', 'def' ft) 
@@ -454,7 +456,7 @@ function! IMAP_PutTextWithMovement(str, ...)
   " first placeholder.
   " Otherwise, replace all occurences of the placeholders here with the
   " user's choice of placeholder settings.
-  if exists('g:Imap_UsePlaceHolders') && !g:Imap_UsePlaceHolders
+  if exists('use_placeholders') && !use_placeholders
 	let final = substitute(final, '\V'.phs.'\.\{-}'.phe, '', 'g')
   else
 	let final = substitute(final, '\V'.phs.'\(\.\{-}\)'.phe,
@@ -539,7 +541,7 @@ function! IMAP_Jumpfunc(direction, inclusive)
   endif
 
   " Now either goto insert mode, visual mode or select mode.
-  if placeHolderEmpty && g:Imap_DeleteEmptyPlaceHolders
+  if placeHolderEmpty && del_empty_ph
 	" Delete the empty placeholder into the blackhole.
 	normal! "_d
 	" Start insert mode. If the placeholder was at the end of the line, use
@@ -595,7 +597,7 @@ endif
 if !hasmapto('<Plug>IMAP_JumpForward', 'n')
   nmap <C-J> <Plug>IMAP_JumpForward
 endif
-if exists('g:Imap_StickyPlaceHolders') && g:Imap_StickyPlaceHolders
+if exists('sticky_ph') && sticky_ph
   if !hasmapto('<Plug>IMAP_JumpForward', 'v')
 	vmap <C-J> <Plug>IMAP_JumpForward
   endif
@@ -606,9 +608,9 @@ else
 endif
 " }}}
 
-" ============================================================================== 
+" ==========================================================================
 " helper functions
-" ============================================================================== 
+" ==========================================================================
 " s:Hash: Return a version of a string that can be used as part of a variable" {{{
 " name.
 " 	Converts every non alphanumeric character into _{ascii}_ where {ascii} is
@@ -663,8 +665,8 @@ endfunc
 function! IMAP_GetPlaceHolderStart()
   if exists("b:Imap_PlaceHolderStart") && strlen(b:Imap_PlaceHolderEnd)
 	return b:Imap_PlaceHolderStart
-  elseif exists("g:Imap_PlaceHolderStart") && strlen(g:Imap_PlaceHolderEnd)
-	return g:Imap_PlaceHolderStart
+  elseif exists("ph_start") && strlen(ph_end)
+	return ph_start
   else
 	return "<+"
   endif
@@ -672,8 +674,8 @@ endfunc
 function! IMAP_GetPlaceHolderEnd()
   if exists("b:Imap_PlaceHolderEnd") && strlen(b:Imap_PlaceHolderEnd)
 	return b:Imap_PlaceHolderEnd
-  elseif exists("g:Imap_PlaceHolderEnd") && strlen(g:Imap_PlaceHolderEnd)
-	return g:Imap_PlaceHolderEnd
+  elseif exists("ph_end") && strlen(ph_end)
+	return ph_end
   else
 	return "+>"
   endif

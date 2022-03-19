@@ -870,11 +870,11 @@ endif
 "              SetTeXOptions() function in main.vim
 function! Tex_SetFastEnvironmentMaps()
   if !empty(b:tex_promptEnvs)
-    call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'i', '<silent> <buffer>')
-    call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'n', '<silent> <buffer>')
-    call Tex_MakeMap("<F5>", "<Plug>Tex_FastEnvironmentInsert", 'v', '<silent> <buffer>')
-    call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'i', '<silent> <buffer>')
-    call Tex_MakeMap("<S-F5>", "<Plug>Tex_FastEnvironmentChange", 'n', '<silent> <buffer>')
+    inoremap <silent> <buffer> <F5> <Plug>Tex_FastEnvironmentInsert<CR>
+    nnoremap <silent> <buffer> <F5> <Plug>Tex_FastEnvironmentInsert<CR>
+    vnoremap <silent> <buffer> <F5> <Plug>Tex_FastEnvironmentInsert<CR>
+    inoremap <silent> <buffer> <S-F5> <Plug>Tex_FastEnvironmentChange<CR>
+    nnoremap <silent> <buffer> <S-F5> <Plug>Tex_FastEnvironmentChange<CR>
   endif
   if !empty(b:tex_hotkeyMaps)
     call s:SetUpHotKeys()
@@ -938,13 +938,19 @@ for env in ['itemize', 'enumerate', 'theindex',
       \ 'asparaenum',  'asparaitem',
       \ 'compactenum', 'compactitem',
       \ 'inparaenum',  'inparaitem']
-  call RcLet("b:tex_itemStyle_".env, "\\item". s:items_with_cr)
+  if !exists("b:tex_itemStyle_".env)
+    let b:tex_itemStyle_{env} = "\\item".s:items_with_cr
+  endif
 endfor
 
-call RcLet("b:tex_itemStyle_thebibliography",
-      \ "\\bibitem[<+biblabel+>]{<+bibkey+>}".s:items_with_cr."<++>")
-call RcLet("b:tex_itemStyle_description",
-      \ "\\item[<+label+>]".s:items_with_cr."<++>")
+if !exists("b:tex_itemStyle_thebibliography")
+  let b:tex_itemStyle_thebibliography =
+	\ "\\bibitem[<+biblabel+>]{<+bibkey+>}".s:items_with_cr."<++>"
+endif
+if !exists("b:tex_itemStyle_description")
+  let b:tex_itemStyle_description =
+	\ "\\item[<+label+>]".s:items_with_cr."<++>"
+endif
 
 function! Tex_InsertItem()
   " Get current enclosing environment
@@ -978,10 +984,16 @@ endfunction " }}}
 " ==============================================================================
 " Define certain commonly used command definitions {{{
 
-call RcLet("b:tex_com_newtheorem",
-      \ '\newtheorem{<+name+>}{<+caption+>}[<+within+>]')
-call RcLet("b:tex_com_frac", '\frac{<+n+>}{<+d+>}<++>')
-call RcLet("b:tex_com_tfrac", '\tfrac{<+n+>}{<+d+>}<++>')
+if !exists("b:tex_com_newtheorem")
+  let b:tex_com_newtheorem =
+	\ '\newtheorem{<+name+>}{<+caption+>}[<+within+>]'
+endif
+if !exists("b:tex_com_frac")
+  let b:tex_com_frac = '\frac{<+n+>}{<+d+>}<++>'
+endif
+if !exists("b:tex_com_tfrac")
+  let b:tex_com_tfrac = '\tfrac{<+n+>}{<+d+>}<++>'
+endif
 
 " }}}
 " PromptForCommand: prompts for a command {{{

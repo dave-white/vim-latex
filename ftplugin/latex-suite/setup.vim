@@ -1,34 +1,12 @@
+nmap <silent> <script> <plug> i
+imap <silent> <script> <C-o><plug> <Nop>
+
 " ==========================================================================
 " Settings
 " ==========================================================================
 " Buffer and script variables. {{{
 let useIMAP = 0
 let useRunningImap = 1
-let b:tex_envMaps = 1
-let b:tex_envMenus = 1
-let b:tex_envEndWithCR = 1
-let b:tex_labelAfterContent = 0
-let b:tex_itemsWithCR = 0
-let b:tex_envLabelPrefix_tab = "tab:"
-let b:tex_envLabelPrefix_fig = "fig:"
-let b:tex_promptEnvs = [
-      \ 'equation*',
-      \ 'align*',
-      \ 'equation',
-      \ 'align',
-      \ 'enumerate',
-      \ 'itemize',
-      \ 'displaymath',
-      \ 'figure',
-      \ 'table'
-      \ ]
-let b:tex_promptCmds = [
-      \ 'footnote',
-      \ 'cite',
-      \ 'pageref',
-      \ 'label'
-      \ ]
-let b:tex_smartKeyBS = 1
 let smart_bs_pat =
       \ '\(' .
       \ "\\\\[\"^'=v]{\\S}"      . '\|' .
@@ -40,49 +18,8 @@ let smart_bs_pat =
       \ '\\-'                    .
       \ '\)' . "$"
 let smart_quote = 1
-let b:tex_smartQuoteOpen = "``"
-let b:tex_smartQuoteClose = "''"
 let smart_space = 0
 let smart_dot = 1
-let b:tex_advMath = 0
-let b:tex_outlineWinHeight = 15
-let b:tex_viewerCwinHeight = 5 
-let b:tex_viewerPreviewHeight = 10 
-let b:tex_ExplorerHeight = 10
-let b:tex_useOutlineCompletion = 1
-let b:tex_projSrcFiles = v:null
-let b:tex_useSimpleLabelSearch = 0
-let b:tex_useCiteCompletionVer2 = 1
-let b:tex_bibFieldPrompt =
-      \ "Field acronyms: (`:let b:tex_EchoBibFields= 0` to avoid ".
-      \ "this message)\n" .
-      \ " [t] title         [a] author        [b] booktitle     \n" .
-      \ " [j] journal       [y] year          [p] bibtype       \n" .
-      \ " (you can also enter the complete field name)    \n"
-let b:tex_echoBibFields = 1
-let b:tex_useJabref = 0
-let b:tex_rememberCiteSearch = 0
-let b:tex_BIBINPUTS = v:null
-let b:tex_TEXINPUTS = v:null
-let b:tex_menus = 0
-let b:tex_mainMenuLoc = 80
-let b:tex_mathMenus = 1 
-let b:tex_nestEltMenus = 1
-let b:tex_pkgMenu = 0
-let b:tex_nestPkgMenu = 1
-let b:tex_menuPrefix = 'TeX-'
-let b:tex_useUtfMenus = 0
-let b:tex_folding = 1
-let b:tex_autoFolding = 1
-let b:tex_tagListSupport = 1
-let b:tex_internalTagDfns = 1
-
-let b:tex_foldedMisc = 'item,slide,preamble,<<<'
-let b:tex_foldedCmds = ''
-let b:tex_foldedEnvs = 'verbatim,comment,eq,gather,align,figure,table,'
-      \.'thebibliography,keywords,abstract,titlepage'
-let b:tex_foldedSecs = 'part,chapter,section,subsection,subsubsection,'
-      \.'paragraph'
 " }}}
 
 command! -nargs=0 -range=% TPartCompile
@@ -99,8 +36,33 @@ command! -nargs=0 TProjectEdit :call tex#project#EditProj()
 
 com! -nargs=0 TVersion echo tex#version#GetVersion()
 
-nmap <silent> <script> <plug> i
-imap <silent> <script> <C-o><plug> <Nop>
+" texviewer:
+command -nargs=1 TLook    call Tex_Complete(<q-args>, 'tex')
+command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
+command -nargs=1 TLookBib call Tex_Complete(<q-args>, 'bib')
+com! -nargs=0 TClearCiteHist unlet! tex#viewer#citeSearchHistory
+
+
+" Python: determine usage {{{
+if b:tex_usePython
+  if has("python3")
+    let pythonCmd = 'python3'
+    let pyfileCmd = 'py3file'
+    let b:tex_usePython = 1
+  elseif has("python")
+    let pythonCmd = 'python'
+    let pyfileCmd = 'pyfile'
+    let b:tex_usePython = 1
+  else
+    let b:tex_usePython = 0
+  endif
+endif
+
+" Define the functions in python if available.
+if b:tex_usePython
+  exec pyfileCmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
+endif
+" }}}
 
 let s:path = expand('<sfile>:p:h')
 
@@ -113,30 +75,114 @@ exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 if b:tex_folds
   call tex#folding#SetupFolding()
 endif
-exe 'source '.fnameescape(s:path.'/templates.vim')
+if v:version >= 602
+  com! -complete=custom,tex#template#CompleteTemplateName -nargs=? TTemplate
+	\ :call tex#template#ReadTemplate(<f-args>)
+else
+  com! -nargs=? TTemplate :call tex#template#ReadTemplate(<f-args>)
+	\| :startinsert
+endif
+if b:tex_menus
+  call tex#template#SetTemplateMenu()
+endif
 " source advanced math functions
 if b:tex_advMath
-  exe 'source '.fnameescape(s:path.'/brackets.vim')
+  inoremap <buffer> <silent> <M-b> <C-r>=tex#brackets#MathBF()<CR>
+  inoremap <buffer> <silent> <M-c> <C-r>=tex#brackets#MathCal()<CR>
+  inoremap <buffer> <silent> <M-l> <C-r>=tex#brackets#LeftRight()<CR>
+  vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
+  vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
+  nnoremap <buffer> <silent> <M-l> :call tex#brackets#PutLeftRight()<CR>
 endif
 if smart_space
-  exe 'source '.fnameescape(s:path.'/smartspace.vim')
+  let b:tw = &l:tw
+  setlocal tw=0
+  inoremap <buffer> <silent> <Space> <Space><Esc>:call tex#smartspace#Fill(b:tw)<CR>a
 endif
 if b:tex_diacritics
   exe 'source '.fnameescape(s:path.'/diacritics.vim')
 endif
-exe 'source '.fnameescape(s:path.'/texviewer.vim')
+if has('gui_running') && b:tex_mathMenus && b:tex_menus
+  " source utf-8 or plain math menus
+  if b:tex_useUtfMenus
+    set encoding=utf-8
+    exe 'source '.fnameescape(s:path.'/mathmacros-utf.vim')
+  else
+    exe 'source '.fnameescape(s:path.'/mathmacros.vim')
+  endif
+endif
+" custmacros:
+if b:tex_menus
+  call tex#custmacros#SetCustomMacrosMenu()
+endif
+com! -nargs=? TMacroNew :call tex#custmacros#NewMacro(<f-args>)
+" This macros had to have 2 versions:
+if v:version >= 602 
+  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacro
+	\ :let s:retVal = tex#custmacros#ReadMacro(<f-args>) <bar> normal! i<C-r>=s:retVal<CR>
+  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacroEdit
+	\ :call tex#custmacros#EditMacro(<f-args>)
+  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacroDelete
+	\ :call tex#custmacros#DeleteMacro(<f-args>)
+else
+  com! -nargs=? TMacro :let s:retVal = tex#custmacros#ReadMacro(<f-args>)
+	\ <bar> normal! i<C-r>=s:retVal<CR>
+  com! -nargs=? TMacroEdit   :call tex#custmacros#EditMacro(<f-args>)
+  com! -nargs=? TMacroDelete :call tex#custmacros#DeleteMacro(<f-args>)
+endif
+
+exe 'source '.fnameescape(s:path.'/bibtex.vim')
+call tex#viewer#SetTexViewerMaps()
 exe 'setlocal dict^='.fnameescape(s:path.'/dictionaries/dictionary')
 
+" =========================================================================
+" Settings for taglist.vim plugin
+" =========================================================================
+" Sets Tlist_Ctags_Cmd for taglist.vim and regexps for ctags {{{
+if b:tex_tagListSupport
+  if !exists("g:tlist_tex_settings")
+    let g:tlist_tex_settings = 'tex;s:section;c:chapter;l:label;r:ref'
+  endif
+
+  if exists("Tlist_Ctags_Cmd")
+    let s:tex_ctags = Tlist_Ctags_Cmd
+  else
+    let s:tex_ctags = 'ctags' " Configurable in texrc?
+  endif
+
+  if b:tex_internalTagDfns == 1
+    let Tlist_Ctags_Cmd = s:tex_ctags
+	  \." --langdef=tex --langmap=tex:.tex.ltx.latex"
+	  \.' --regex-tex="/\\\\begin{abstract}'
+	  \.'/Abstract/s,abstract/"'
+	  \.' --regex-tex="/\\\\part[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,part/"'
+	  \.' --regex-tex="/\\\\chapter[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,chapter/"'
+	  \.' --regex-tex="/\\\\section[ \t]*\*?\{[ \t]*([^}]*)\}/\1/s,section/"'
+	  \.' --regex-tex="/\\\\subsection[ \t]*\*?\{[ \t]*([^}]*)\}/+ \1/s,subsection/"'
+	  \.' --regex-tex="/\\\\subsubsection[ \t]*\*?\{[ \t]*([^}]*)\}/+  \1/s,subsubsection/"'
+	  \.' --regex-tex="/\\\\paragraph[ \t]*\*?\{[ \t]*([^}]*)\}/+   \1/s,paragraph/"'
+	  \.' --regex-tex="/\\\\subparagraph[ \t]*\*?\{[ \t]*([^}]*)\}/+    \1/s,subparagraph/"'
+	  \.' --regex-tex="/\\\\begin{thebibliography}/BIBLIOGRAPHY/s,thebibliography/"'
+	  \.' --regex-tex="/\\\\tableofcontents/TABLE OF CONTENTS/s,tableofcontents/"'
+	  \.' --regex-tex="/\\\\frontmatter/FRONTMATTER/s,frontmatter/"'
+	  \.' --regex-tex="/\\\\mainmatter/MAINMATTER/s,mainmatter/"'
+	  \.' --regex-tex="/\\\\backmatter/BACKMATTER/s,backmatter/"'
+	  \.' --regex-tex="/\\\\appendix/APPENDIX/s,appendix/"'
+	  \.' --regex-tex="/\\\\label[ \t]*\*?\{[ \t]*([^}]*)\}/\1/l,label/"'
+	  \.' --regex-tex="/\\\\ref[ \t]*\*?\{[ \t]*([^}]*)\}/\1/r,ref/"'
+  endif
+endif
+" }}}
 " ========================================================================
 " Mappings
 " ========================================================================
 " {{{
-nnoremap <buffer> <Leader>c :up \| call Tex_Compile()<cr>
-vnoremap <buffer> <Leader>c :up \| call Tex_PartCompile()<cr>
-nnoremap <buffer> <Leader>v :call Tex_View()<cr>
-nnoremap <buffer> <Leader>a :up \| call Tex_Compile()
-      \ \| call Tex_View()<cr>
-nnoremap <buffer> <Leader>s :call Tex_ForwardSearch()<cr>
+nnoremap <buffer> <Leader>c :up \| call tex#compiler#Run()<cr>
+vnoremap <buffer> <Leader>c :up \| call tex#compiler#PartCompile()<cr>
+nnoremap <buffer> <Leader>v :call tex#compiler#View()<cr>
+nnoremap <buffer> <Leader>a :up \| call tex#compiler#Run()
+      \ \| call tex#compiler#View()<cr>
+nnoremap <buffer> <Leader>s :call tex#compiler#ForwardSearch()<cr>
 
 if useRunningImap
 exe 'source '.s:path.'/imaps.vim'
@@ -402,28 +448,22 @@ if smart_quote
 endif
 " }}}
 " SmartBS: smart backspacing {{{
-if b:tex_smartKeyBS 
+if b:tex_smart_bs 
 
   " SmartBS: smart backspacing
-  " SmartBS lets you treat diacritic characters (those \'{a} thingies) as 
-  " a
+  " SmartBS lets you treat diacritic characters (those \'{a} thingies) as a 
   " single character. This is useful for example in the following 
-  " situation:
-  "
-  " \v{s}\v{t}astn\'{y}    ('happy' in Slovak language :-) )
-  " If you will delete this normally (without using smartBS() function), 
-  " you
-  " must press <BS> about 19x. With function smartBS() you must press 
-  " <BS> only
-  " 7x. Strings like "\v{s}", "\'{y}" are considered like one character 
-  " and are
-  " deleted with one <BS>.
+  " situation: \v{s}\v{t}astn\'{y}    ('happy' in Slovak language :-) ) If 
+  " you will delete this normally (without using smartBS() function), you 
+  " must press <BS> about 19x. With function smartBS() you must press <BS> 
+  " only 7x. Strings like "\v{s}", "\'{y}" are considered like one 
+  " character and are deleted with one <BS>.
 
   " This function comes from Benji Fisher <benji@e-math.AMS.org>
   " http://vim.sourceforge.net/scripts/download.php?src_id=409 
   " (modified/patched by Lubomir Host 'rajo' <host8 AT 
   " keplerDOTfmphDOTuniba.sk>)
-  function! s:SmartBS(pat)
+  func Tex_SmartBS(pat)
     let init = strpart(getline("."), 0, col(".")-1)
     let matchtxt = matchstr(init, a:pat)
     if matchtxt != ''
@@ -432,7 +472,7 @@ if b:tex_smartKeyBS
     else
       return "\<bs>"
     endif
-  endfun
+  endfunc
 
 endif
 " }}}
@@ -462,9 +502,9 @@ endif
 if smart_quote
   inoremap <buffer> <silent> " "<Left><C-R>=<SID>TexQuotes()<CR>
 endif
-if b:tex_smartKeyBS
+if b:tex_smart_bs
   exe "inoremap <buffer> <silent> <BS>"
-	\."<C-R>=<SID>SmartBS(".smart_bs_pat.")<CR>"
+	\."<C-R>=Tex_SmartBS(".smart_bs_pat.")<CR>"
 endif
 if smart_dot
   inoremap <buffer> <silent> . <C-R>=<SID>SmartDots()<CR>

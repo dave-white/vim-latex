@@ -31,15 +31,15 @@
 " latex.
 " ==========================================================================
 
-" Tex_MathBF: encloses te previous letter/number in \mathbf{} {{{
+" MathBF: encloses te previous letter/number in \mathbf{} {{{
 " Description: 
-function! Tex_MathBF()
+func! tex#brackets#MathBF()
   return "\<Left>\\mathbf{\<Right>}"
-endfunction " }}}
-" Tex_MathCal: enclose the previous letter/number in \mathcal {{{
+endfunc " }}}
+" MathCal: enclose the previous letter/number in \mathcal {{{
 " Description:
 " 	if the last character is not a letter/number, then insert \cite{}
-function! Tex_MathCal()
+func! tex#brackets#MathCal()
   let line = getline(line("."))
   let char = line[col(".")-2]
 
@@ -48,9 +48,9 @@ function! Tex_MathCal()
   else
     return IMAP_PutTextWithMovement('\cite{<++>}<++>')
   endif
-endfunction
+endfunc
 " }}}
-" Tex_LeftRight: maps <M-l> in insert mode. {{{
+" LeftRight: maps <M-l> in insert mode. {{{
 " Description:
 " This is a polymorphic function, which maps the behaviour of <M-l> in the
 " following way:
@@ -62,7 +62,7 @@ endfunction
 " 	2. <<M-l>		\langle<++>\rangle<++>
 " 	3. q<M-l>		\lefteqn{<++>}<++>
 " otherwise insert  \label{<++>}<++>
-function! Tex_LeftRight()
+func! tex#brackets#LeftRight()
   let line = getline(line("."))
   let char = line[col(".")-2]
   let previous = line[col(".")-3]
@@ -82,11 +82,11 @@ function! Tex_LeftRight()
   else
     return IMAP_PutTextWithMovement('\label{<++>}<++>')
   endif
-endfunction " }}}
-" Tex_PutLeftRight: maps <M-l> in normal mode {{{
+endfunc " }}}
+" PutLeftRight: maps <M-l> in normal mode {{{
 " Description:
 " Put \left...\right in front of the matched brackets.
-function! Tex_PutLeftRight()
+func! tex#brackets#PutLeftRight()
   let previous = getline(line("."))[col(".") - 2]
   let char = getline(line("."))[col(".") - 1]
   if previous == '\'
@@ -100,13 +100,6 @@ function! Tex_PutLeftRight()
   elseif char =~ '\]\|)'
     exe "normal! i\\right\<Esc>l%i\\left\<Esc>l%"
   endif
-endfunction " }}}
-
-inoremap <buffer> <silent> <M-b> <C-r>=Tex_MathBF()<CR>
-inoremap <buffer> <silent> <M-c> <C-r>=Tex_MathCal()<CR>
-inoremap <buffer> <silent> <M-l> <C-r>=Tex_LeftRight()<CR>
-vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
-vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
-nnoremap <buffer> <silent> <M-l> :call Tex_PutLeftRight()<CR>
+endfunc " }}}
 
 " vim:ft=vim:fdm=marker
