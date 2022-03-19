@@ -6,7 +6,7 @@ imap <silent> <script> <C-o><plug> <Nop>
 " ==========================================================================
 " Buffer and script variables. {{{
 let useIMAP = 0
-let useRunningImap = 1
+let s:runningimap = 1
 let smart_bs_pat =
       \ '\(' .
       \ "\\\\[\"^'=v]{\\S}"      . '\|' .
@@ -40,7 +40,7 @@ com! -nargs=0 TVersion echo tex#version#GetVersion()
 command -nargs=1 TLook    call Tex_Complete(<q-args>, 'tex')
 command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
 command -nargs=1 TLookBib call Tex_Complete(<q-args>, 'bib')
-com! -nargs=0 TClearCiteHist unlet! tex#viewer#citeSearchHistory
+com! -nargs=0 TClearCiteHist unlet! tex#viewer#cite_search_hist
 
 
 " Python: determine usage {{{
@@ -180,12 +180,34 @@ endif
 nnoremap <buffer> <Leader>c :up \| call tex#compiler#Run()<cr>
 vnoremap <buffer> <Leader>c :up \| call tex#compiler#PartCompile()<cr>
 nnoremap <buffer> <Leader>v :call tex#compiler#View()<cr>
-nnoremap <buffer> <Leader>a :up \| call tex#compiler#Run()
-      \ \| call tex#compiler#View()<cr>
+nnoremap <buffer> <Leader>a :up \| let texrunerr = tex#compiler#Run()
+      \ \| if !texrunerr \| call tex#compiler#View() \| endif<cr>
 nnoremap <buffer> <Leader>s :call tex#compiler#ForwardSearch()<cr>
 
-if useRunningImap
-exe 'source '.s:path.'/imaps.vim'
+if s:runningimap
+  inoremap <buffer> <tab> <c-r>=tex#imap#GetRunningImap(9)<cr>
+  inoremap <buffer> <space> <c-r>=tex#imap#GetRunningImap(32)<cr>
+  inoremap <buffer> <cr> <c-r>=tex#imap#GetRunningImap(13)<cr>
+
+  inoremap == <c-r>='&= '<cr>
+  inoremap ~~ <c-r>='&\approx '<cr>
+  inoremap =~ <c-r>='\approx'<cr>
+  inoremap :: <c-r>='\dots'<cr>
+  inoremap .. <c-r>='\dotsc'<cr>
+  inoremap ** <c-r>='\dotsb'<cr>
+
+  inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>')<cr>
+  inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>')<cr>
+  inoremap <buffer> () <c-r>=IMAP_PutTextWithMovement('(<++>)<++>')<cr>
+  inoremap <buffer> [] <c-r>=IMAP_PutTextWithMovement('[<++>]<++>')<cr>
+  inoremap <buffer> {} <c-r>=IMAP_PutTextWithMovement('{<++>}<++>')<cr>
+  inoremap <buffer> $$ <c-r>=IMAP_PutTextWithMovement('$<++>$<++>')<cr>
+  inoremap <buffer> (( <c-r>=
+	\IMAP_PutTextWithMovement('\left( <++> \right)<++>')<cr>
+  inoremap <buffer> [[ <c-r>=
+	\IMAP_PutTextWithMovement('\left[ <++> \right]<++>')<cr>
+  inoremap <buffer> {{ <c-r>=
+	\IMAP_PutTextWithMovement('\left\{ <++> \right\}<++>')<cr>
 endif
 
 " Set the mapping leader character symbol.

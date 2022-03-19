@@ -12,7 +12,7 @@
 "        on.
 "==========================================================================
 
-let g:runImapLeaderList = ['\'] ", ';']
+let s:runningimap_ldrs = ['\'] ", ';']
 
 " Unincorporated IMAPs {{{
 " call IMAP (b:tex_leader.'-', '\bigcap', "tex")
@@ -20,7 +20,6 @@ let g:runImapLeaderList = ['\'] ", ';']
 " call IMAP (b:tex_leader.':', '\ddot{<++>}<++>', "tex")
 " call IMAP (b:tex_leader.'|', '\Big|', "tex")
 " }}}
-
 " Imap Dictionaries: {{{
 " Form: { [ key = macro name, value = expansion text ], ... }
 " Description: {{{ Each dictionary has a name of the form 
@@ -404,7 +403,6 @@ let s:imapDict_92_13 = {
 " }}}
 
 " }}}
-
 " s:ExpansionLookup: {{{
 " Description: {{{ Look up expansion text corresponding to the user-typed 
 " token, or to a macro name matching it, in selected dictionary above.
@@ -453,7 +451,6 @@ func s:ExpansionLookup(dict, token)
   return l:expansion
 endfunc
 " }}}
-
 " s:AddMovement: {{{
 " Description: Move to and delete first placeholder.
 func s:AddMovement(text, startLn)
@@ -467,14 +464,13 @@ func s:AddMovement(text, startLn)
   endif
 endfunc
 " }}}
-
 " GetRunningImap: {{{
 " Description: to be written {{{
 " args:
 " 	trigger = char code of the keystroke imapped to trigger this lookup 
 " 	below.
 " }}}
-func GetRunningImap(trigger)
+func tex#imap#GetRunningImap(trigger)
   " Set current pos, parameters.
   let l:line = getline(".")
   let l:ln = line(".")
@@ -488,7 +484,7 @@ func GetRunningImap(trigger)
       " No whitespace allowed in macro names/tokens for the moment, so 
       " return immediately if we encounter whitespace.
       return nr2char(a:trigger)
-    elseif index(g:runImapLeaderList, l:line[l:leaderIdx]) >= 0
+    elseif index(s:runningimap_ldrs, l:line[l:leaderIdx]) >= 0
       break
     else
       let l:leaderIdx -= 1
@@ -528,42 +524,5 @@ func GetRunningImap(trigger)
 
   return s:AddMovement(l:printText, l:ln)
 endfunc
-" }}}
-
-" Raw imaps {{{
-" let g:runImapTriggerList = ["\<tab>", "\<cr>"]
-" let s:asciiCd = 1
-" while s:asciiCd < 100
-"     let s:trigger = nr2char(s:asciiCd)
-"     if index(g:runImapTriggerList, s:trigger) >= 0
-" 	exe 'inoremap ' . s:trigger . '<c-r>=GetRunningImap('
-" 		    \ . s:asciiCd . ')<cr>'
-"     endif
-"     let s:asciiCd += 1
-" endwhile
-
-inoremap <buffer> <tab> <c-r>=GetRunningImap(9)<cr>
-inoremap <buffer> <space> <c-r>=GetRunningImap(32)<cr>
-inoremap <buffer> <cr> <c-r>=GetRunningImap(13)<cr>
-
-inoremap == <c-r>='&= '<cr>
-inoremap ~~ <c-r>='&\approx '<cr>
-inoremap =~ <c-r>='\approx'<cr>
-inoremap :: <c-r>='\dots'<cr>
-inoremap .. <c-r>='\dotsc'<cr>
-inoremap ** <c-r>='\dotsb'<cr>
-
-inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>')<cr>
-inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>')<cr>
-inoremap <buffer> () <c-r>=IMAP_PutTextWithMovement('(<++>)<++>')<cr>
-inoremap <buffer> [] <c-r>=IMAP_PutTextWithMovement('[<++>]<++>')<cr>
-inoremap <buffer> {} <c-r>=IMAP_PutTextWithMovement('{<++>}<++>')<cr>
-inoremap <buffer> $$ <c-r>=IMAP_PutTextWithMovement('$<++>$<++>')<cr>
-inoremap <buffer> (( <c-r>=
-      \IMAP_PutTextWithMovement('\left( <++> \right)<++>')<cr>
-inoremap <buffer> [[ <c-r>=
-      \IMAP_PutTextWithMovement('\left[ <++> \right]<++>')<cr>
-inoremap <buffer> {{ <c-r>=
-      \IMAP_PutTextWithMovement('\left\{ <++> \right\}<++>')<cr>
 " }}}
 

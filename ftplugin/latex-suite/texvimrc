@@ -3,6 +3,8 @@
 " ==========================================================================
 " Buffer variables. {{{
 let b:tex_targ = "pdf"
+" let b:tex_outpdir = ""
+" let b:tex_jobnm = ""
 let b:tex_folds = 1
 let b:tex_use_make = 0
 let b:tex_debug = 0
@@ -38,7 +40,7 @@ let b:tex_promptCmds = [
       \ 'pageref',
       \ 'label'
       \ ]
-let b:tex_smart_bs = 1
+let b:tex_smart_bs = 0
 let b:tex_smartQuoteOpen = "``"
 let b:tex_smartQuoteClose = "''"
 let b:tex_advMath = 0
@@ -74,13 +76,26 @@ let b:tex_autoFolding = 1
 let b:tex_tagListSupport = 1
 let b:tex_internalTagDfns = 1
 
+" Folding: Options for autoload/tex/folding.vim {{{
 let b:tex_foldedMisc = 'item,slide,preamble,<<<'
 let b:tex_foldedCmds = ''
 let b:tex_foldedEnvs = 'verbatim,comment,eq,gather,align,figure,table,'
       \.'thebibliography,keywords,abstract,titlepage'
 let b:tex_foldedSecs = 'part,chapter,section,subsection,subsubsection,'
       \.'paragraph'
+" }}}
+
 let b:tex_completion_explorer = ','
+
+" Indent: Options for indent/tex.vim {{{
+" let b:tex_indent_brace = 1
+" let b:tex_indent_items = 1
+" let b:tex_items = '\\bibitem\>\|\\item\>'
+" let b:tex_itemize_env =  
+" \'itemize\|description\|enumerate\|thebibliography'
+" let b:tex_noindent_env = 'document\|verbatim\|comment\|lstlisting'
+" let b:tex_indent_ifelsefi = 1
+" }}}
 " }}}
 
 " vim:ft=vim:fdm=marker

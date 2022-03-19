@@ -1,26 +1,29 @@
 "===========================================================================
-"        File: compiler.vim
-"      Author: Srinath Avadhanula
-"     Created: Tue Apr 23 05:00 PM 2002 PST
+"	      File: compiler.vim
+"  Original Author: Srinath Avadhanula
+" Modifications By: David White
+"	   Created: Tue Apr 23 05:00 PM 2002 PST
 "
-"  Description: functions for compiling/viewing/searching latex documents
+"      Description: functions for compiling/viewing/searching latex 
+"      documents
 "===========================================================================
 
 " == Settings =============================================================
 " Script variables {{{
 " A list of formats for which need multiple compilations should be done as 
 " needed.
-let mult_cmpl_fmts = ["dvi", "pdf"]
+let s:multcmplfmts = ["dvi", "pdf"]
 
-let fmt_deps_ps = ['dvi', 'ps']
-let fmt_deps_pdf = []
+let s:fmtdeps_ps = ['dvi']
+let s:fmtdeps_pdf = []
 
-let make_idx_cmd = 'makeindex "$*.idx"'
+let s:idxcmd = 'makeindex "$*.idx"'
 
-let s:bibcmd = 'biber'
-if exists('b:tex_outpDir')
-  let s:bibcmd .= ' --input-directory="'.b:tex_outpDir.'"'
-	       \.' --output-directory="'.b:tex_outpDir.'"'
+let s:bibprg = 'biber'
+let s:bibcmd = s:bibprg
+if exists('b:tex_outpdir')
+  let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
+	       \.' --output-directory="'.b:tex_outpdir.'"'
 endif
 
 if has('win32')
@@ -35,7 +38,7 @@ elseif has('osx') || has('macunix')
   let s:viewprg_dvi = v:null
   " Set this to 1 to disable opening a viewer with 'open -a'
   " Note: If you do this, you need to specify viewers above
-  let mac_as_nix = 0
+  let s:macasnix = 0
 else
   if executable('xdg-open')
     let s:viewprg_ps = 'xdg-open'
@@ -51,15 +54,15 @@ else
   " (tip
   " #225)
 endif
-let dvi_viewer_set_editor = 0
+let s:dvi_viewer_set_editor = 0
 " For unix systems or macunix systens with enabled Tex_TreatMacViewerAsUNIX:
 " Set this to 1 if you do not want to execute the viewer in the background
-let fground_viewer = 1
+let s:fground_viewer = 1
 
-" view_rule_* takes precedence over view_prg_* and is executed as is (up to 
-" file name substitution).
-let view_rule_html = 'MozillaFirebird "$*/index.html" &'
-let view_rule_dvi = v:null
+" s:viewrule_* takes precedence over view_prg_* and is executed as is (up 
+" to file name substitution).
+let s:viewrule_html = 'MozillaFirebird "$*/index.html" &'
+let s:viewrule_dvi = v:null
 
 let s:goto_err = 0
 
@@ -71,20 +74,9 @@ let s:show_err_cntxt = 0
 let s:rmv_tmp_files = 1
 " }}}
 
-" == Externalized functions ===============================================
+" == External functions ===================================================
 " Run: Sets off the compilation process. {{{
 func! tex#compiler#Run(...)
-  if a:0 < 1
-    let fpath = expand('%:p')
-    let mainTarg = b:tex_targ
-  elseif a:0 < 2
-    let fpath = a:1
-    let mainTarg = b:tex_targ
-  else
-    let fpath = a:1
-    let mainTarg = a:2
-  endif
-
   if &makeprg =~ "make"
     let cwd = getcwd()
     call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
@@ -94,33 +86,71 @@ func! tex#compiler#Run(...)
     return 0
   endif
 
-  if fnamemodify(fpath, ":e") != 'tex'
-    echo "calling Run from a non-tex file"
-    return
+  if a:0 < 1
+    let mainfpath = fnameescape(expand("%:p"))
+    let targ = b:tex_targ
+  elseif a:0 < 2
+    let mainfpath = a:1
+    let targ = b:tex_targ
+  else
+    let mainfpath = a:1
+    let targ = a:2
   endif
 
-  let jobNm = GetJobNm()
-  let outpDir = GetOutpDir(fpath)
+  if fnamemodify(mainfpath, ":e") != 'tex'
+    echo "calling tex#compiler#Run from a non-tex file"
+    return 1
+  endif
 
-  if getftime(fpath) <= getftime(outpDir.'/'.jobNm.'.aux')
-    echo "Nothing to do."
-    return 0
+  " let mainbufnr = bufnr(mainfpath)
+  " let bufchanged = getbufinfo(mainbufnr)[0]["changed"]
+  " if mainbufnr > -1 && bufchanged
+  "   let currbufnr = bufnr()
+  "   exe string(mainbufnr)."buffer"
+  "   let fpath = mainfpath.".tmp"
+  "   exe "write ".fpath
+  "   let usetmp = 1
+  "   exe string(currbufnr)."buffer"
+  " else
+  "   let usetmp = 0
+  "   let fpath = mainfpath
+  " endif
+
+  let jobnm = tex#compiler#GetJobNm()
+  let outpdir = tex#compiler#GetOutpDir(mainfpath)
+
+  if getftime(mainfpath) <= getftime(outpdir.'/'.jobnm.'.aux')
+    " || (!usetmp exists("b:last_cmpl_time") && b:last_cmpl_time)
+    echomsg "Nothing to do."
+    return 2
   endif
 
   " first get the dependency chain of this format.
-  let depChain = [mainTarg]
-  if !empty(b:tex_fmtDeps_{mainTarg})
-    let depChain = extendnew(b:tex_fmtDeps_{mainTarg}, [mainTarg])
+  let depchain = [targ]
+  if exists("s:fmtdeps_".targ) && !empty(s:fmtdeps_{targ})
+	\ && (index(s:fmtdeps_{targ}, targ) != len(s:fmtdeps_{targ})-1)
+    let depchain = extendnew(s:fmtdeps_{targ}, [targ])
   endif
 
   let cwd = getcwd()
-  call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
+  call chdir(fnameescape(fnamemodify(mainfpath, ":p:h")))
 
-  call s:Compile(fpath, depChain, outpDir, jobNm)
+  let err = 0
+  let depidx = 0
+  while !err && (depidx < len(depchain))
+    let depidx += 1
+    " let err = s:Compile(fpath, outpdir, jobnm)
+    let err = s:Compile(mainfpath, outpdir, jobnm)
+  endwhile
+  " let b:last_cmpl_time = localtime()
+  " if usetmp
+  "   call delete(fpath)
+  " endif
 
   call chdir(cwd)
   redraw!
   call Tex_SetupErrorWindow()
+  return err
 endfunc
 " }}}
 " View: opens viewer {{{
@@ -130,25 +160,24 @@ endfunc
 func! tex#compiler#View(...)
   if a:0 < 1
     let targ = b:tex_targ
-    let viewer = b:tex_viewPrg_{targ}
+    let viewer = s:viewprg_{targ}
   elseif a:0 < 2
     let targ = a:1
-    let viewer = b:tex_viewPrg_{targ}
+    let viewer = s:viewprg_{targ}
   else
     let targ = a:1
     let viewer = a:2
   endif
 
-  if exists("view_rule_".targ)
-	\ && !empty(view_rule_{targ})
-    let cmd = substitute(view_rule_{targ},
-	  \ '{v:servername}', v:servername, 'g')
+  if exists("s:viewrule_".targ) && !empty(s:viewrule_{targ})
+    let cmd = substitute(s:viewrule_{targ}, '{v:servername}', v:servername,
+	  \ 'g')
   elseif has('win32')
     " unfortunately, yap does not allow the specification of an external
     " editor from the command line. that would have really helped ensure
     " that this particular vim and yap are connected.
     let cmd = 'start '.viewer.' "$*.'.targ.'"'
-  elseif (has('osx') || has('macunix')) && !mac_as_nix
+  elseif (has('osx') || has('macunix')) && !s:macasnix
     let cmd = 'open'
     if !empty(viewer)
       let cmd .= ' -a '.viewer
@@ -161,7 +190,7 @@ func! tex#compiler#View(...)
     " Using an option for specifying the editor in the command line
     " because that seems to not work on older bash'es.
     let cmd = viewer
-    if targ == 'dvi' && dvi_viewer_set_editor
+    if targ == 'dvi' && s:dvi_viewer_set_editor
       if !empty(v:servername) && viewer =~ '^ *xdvik\?\( \|$\)'
 	let cmd .= ' -editor "gvim --servername '.v:servername
 	      \.' --remote-silent +\%l \%f"'
@@ -173,9 +202,9 @@ func! tex#compiler#View(...)
   endif
 
 
-  let fpath = GetOutpDir(expand('%:p'))
-  if !empty(b:tex_jobNm)
-    let fpath .= b:tex_jobNm
+  let fpath = tex#compiler#GetOutpDir(expand('%:p'))
+  if exists("b:tex_jobnm")
+    let fpath .= b:tex_jobnm
   else
     let fpath .= expand('%:r')
   endif
@@ -211,10 +240,12 @@ func tex#compiler#SeekFoward(...)
     let targ = b:tex_targ
   endif
 
-  if empty(b:tex_viewPrg_{targ})
+  if !exists("s:viewprg_".targ) || empty(s:viewprg_{targ})
+    echoerr "No viewer set for output file type."
     return
+  else
+    let viewer = s:viewprg_{targ}
   endif
-  let viewer = b:tex_viewPrg_{targ}
 
   let origdir = fnameescape(getcwd())
 
@@ -322,7 +353,7 @@ func tex#compiler#SeekFoward(...)
 
     " See if we should add &. On Mac (at least in MacVim), it seems
     " like this should NOT be added...
-    if fground_viewer
+    if s:fground_viewer
       let execString = execString.' &'
     endif
 
@@ -398,11 +429,11 @@ func! tex#compiler#PartCompile()
   silent! call tex#compiler#Run()
 endfunc " }}}
 
-" == Internal helper functions ============================================
+" == External helper functions ============================================
 " GetJobNm: Return the pdftex -jobname option value if it is set. {{{
-func GetJobNm()
-  if exists('b:tex_jobNm')
-    return b:tex_jobNm
+func tex#compiler#GetJobNm()
+  if exists('b:tex_jobnm')
+    return b:tex_jobnm
   elseif exists('b:tex_main_fxpr')
     return glob(b:tex_main_fxpr)
   else
@@ -410,7 +441,9 @@ func GetJobNm()
   endif
 endfunc
 " }}}
-func GetOutpDir(...) " {{{
+" GetOutpDir: Return the current output directory for tex file being {{{ 
+" built.
+func tex#compiler#GetOutpDir(...)
   if a:0 < 1
     let fpathHead = expand('%:p:h')
     let mod = ':p'
@@ -422,18 +455,19 @@ func GetOutpDir(...) " {{{
     let mod = a:2
   endif
 
-  if !empty(b:tex_outpDir)
-    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpDir)
+  if !empty(b:tex_outpdir)
+    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpdir)
     return fnamemodify(out_dir, mod)
   else
     return fnamemodify(fpathHead, mod)
   endif
 endfunc
 " }}}
+" == Internal helper functions ============================================
 " ExeCompiler: {{{
 func s:ExeCompiler(file, ...)
   if a:0 > 0
-    let ignWarnPats = a:1
+    let ignwarnpats = a:1
     if a:0 > 1
       let ignLvl = a:2
     else
@@ -441,25 +475,25 @@ func s:ExeCompiler(file, ...)
     endif
   else
     let ignLvl = -1
-    let ignWarnPats = []
+    let ignwarnpats = []
   endif
 
-  let origLvl = b:tex_ignLvl
-  let origPats = b:tex_ignWarnPats
+  let orig_ignlvl = b:tex_ignlvl
+  let orig_ignpats = b:tex_ignwarnpats
 
-  let b:tex_ignWarnPats = extendnew(ignWarnPats, b:tex_ignWarnPats)
-  let newIgnLvl = origLvl
+  let b:tex_ignwarnpats = extendnew(ignwarnpats, b:tex_ignwarnpats)
+  let newIgnLvl = orig_ignlvl
   if ignLvl >= 0
     let newIgnLvl = ignLvl
   else
-    let newIgnLvl = len(ignWarnPats)+origLvl
+    let newIgnLvl = len(ignwarnpats)+orig_ignlvl
   endif
   exe "TCLevel ".string(newIgnLvl)
 
   silent! exe "make! ".a:file
 
-  let b:tex_ignLvl = origLvl
-  let b:tex_ignWarnPats = origPats
+  let b:tex_ignLvl = orig_ignlvl
+  let b:tex_ignwarnpats = orig_ignpats
 
   " If there are any errors, then break from the rest of the steps
   let errLst = tex#lib#GetErrorList()
@@ -475,19 +509,14 @@ func s:ExeCompiler(file, ...)
 endfunc
 " }}}
 " Compile: {{{
-func s:Compile(fpath, depChain, outpDir, jobNm)
-  let auxfile = a:outpDir.'/'.a:jobNm.'.aux'
-  let bcffile = a:outpDir.'/'.a:jobNm.'.bcf'
-  let bblfile = a:outpDir.'/'.a:jobNm.'.bbl'
-  let idxFile = a:outpDir.'/'.a:jobNm.'.idx'
+func s:Compile(fpath, outpdir, jobnm)
+  let auxfile = a:outpdir.'/'.a:jobnm.'.aux'
+  let bcffile = a:outpdir.'/'.a:jobnm.'.bcf'
+  let bblfile = a:outpdir.'/'.a:jobnm.'.bbl'
+  let idxFile = a:outpdir.'/'.a:jobnm.'.idx'
 
-  if getftime(a:fpath) <= getftime(auxfile)
-    echo "Nothing to do."
-    return 0
-  endif
-  
-  if !empty(a:outpDir)
-    call mkdir(a:outpDir, "p")
+  if !empty(a:outpdir)
+    call mkdir(a:outpdir, "p")
   endif
 
   if has('win32')
@@ -499,64 +528,64 @@ func s:Compile(fpath, depChain, outpDir, jobNm)
   endif
 
   let fname = fnamemodify(a:fpath, ":t")
-  " now compile to the final target format via each dependency.
-  for targ in a:depChain
-    " close any preview windows left open.
-    pclose!
-    " Record the 'state' of auxilliary files before compilation.
-    let auxPreHash = system(md5cmd." ".auxfile)
-    let idxPreHash = system(md5cmd." ".idxFile)
-    let bcfPreHash = system(md5cmd." ".bcffile)
+  " close any preview windows left open.
+  pclose!
+  " Record the 'state' of auxilliary files before compilation.
+  let auxPreHash = system(md5cmd." ".auxfile)
+  let idxPreHash = system(md5cmd." ".idxFile)
+  let bcfPreHash = system(md5cmd." ".bcffile)
 
-    " Run the composed compiler command
-    let err = s:ExeCompiler(fname, [
-	  \ 'Reference %.%# undefined',
-	  \ 'Rerun to get cross-references right'
-	  \ ])
+  " Run the composed compiler command
+  let err = s:ExeCompiler(fname, [
+	\ 'Reference %.%# undefined',
+	\ 'Rerun to get cross-references right'
+	\ ])
+  if err
+    return 1
+  endif
+
+  let rerun = 0
+  let runCnt = 1
+
+  " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
+  if bcfPreHash != system(md5cmd." ".bcffile)
+    let bblPreHash = system(md5cmd." ".bblfile)
+
+    silent! exec '!'.s:bibcmd.' "'.a:jobnm.'"'
+    echomsg "Ran ".s:bibprg
+
+    if system(md5cmd." ".bblfile) != bblPreHash
+      let rerun = 1
+    endif
+  endif
+
+  " Recompile up to four times as necessary.
+  while rerun && (runCnt < 5)
+    let rerun = 0
+    let runCnt += 1
+
+    let err = s:ExeCompiler(fname)
     if err
+      let timeWrd = "time"
+      if runCnt != 1
+	let timeWrd .= "s"
+      endif
+      echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
       return 1
     endif
 
-    let rerun = 0
-    let runCnt = 1
-
-    " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
-    if filereadable(bcffile)
-     \ && (!filereadable(bblfile)
-	  \ || (getftime(bblfile) <= getftime(bcffile)))
-      let bblPreHash = system(md5cmd." ".bblfile)
-
-      silent! exec '!'.s:bibcmd.' "'.a:jobNm.'"'
-      if system(md5cmd." ".bblfile) != bblPreHash
-	let rerun = 1
-      endif
+    let auxPostHash = system(md5cmd." ".auxfile)
+    if auxPostHash != auxPreHash
+      let rerun = 1
+      let auxPreHash = auxPostHash
     endif
+  endwhile
 
-    if index(mult_cmpl_fmts, targ) >= 0
-      " Recompile up to four times as necessary.
-      while rerun && (runCnt < 5)
-	let rerun = 0
-	let runCnt += 1
-
-	let err = s:ExeCompiler(fname)
-	if err
-	  return 1
-	endif
-
-	let auxPostHash = system(md5cmd." ".auxfile)
-	if auxPostHash != auxPreHash
-	  let rerun = 1
-	  let auxPreHash = auxPostHash
-	endif
-      endwhile
-    endif
-
-    let timeWrd = "time"
-    if runCnt != 1
-      let timeWrd .= "s"
-    endif
-    echomsg "Ran ".b:tex_compilePrg_{targ}." ".runCnt." ".timeWrd."."
-  endfor
+  let timeWrd = "time"
+  if runCnt != 1
+    let timeWrd .= "s"
+  endif
+  echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
 endfunc
 " }}}
 

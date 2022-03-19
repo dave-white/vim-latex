@@ -1,3 +1,23 @@
+" == Compiler settings: tex -> pdf ========================================
+" MAKEPRG: Set vim &makeprg option. {{{
+let b:tex_targ = "pdf"
+let b:tex_cmplprg = 'pdflatex'
+let b:tex_flavor = 'latex'
+
+let strMkPrg = b:tex_cmplprg
+      \.' -file-line-error-style'
+      \.' -interaction=nonstopmode'
+if exists('b:tex_outpdir') && !empty(b:tex_outpdir)
+  let strMkPrg .= ' -output-directory="'.b:tex_outpdir.'"'
+endif
+if exists('b:tex_jobnm') && !empty(b:tex_jobnm)
+  let strMkPrg .= ' -jobname="'.b:tex_jobnm.'"'
+endif
+
+exe "CompilerSet makeprg=".escape(strMkPrg, " '\"\\")
+" }}}
+" ==========================================================================
+" Salvage: Need new homes. {{{
 let b:tex_compilePrg_dvi = 'latex -interaction=nonstopmode '
       \.'-file-line-error-style "$*"'
 
@@ -14,74 +34,18 @@ let b:tex_compilePrg_ps = 'dvips -Ppdf -o "$*.ps" "$*.dvi"'
 " let b:tex_CompileRule_pdf = 'ps2pdf "$*.ps"'
 " let b:tex_CompileRule_pdf = 'dvipdfm "$*.dvi"'
 " let b:tex_CompileRule_pdf = 'dvipdf "$*.dvi"'
-
 let b:tex_CompilePrg_html = 'latex2html "$*.tex"'
-
-let b:tex_targ = "pdf"
-let b:tex_flavor = 'latex'
-
-let strMkPrg = 'pdflatex'
-      \.' -file-line-error-style'
-      \.' -interaction=nonstopmode'
-if exists('b:tex_outpDir')
-  let strMkPrg .= ' -output-directory="'.b:tex_outpDir.'"'
-endif
-if exists('b:tex_jobNm')
-  let strMkPrg .= ' -jobname="'.b:tex_jobNm.'"'
-endif
-
-exe "CompilerSet makeprg=".escape(strMkPrg, " '\"\\")
-
-" ==========================================================================
-" Customization of 'efm':  {{{
-" This section contains the customization variables which the user can set.
-" b:tex_ignWarnPats: This variable contains a ¡ seperated list of
-" patterns which will be ignored in the TeX compiler's output. Use this
-" carefully, otherwise you might end up losing valuable information.
-"
-" There will be lots of stuff in a typical compiler output which will
-" completely fall through the 'efm' parsing. This options sets whether or 
-" not you will be shown those lines.
-if !exists('b:tex_ignUnmatched')
-  let b:tex_ignUnmatched = 1
-endif
-" With all this customization, there is a slight risk that you might be 
-" ignoring valid warnings or errors. Therefore before getting the final 
-" copy of your work, you might want to reset the 'efm' with this variable 
-" set to 1.  With that value, all the lines from the compiler are shown 
-" irrespective of whether they match the error or warning patterns.
-" NOTE: An easier way of resetting the 'efm' to show everything is to do
-"       TCLevel strict
-if !exists('b:tex_showAllLns')
-  let b:tex_showAllLns = 0
-endif
-
-let b:tex_ignWarnPats = [
-      \ 'Underfull',
-      \ 'Overfull',
-      \ 'specifier changed to',
-      \ 'You have requested',
-      \ 'Missing number, treated as zero.',
-      \ 'There were undefined references',
-      \ 'Citation %.%# undefined',
-      \ ]
-
-" the 'ignore level' of the 'efm'. A value of 4 says that the first 4 kinds 
-" of warnings in the list above will be ignored. Use the command TCLevel to 
-" set a level dynamically.
-let b:tex_ignLvl = len(b:tex_ignWarnPats)
 " }}}
 " ==========================================================================
 " Functions for setting up a customized 'efm' {{{
-
-" IgnoreWarnings: parses b:tex_ignWarnPats for message customization {{{
+" IgnoreWarnings: parses b:tex_ignwarnpats for message customization {{{
 " Description: 
 func! <SID>IgnoreWarnings()
   let s:Ignored_Overfull = 0
 
   let i = 0
-  while (i < len(b:tex_ignWarnPats)) && (i < b:tex_ignLvl)
-    let warningPat = b:tex_ignWarnPats[i]
+  while (i < len(b:tex_ignwarnpats)) && (i < b:tex_ignlvl)
+    let warningPat = b:tex_ignwarnpats[i]
     let warningPat = escape(substitute(warningPat, '[\,]', '%\\\\&', 'g'), ' ')
 
     if warningPat =~? 'overfull'
@@ -102,9 +66,9 @@ func! <SID>IgnoreWarnings()
 endfunc 
 
 " }}}
-" SetLatexEfm: sets the 'efm' for the latex compiler {{{
+" SetEfm: sets the 'efm' for the latex compiler {{{
 " Description: 
-func! <SID>SetLatexEfm()
+func! <SID>SetEfm()
 
   let pm = ( b:tex_showAllLns == 1 ? '+' : '-' )
 
@@ -112,7 +76,7 @@ func! <SID>SetLatexEfm()
   setlocal efm=dummy_value
 
   if !b:tex_showAllLns
-    call s:IgnoreWarnings()
+    call <SID>IgnoreWarnings()
   endif
 
   setlocal efm+=%E!\ LaTeX\ %trror:\ %m
@@ -254,9 +218,9 @@ func! <SID>SetTexCompilerLevel(...)
   if a:0 > 0
     let level = a:1
   else
-    call Tex_ResetIncrementNumber(0)
-    " echo substitute(b:tex_ignWarnPats, 
-	  " \ '^\|\n\zs\S', '\=Tex_IncrementNumber(1)." ".submatch(0)', 'g')
+    call tex#lib#ResetIncrementNumber(0)
+    " echo substitute(b:tex_ignwarnpats, \ '^\|\n\zs\S', 
+    " '\=Itex#lib#ncrementNumber(1)." ".submatch(0)', 'g')
     let level = input("\nChoose an ignore level: ")
     if level == ''
       return
@@ -266,11 +230,11 @@ func! <SID>SetTexCompilerLevel(...)
     let b:tex_showAllLns = 1
   elseif level =~ '^\d\+$'
     let b:tex_showAllLns = 0
-    let b:tex_ignLvl = level
+    let b:tex_ignlvl = level
   else
     echoerr "SetTexCompilerLevel: Unkwown option [".level."]"
   endif
-  call s:SetLatexEfm()
+  call <SID>SetEfm()
 endfunc 
 
 com! -nargs=? TCLevel :call <SID>SetTexCompilerLevel(<f-args>)
@@ -278,24 +242,62 @@ com! -nargs=? TCLevel :call <SID>SetTexCompilerLevel(<f-args>)
 
 " }}}
 " ==========================================================================
+" EFM: Customize efm. {{{
+" This section contains the customization variables which the user can set.
+" b:tex_ignwarnpats: This variable contains a ¡ seperated list of
+" patterns which will be ignored in the TeX compiler's output. Use this
+" carefully, otherwise you might end up losing valuable information.
+"
+" There will be lots of stuff in a typical compiler output which will
+" completely fall through the 'efm' parsing. This options sets whether or 
+" not you will be shown those lines.
+if !exists('b:tex_ignUnmatched')
+  let b:tex_ignUnmatched = 1
+endif
+" With all this customization, there is a slight risk that you might be 
+" ignoring valid warnings or errors. Therefore before getting the final 
+" copy of your work, you might want to reset the 'efm' with this variable 
+" set to 1.  With that value, all the lines from the compiler are shown 
+" irrespective of whether they match the error or warning patterns.
+" NOTE: An easier way of resetting the 'efm' to show everything is to do
+"       TCLevel strict
+if !exists('b:tex_showAllLns')
+  let b:tex_showAllLns = 0
+endif
 
-" Set the errorfile if not already set by somebody else
+let b:tex_ignwarnpats = [
+      \ 'Underfull',
+      \ 'Overfull',
+      \ 'specifier changed to',
+      \ 'You have requested',
+      \ 'Missing number, treated as zero.',
+      \ 'There were undefined references',
+      \ 'Citation %.%# undefined',
+      \ ]
+
+" the 'ignore level' of the 'efm'. A value of 4 says that the first 4 kinds 
+" of warnings in the list above will be ignored. Use the command TCLevel to 
+" set a level dynamically.
+let b:tex_ignlvl = len(b:tex_ignwarnpats)
+
+call <SID>SetEfm()
+" }}}
+" ==========================================================================
+" ERRORFILE: Set the errorfile if not already set by somebody else. {{{
 if &errorfile ==# ''  ||  &errorfile ==# 'errors.err'
   try
-    execute 'set errorfile=' . fnameescape(Tex_GetOutpDir().Tex_GetJobName() . '.log')
+    execute 'set errorfile='.fnameescape(tex#compiler#GetOutpDir()
+	  \.tex#compiler#GetJobName().'.log')
   catch
   endtry
 endif
+" }}}
+" ==========================================================================
 
-call s:SetLatexEfm()
-
+" Debugging {{{
 if b:tex_debug
-  call Tex_Debug("compiler/tex.vim: sourcing this file", "comp")
+  call tex#lib#Debug("compiler/tex.vim: sourcing this file", "comp")
 endif
-
-if !exists('*Tex_Debug')
-  func! Tex_Debug(...)
-  endfunc
-endif
+" }}}
 
 " vim:fdm=marker:ff=unix:noet
