@@ -104,7 +104,7 @@ simplify things.
    and files have lost their header text (giving info such as authorship, 
    licensing, etc.) in the shuffling.
 
-2. Finish renaming things. (Cf. [](#naming))
+2. Finish renaming things. (Cf. [Naming](#naming))
 
 2. Pull out the remaining uses of the `IMAP` plugin. Users should be able 
    to enable `IMAP` independently of this ftplugin.
