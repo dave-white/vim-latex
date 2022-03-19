@@ -37,7 +37,7 @@ let &cpo = s:save_cpo
 if b:tex_use_make
   setlocal makeprg=make
 elseif b:tex_targ == "pdf"
-  compiler tex-pdf
+  compiler tex2pdf
 else
   compiler tex
 endif
