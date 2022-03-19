@@ -5,6 +5,8 @@ plugin](https://github.com/vim-latex/vim-latex).
 
 ## Changes from the original
 
+An inexhaustive description of what I've changed:
+
 ### Architecture
 
 1. The bulk of the functions are moved to scripts in `autoload/tex/`. For 
@@ -18,12 +20,14 @@ plugin](https://github.com/vim-latex/vim-latex).
    `ftplugin` buffer variable corresponding to each script variable is 
    checked; if it exists/is populated, then the script variable is given 
    the buffer value. This code looks as follows:
-
-       if exists("b:tex_<param>")
-	 let s:<param> = b:tex_<param>
-       else
-	 let s:<param> = <default_val>
-       endif
+   
+   ```
+	if exists("b:tex_<param>")
+	 	let s:<param> = b:tex_<param>
+	else
+		let s:<param> = <default_global_val>
+	endif
+	 ```
 
    I haven't yet fulfilled this everywhere.
 
