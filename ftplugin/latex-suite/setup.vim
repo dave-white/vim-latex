@@ -44,23 +44,23 @@ com! -nargs=0 TClearCiteHist unlet! tex#viewer#cite_search_hist
 
 
 " Python: determine usage {{{
-if b:tex_usePython
+if b:tex_usepython
   if has("python3")
-    let pythonCmd = 'python3'
-    let pyfileCmd = 'py3file'
-    let b:tex_usePython = 1
+    let pythoncmd = 'python3'
+    let pyfilecmd = 'py3file'
+    let b:tex_usepython = 1
   elseif has("python")
-    let pythonCmd = 'python'
-    let pyfileCmd = 'pyfile'
-    let b:tex_usePython = 1
+    let pythoncmd = 'python'
+    let pyfilecmd = 'pyfile'
+    let b:tex_usepython = 1
   else
-    let b:tex_usePython = 0
+    let b:tex_usepython = 0
   endif
 endif
 
 " Define the functions in python if available.
-if b:tex_usePython
-  exec pyfileCmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
+if b:tex_usepython
+  exec pyfilecmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
 endif
 " }}}
 
@@ -72,7 +72,7 @@ if b:tex_envMaps || b:tex_envMenus
   exe 'source '.fnameescape(s:path.'/envmacros.vim')
 endif
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
-if b:tex_folds
+if b:tex_fold
   call tex#folding#SetupFolding()
 endif
 if v:version >= 602
