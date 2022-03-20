@@ -1,25 +1,31 @@
+let tex#lib#debugflg_brackets = 0x1
+let tex#lib#debugflg_compiler = 0x2
+let tex#lib#debugflg_custmacros = 0x4
+let tex#lib#debugflg_folding = 0x8
+let tex#lib#debugflg_imap = 0x10
+let tex#lib#debugflg_lib = 0x20
+let tex#lib#debugflg_menu = 0x40
+let tex#lib#debugflg_project = 0x80
+let tex#lib#debugflg_smartspace = 0x100
+let tex#lib#debugflg_template = 0x200
+let tex#lib#debugflg_viewer = 0x400
 " =========================================================================
 " Helper functions for debugging
 " =========================================================================
 " Debug: appends the argument into s:debugString {{{
-" Description: 
-" 
-" Do not want a memory leak! Set this to zero so that latex-suite always
-" starts out in a non-debugging mode.
-func tex#lib#Debug(str, ...)
-  if !b:tex_debug
-    return
-  endif
+" Description: Do not want a memory leak! Set this to zero so that 
+" latex-suite always starts out in a non-debugging mode.
+func tex#lib#debug(str, ...)
   if a:0 > 0
     let pattern = a:1
   else
     let pattern = ''
   endif
 
-  " If b:tex_debug:tex_og' is given, write debug information into this file 
-  " (preferred method).  Otherwise, save it in a variable
-  if !empty(b:tex_debug:tex_og)
-    exec 'redir! >> '.b:tex_debug:tex_og
+  " If b:tex_debuglog is given, write debug information into this file 
+  " (preferred method); otherwise, save it in a variable.
+  if exists("b:tex_debuglog") && !empty(b:tex_debuglog)
+    exec 'redir! >> '.b:tex_debuglog
     silent! echo pattern.' : '.a:str
     redir END
   else
@@ -33,7 +39,8 @@ func tex#lib#Debug(str, ...)
     endif
     let s:debugString_ = s:debugString_ . pattern.' : '.a:str."\n"
   endif
-endfunc " }}}
+endfunc
+" }}}
 " PrintDebug: prings s:debugString {{{
 " Description: 
 " 
@@ -633,5 +640,27 @@ else
 
 endif
 " }}}
+
+" Tex_Version: returns a string which gives the current version number of 
+" latex-suite
+" Description: Each time a bug fix/addition is done in any source file in 
+" latex-suite, not just this file, the number below has to be incremented 
+" by the author.  This will ensure that there is a single 'global' version 
+" number for all of latex-suite. If a change is done in the doc/ directory, 
+" i.e an addition/change in the documentation, then this number should NOT 
+" be incremented. Latex-suite will follow a 3-tier system of versioning 
+" just as Vim. A version number will be of the form: X.Y.ZZ 'X'	will only 
+" be incremented for a major over-haul or feature addition. 'Y'	will be 
+" incremented for significant changes which do not qualify as major. 'ZZ'
+" will be incremented for bug-fixes and very trivial additions such as 
+" adding an option etc. Once ZZ reaches 50, then Y will be incremented and 
+" ZZ will be reset to 01. Each time we have a version number of the form 
+" X.Y.01, then we'll make a release on vim.sf.net and also create a cvs tag 
+" at that point. We'll try to "stabilize" that version by releasing a few 
+" pre-releases and then keep that as a stable point.
+
+func tex#lib#version()
+  return "dave-white/vim-latex: version 0.1.0"
+endfunc 
 
 " vim:ft=vim:fdm=marker
