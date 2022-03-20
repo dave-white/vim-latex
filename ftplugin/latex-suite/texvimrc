@@ -54,11 +54,13 @@ let b:tex_fold = 1
 " If set to 1 or v:true, compile via GNU `make` according to a Makefile.
 let b:tex_flavor = 'latex'
 let b:tex_bibprg = 'biber'
-let b:tex_bibcmd = b:tex_bibprg
-if exists("b:tex_outpdir") && !empty(b:tex_outpdir)
-  let b:tex_bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
-		    \.' --output-directory="'.b:tex_outpdir.'"'
-endif
+" The interaction between the below and tex/compiler.vim var settings does 
+" not quite work yet.
+" let b:tex_bibcmd = b:tex_bibprg
+" if exists("b:tex_outpdir") && !empty(b:tex_outpdir)
+"   let b:tex_bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
+" 		    \.' --output-directory="'.b:tex_outpdir.'"'
+" endif
 let b:tex_multcmplfmts = ["dvi", "pdf"]
 let b:tex_fmtdeps_ps = ['dvi']
 let b:tex_fmtdeps_pdf = []
