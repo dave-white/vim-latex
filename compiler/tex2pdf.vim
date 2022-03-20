@@ -1,10 +1,15 @@
 " == Compiler settings: tex -> pdf ========================================
 " MAKEPRG: Set vim &makeprg option. {{{
 let b:tex_targ = "pdf"
-let b:tex_cmplprg = 'pdflatex'
+if exists("b:tex_tex2pdf_cmplprg") && !empty(b:tex_tex2pdf_cmplprg)
+  let s:cmplprg = b:tex_tex2pdf_cmplprg
+else
+  let s:cmplprg = 'pdflatex'
+endif
+let b:tex_cmplprg = s:cmplprg
 let b:tex_flavor = 'latex'
 
-let strMkPrg = b:tex_cmplprg
+let strMkPrg = s:cmplprg
       \.' -file-line-error-style'
       \.' -interaction=nonstopmode'
 if exists('b:tex_outpdir') && !empty(b:tex_outpdir)
@@ -295,8 +300,8 @@ endif
 " ==========================================================================
 
 " Debugging {{{
-if b:tex_debug
-  call tex#lib#Debug("compiler/tex.vim: sourcing this file", "comp")
+if b:tex_debuglvl >= 1
+  call tex#lib#debug("compiler/tex.vim: sourcing this file", "comp")
 endif
 " }}}
 
