@@ -34,7 +34,7 @@ exe 'so '.fnameescape(expand('<sfile>:p:h')).'/latex-suite/setup.vim'
 
 let &cpo = s:save_cpo
 
-if b:tex_use_make
+if b:tex_usemake
   setlocal makeprg=make
 elseif b:tex_targ == "pdf"
   compiler tex2pdf
