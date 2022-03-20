@@ -114,8 +114,7 @@ debug, and then this is matched for debugging calls to `tex#lib#debug()`
 via a bitwise AND. Such a call is coded as follows:
 
 ```
-if (b:tex_debuglvl >= <lvl>) && and(b:tex_debugflg, 
-tex#lib#debugflg_<script_name>)
+if (b:tex_debuglvl >= <lvl>) && and(b:tex_debugflg, tex#lib#debugflg_<script_name>)
   call tex#lib#debug(<msg>)
 endif
 ```
