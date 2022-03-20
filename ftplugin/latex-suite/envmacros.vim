@@ -1035,7 +1035,10 @@ function! Tex_DoCommand(isvisual)
     let wordaft = matchstr(strpart(presline, c-1), '^\k\+\*\?')
 
     let word = wordbef . wordaft
-    call Tex_Debug("Tex_DoCommand: wordbef = [".wordbef."], wordaft = [".wordaft."], word = [".word."]", 'env')
+    if b:tex_debuglvl >= 1
+      call tex#lib#debug("Tex_DoCommand: wordbef = [".wordbef
+	    \."], wordaft = [".wordaft."], word = [".word."]", 'env')
+    endif
 
     " We use \<Del> instead of \<Bs> because \<Bs> does not work
     " unless bs=2
