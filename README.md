@@ -102,6 +102,32 @@ simplify things.
    crammed into single "words". I really ought to come up with a convention 
    for this.
 
+#### Debugging
+
+Writing debugging messages is to be triggered based on a debugging level, 
+`b:tex_debuglvl`, and on a bitwise match between the overall debugging 
+flag, `b:tex_debugflg`, and a "code module" flag of the form 
+`tex#lib#debugflg_<script_name>` specific to a particular `autoload` 
+script. The overall debugging flag, `b:tex_debugflg`, is set by bitwise 
+OR'ing together the module flags for all of the scripts one wishes to 
+debug, and then this is matched for debugging calls to `tex#lib#debug()` 
+via a bitwise AND. Such a call is coded as follows:
+
+```
+if (b:tex_debuglvl >= <lvl>) && and(b:tex_debugflg, 
+tex#lib#debugflg_<script_name>)
+  call tex#lib#debug(<msg>)
+endif
+```
+
+Here "`<script_name>`" is the name of the `autoload` script in which this 
+call resides, and "`<lvl>`" and "`<msg>`" are determined on a per-case 
+basis.
+
+"Code modules" may need to come to mean categories of `autoload` scripts 
+(ideally grouped in folders) if the number of scripts were ever to get very 
+large.
+
 ## TODO
 
 1. This fork is horrifyingly lacking in documentation and code comments, 
@@ -110,10 +136,10 @@ simplify things.
 
 2. Finish renaming things. (Cf. [Naming](#naming))
 
-2. Pull out the remaining uses of the `IMAP` plugin. Users should be able 
+3. Pull out the remaining uses of the `IMAP` plugin. Users should be able 
    to enable `IMAP` independently of this ftplugin.
 
-3. Probably all functionality which I don't use has been broken by my 
+4. Probably all functionality which I don't use has been broken by my 
    changes and I just don't know it yet. These bugs will need to be tested 
    for and fixed.
 
