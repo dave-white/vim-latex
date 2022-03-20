@@ -8,98 +8,49 @@
 "      documents
 "===========================================================================
 
-" == Settings =============================================================
+" == Default Settings =====================================================
 " Script variables {{{
 " ==== Compiler ===========================================================
 " {{{
 " A list of formats for which need multiple compilations should be done as 
 " needed.
-if exists("b:tex_multcmplfmts") && !empty(b:tex_multcmplfmts)
-  let s:multcmplfmts = b:tex_multcmplfmts
-else
-  let s:multcmplfmts = ["dvi", "pdf"]
-endif
-if exists("b:tex_fmtdeps_ps") && !empty(b:tex_fmtdeps_ps)
-  let s:fmtdeps_ps = b:tex_fmtdeps_ps
-else
-  let s:fmtdeps_ps = ["dvi"]
-endif
-if exists("b:tex_fmtdeps_pdf") && !empty(b:tex_fmtdeps_pdf)
-  let s:fmtdeps_pdf = b:tex_fmtdeps_pdf
-else
-  let s:fmtdeps_pdf = []
-endif
-if exists("b:tex_idxcmd") && !empty(b:tex_idxcmd)
-  let s:idxcmd = b:tex_idxcmd
-else
-  let s:idxcmd = 'makeindex "$*.idx"'
-endif
+let s:multcmplfmts = ["dvi", "pdf"]
+let s:fmtdeps = {"ps": ["dvi"], "pdf": []}
+let s:idxcmd = 'makeindex "$*.idx"'
 " ====== Bibliography =====================================================
 " {{{
-if exists("b:tex_bibprg") && !empty(b:tex_bibprg)
-  let s:bibprg = b:tex_bibprg
-else
-  let s:bibprg = 'biber'
-endif
-if exists("b:tex_bibcmd") && !empty(b:tex_bibcmd)
-  let s:bibcmd = b:tex_bibcmd
-else
-  let s:bibcmd = s:bibprg
-  if exists('b:tex_outpdir')
-    let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
-		  \.' --output-directory="'.b:tex_outpdir.'"'
-  endif
+let s:bibprg = 'biber'
+let s:bibcmd = s:bibprg
+if exists('b:tex_outpdir')
+  let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
+		\.' --output-directory="'.b:tex_outpdir.'"'
 endif
 " }}}
 " ====== Error / Warning Display ==========================================
-if exists("b:tex_gotoerr")
-  let s:gotoerr = b:tex_gotoerr
-else
-  let s:gotoerr = 0
-endif
+" {{{
+let s:gotoerr = 0
 " If set to 1, then latex-suite shows the context of the error in a preview
 " window beneath the window showing the actual errors.
-if exists("b:tex_show_err_cntxt")
-  let s:show_err_cntxt = b:tex_show_err_cntxt
-else
-  let s:show_err_cntxt = 0
-endif
+let s:show_err_cntxt = 0
 " Remove temp files created during part compilations when vim exits.
-if exists("b:tex_rmv_tmp_files")
-  let s:rmv_tmp_files = b:tex_rmv_tmp_files
-else
-  let s:rmv_tmp_files = 1
-endif
+let s:rmv_tmp_files = 1
+" }}}
 " }}}
 " ==== Viewer =============================================================
 " {{{
 " the option below specifies an editor for the dvi viewer while starting up 
 " the dvi viewer according to Dimitri Antoniou's tip on vim.sf.net (tip 
 " #225)
-if exists("b:tex_dvi_viewer_set_editor")
-  let s:dvi_viewer_set_editor = b:tex_dvi_viewer_set_editor
-else
-  let s:dvi_viewer_set_editor = 0
-endif
+let s:dvi_viewer_set_editor = 0
 " For unix systems or macunix systens with enabled s:macasnix : Set this to 
 " 1 if you do not want to execute the viewer in the background
-if exists("b:tex_fgroundviewer")
-  let s:fgroundviewer = b:tex_fgroundviewer
-else
-  let s:fgroundviewer = 0
-endif
+let s:fgroundviewer = 0
 " b:tex_viewrule_* takes precedence over view_prg_* and is executed as is 
 " (up to file name substitution).
-if exists("b:tex_viewrule_html") && !empty(b:tex_viewrule_html)
-  let s:viewrule_html = b:tex_viewrule_html
-else
-  let s:viewrule_html = 'MozillaFirebird "$*/index.html" &'
-endif
-if exists("b:tex_viewrule_dvi") && !empty(b:tex_viewrule_dvi)
-  let s:viewrule_dvi = b:tex_viewrule_dvi
-else
-  let s:viewrule_dvi = v:null
-endif
+let s:viewrule = {
+      \ "html": 'MozillaFirebird "$*/index.html" &',
+      \ "dvi": v:null
+      \ }
 " ====== Viewing Apps by OS ===============================================
 " {{{
 " Windows: {{{
@@ -117,11 +68,7 @@ elseif has('osx') || has('macunix')
   let s:viewprg_dvi = v:null
   " Set this to 1 to disable opening a viewer with 'open -a'
   " Note: If you do this, you need to specify viewers above
-  if exists("b:tex_macasnix")
-    let s:macasnix = b:tex_macasnix
-  else
-    let s:macasnix = 0
-  endif
+  let s:macasnix = 0
 " }}}
 " Nix And Other: {{{
 else
@@ -136,11 +83,6 @@ else
   endif
 endif
 " }}}
-for viewft in ["ps", "pdf", "dvi"]
-  if exists("b:tex_viewprg_{viewft}") && !empty(b:tex_viewprg_{viewft})
-    let s:viewprg_{viewft} = b:tex_viewprg_{viewft}
-  endif
-endfor
 " }}}
 " }}}
 " }}}
@@ -196,21 +138,26 @@ func! tex#compiler#Run(...)
   endif
 
   " first get the dependency chain of this format.
-  let depchain = [targ]
-  if exists("s:fmtdeps_".targ) && !empty(s:fmtdeps_{targ})
-	\ && (index(s:fmtdeps_{targ}, targ) != len(s:fmtdeps_{targ})-1)
-    let depchain = extendnew(s:fmtdeps_{targ}, [targ])
+  if exists("b:tex_fmtdeps[\"".targ."\"]")
+    let fmtdeps = b:tex_fmtdeps[targ]
+  else
+    if exists("s:fmtdeps[\".".targ."\"]")
+      let fmtdeps = s:fmtdeps[targ]
+    else
+      let fmtdeps = []
+    endif
   endif
+  call add(fmtdeps, targ)
 
   let cwd = getcwd()
   call chdir(fnameescape(fnamemodify(mainfpath, ":p:h")))
 
   let err = 0
   let depidx = 0
-  while !err && (depidx < len(depchain))
+  while !err && (depidx < len(fmtdeps))
     let depidx += 1
     " let err = s:Compile(fpath, outpdir, jobnm)
-    let err = s:Compile(mainfpath, outpdir, jobnm)
+    let err = s:Compile(mainfpath, fmtdeps[depidx-1], outpdir, jobnm)
   endwhile
   " let b:last_cmpl_time = localtime()
   " if usetmp
@@ -228,18 +175,36 @@ endfunc
 " Again, if the current file is a \input in a master file, see text above
 " tex#compiler#Run() to see how to set this information.
 func! tex#compiler#View(...)
-  if a:0 < 1
-    let targ = b:tex_targ
-    let viewer = s:viewprg_{targ}
-  elseif a:0 < 2
+  if a:0 > 0
     let targ = a:1
-    let viewer = s:viewprg_{targ}
   else
-    let targ = a:1
-    let viewer = a:2
+    let targ = b:tex_targ
   endif
 
-  if exists("s:viewrule_".targ) && !empty(s:viewrule_{targ})
+  if a:0 > 1
+    let viewer = a:2
+  elseif exists("b:tex_viewprg_".targ) && !empty(b:tex_viewprg_{targ})
+    let viewer = b:tex_viewprg_{targ}
+  else
+    let viewer = s:viewprg_{targ}
+  endif
+
+  if exists("b:tex_viewrule[\"".targ."\"]") && !empty(b:tex_viewrule[targ])
+    let viewrule = b:tex_viewrule[targ]
+  elseif exists("s:viewrule[\"".targ."\"]")
+	\ && !empty(s:viewrule[targ])
+    let viewrule = s:viewrule[targ]
+  else
+    let viewrule = v:null
+  endif
+
+  if exists("b:tex_macasnix")
+    let macasnix = b:tex_macasnix
+  else
+    let macasnix = s:macasnix
+  endif
+
+  if !empty(viewrule)
     let cmd = substitute(s:viewrule_{targ}, '{v:servername}', v:servername,
 	  \ 'g')
   elseif has('win32')
@@ -260,7 +225,14 @@ func! tex#compiler#View(...)
     " Using an option for specifying the editor in the command line
     " because that seems to not work on older bash'es.
     let cmd = viewer
-    if targ == 'dvi' && s:dvi_viewer_set_editor
+
+    if exists("b:tex_dvi_viewer_set_editor")
+      let dvi_viewer_set_editor = b:tex_dvi_viewer_set_editor
+    else
+      let dvi_viewer_set_editor = s:dvi_viewer_set_editor
+    endif
+
+    if targ == 'dvi' && dvi_viewer_set_editor
       if !empty(v:servername) && viewer =~ '^ *xdvik\?\( \|$\)'
 	let cmd .= ' -editor "gvim --servername '.v:servername
 	      \.' --remote-silent +\%l \%f"'
@@ -423,7 +395,12 @@ func tex#compiler#SeekFoward(...)
 
     " See if we should add &. On Mac (at least in MacVim), it seems
     " like this should NOT be added...
-    if s:fgroundviewer
+    if exists("b:tex_fgroundviewer")
+      let fgroundviewer = b:tex_fgroundviewer
+    else
+      let fgroundviewer = s:fgroundviewer
+    endif
+    if fgroundviewer
       let execString = execString.' &'
     endif
 
@@ -579,7 +556,7 @@ func s:ExeCompiler(file, ...)
 endfunc
 " }}}
 " Compile: {{{
-func s:Compile(fpath, outpdir, jobnm)
+func s:Compile(fpath, targ, outpdir, jobnm)
   let auxfile = a:outpdir.'/'.a:jobnm.'.aux'
   let bcffile = a:outpdir.'/'.a:jobnm.'.bcf'
   let bblfile = a:outpdir.'/'.a:jobnm.'.bbl'
@@ -621,8 +598,19 @@ func s:Compile(fpath, outpdir, jobnm)
   if bcfPreHash != system(md5cmd." ".bcffile)
     let bblPreHash = system(md5cmd." ".bblfile)
 
-    silent! exec '!'.s:bibcmd.' "'.a:jobnm.'"'
-    echomsg "Ran ".s:bibprg
+    if exists("b:tex_bibcmd") && !empty(b:tex_bibcmd)
+      let bibcmd = b:tex_bibcmd
+    else
+      let bibcmd = s:bibcmd
+    endif
+    silent! exe '!'.bibcmd.' "'.a:jobnm.'"'
+
+    if exists("b:tex_bibprg") && !empty(b:tex_bibprg)
+      let bibprg = b:tex_bibprg
+    else
+      let bibprg = s:bibprg
+    endif
+    echomsg "Ran ".bibprg
 
     if system(md5cmd." ".bblfile) != bblPreHash
       let rerun = 1
@@ -630,26 +618,33 @@ func s:Compile(fpath, outpdir, jobnm)
   endif
 
   " Recompile up to four times as necessary.
-  while rerun && (runCnt < 5)
-    let rerun = 0
-    let runCnt += 1
+  if exists("b:tex_multcmplfmts") && !empty(b:tex_multcmplfmts)
+    let multcmplfmts = b:tex_multcmplfmts
+  else
+    let multcmplfmts = s:multcmplfmts
+  endif
+  if index(multcmplfmts, a:targ) >= 0
+    while rerun && (runCnt < 5)
+      let rerun = 0
+      let runCnt += 1
 
-    let err = s:ExeCompiler(fname)
-    if err
-      let timeWrd = "time"
-      if runCnt != 1
-	let timeWrd .= "s"
+      let err = s:ExeCompiler(fname)
+      if err
+	let timeWrd = "time"
+	if runCnt != 1
+	  let timeWrd .= "s"
+	endif
+	echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
+	return 1
       endif
-      echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
-      return 1
-    endif
 
-    let auxPostHash = system(md5cmd." ".auxfile)
-    if auxPostHash != auxPreHash
-      let rerun = 1
-      let auxPreHash = auxPostHash
-    endif
-  endwhile
+      let auxPostHash = system(md5cmd." ".auxfile)
+      if auxPostHash != auxPreHash
+	let rerun = 1
+	let auxPreHash = auxPostHash
+      endif
+    endwhile
+  endif
 
   let timeWrd = "time"
   if runCnt != 1
@@ -665,7 +660,13 @@ endfunc
 "              visually selected text are created. These files need to be
 "              removed when Vim exits to avoid "file leakage".
 func! RmvTmpFiles()
-  if s:rmv_tmp_files && exists('s:tmp_file_cnt')
+  if exists("b:tex_rmv_tmp_files")
+    let rmv_tmp_files = b:tex_rmv_tmp_files
+  else
+    let rmv_tmp_files = s:rmv_tmp_files
+  endif
+
+  if rmv_tmp_files && exists('s:tmp_file_cnt')
     let i = 1
     while i <= s:tmpFileCnt
       let tmpFile = s:tmpFile_{i}
@@ -691,6 +692,16 @@ endfunc " }}}
 func! Tex_SetupErrorWindow()
   " Must capture buffer vars before opening the error win (new buf).
   let debuglvl = b:tex_debuglvl
+  if exists("b:tex_show_err_cntxt")
+    let show_err_cntxt = b:tex_show_err_cntxt
+  else
+    let show_err_cntxt = s:show_err_cntxt
+  endif
+  if exists("b:tex_gotoerr")
+    let gotoerr = b:tex_gotoerr
+  else
+    let gotoerr = s:gotoerr
+  endif
   let main_winnr = winnr()
 
   let mainfname = tex#lib#GetMainFileName()
@@ -707,21 +718,21 @@ func! Tex_SetupErrorWindow()
   endif
   " if we moved to a different window, then it means we had some errors.
   if main_winnr != winnr()
-    if s:show_err_cntxt
+    if show_err_cntxt
       call Tex_UpdatePreviewWindow(mfnlog)
       exe 'nnoremap <buffer> <silent> j j:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
       exe 'nnoremap <buffer> <silent> k k:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
       exe 'nnoremap <buffer> <silent> <up> <up>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
       exe 'nnoremap <buffer> <silent> <down> <down>:call Tex_UpdatePreviewWindow("'.mfnlog.'")<CR>'
     endif
-    exe 'nnoremap <buffer> <silent> <enter> :call Tex_GotoErrorLocation("'.mfnlog.'")<CR>'
+    exe 'nnoremap <buffer> <silent> <enter> :call Tex_GotoErrorLocation("'.mfnlog.'", '.string(show_err_cntxt).')<CR>'
 
     setlocal nowrap
 
     " resize the window to just fit in with the number of lines.
     exe ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
-    if s:gotoerr
-      call Tex_GotoErrorLocation(mfnlog)
+    if gotoerr
+      call Tex_GotoErrorLocation(mfnlog, show_err_cntxt)
     else
       exec main_winnr.' wincmd w'
     endif
@@ -845,7 +856,7 @@ endfunc " }}}
 "   which this error has occured.
 "
 "   The position is both the correct line number and the column number.
-func! Tex_GotoErrorLocation(filename)
+func! Tex_GotoErrorLocation(filename, show_err_cntxt)
   " first use vim's functionality to take us to the location of the error
   " accurate to the line (not column). This lets us go to the correct file
   " without applying any logic.
@@ -896,7 +907,7 @@ func! Tex_GotoErrorLocation(filename)
   exec winnum.' wincmd w'
   exec 'silent! '.linenum.' | normal! '.normcmd
 
-  if !s:show_err_cntxt
+  if !a:show_err_cntxt
     pclose!
   endif
 endfunc " }}}
