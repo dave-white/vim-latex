@@ -1,6 +1,29 @@
 " ==========================================================================
 " Settings: buffer variables.
 " ==========================================================================
+" Python: determine usage {{{
+" It bothers me that this has to be done here, ahead of the sourcing of 
+" tex/lib.vim triggered by setting b:tex_debugflg below.
+let b:tex_usepython = 0
+if b:tex_usepython
+  if has("python3")
+    let pythoncmd = 'python3'
+    let pyfilecmd = 'py3file'
+    let b:tex_usepython = 1
+  elseif has("python")
+    let pythoncmd = 'python'
+    let pyfilecmd = 'pyfile'
+    let b:tex_usepython = 1
+  else
+    let b:tex_usepython = 0
+  endif
+endif
+
+" Define the functions in python if available.
+if b:tex_usepython
+  exec pyfilecmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
+endif
+" }}}
 let b:tex_debuglvl = 0
 let b:tex_debugflg = or(
       \ tex#lib#debugflg_brackets, or(
@@ -22,7 +45,6 @@ let b:tex_usemake = 0
 let b:tex_tex2pdf_cmplprg = 'pdflatex'
 let b:tex_outpdir = ""
 let b:tex_jobnm = ""
-let b:tex_usepython = 0
 let b:tex_fold = 1
 " ==========================================================================
 " Compiling And Viewing: settings for autoload/tex/compiler.vim

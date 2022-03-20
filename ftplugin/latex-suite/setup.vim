@@ -42,28 +42,6 @@ command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
 command -nargs=1 TLookBib call Tex_Complete(<q-args>, 'bib')
 com! -nargs=0 TClearCiteHist unlet! tex#viewer#cite_search_hist
 
-
-" Python: determine usage {{{
-if b:tex_usepython
-  if has("python3")
-    let pythoncmd = 'python3'
-    let pyfilecmd = 'py3file'
-    let b:tex_usepython = 1
-  elseif has("python")
-    let pythoncmd = 'python'
-    let pyfilecmd = 'pyfile'
-    let b:tex_usepython = 1
-  else
-    let b:tex_usepython = 0
-  endif
-endif
-
-" Define the functions in python if available.
-if b:tex_usepython
-  exec pyfilecmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
-endif
-" }}}
-
 let s:path = expand('<sfile>:p:h')
 
 call tex#project#SourceProj()

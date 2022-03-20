@@ -602,7 +602,7 @@ func tex#lib#GotoTempFile()
 endfunc " }}}
 " FileContains: finds if a regexp, is present in filename {{{
 
-if b:tex_usePython
+if b:tex_usepython
 
   func tex#lib#FileContains(regex, fpath)
     exec b:tex_pythonCmd . ' isPresentInFile(r"'.a:regex.'", r"'
