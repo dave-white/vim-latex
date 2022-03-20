@@ -10,10 +10,10 @@
 
 " == Settings =============================================================
 " Script variables {{{
-" A list of formats for which need multiple compilations should be done as 
-" needed.
 " ==== Compiler ===========================================================
 " {{{
+" A list of formats for which need multiple compilations should be done as 
+" needed.
 if exists("b:tex_multcmplfmts") && !empty(b:tex_multcmplfmts)
   let s:multcmplfmts = b:tex_multcmplfmts
 else
@@ -141,7 +141,9 @@ for viewft in ["ps", "pdf", "dvi"]
     let s:viewprg_{viewft} = b:tex_viewprg_{viewft}
   endif
 endfor
-
+" }}}
+" }}}
+" }}}
 " == External functions ===================================================
 " Run: Sets off the compilation process. {{{
 func! tex#compiler#Run(...)
@@ -497,7 +499,6 @@ func! tex#compiler#PartCompile()
 
   silent! call tex#compiler#Run()
 endfunc " }}}
-
 " == External helper functions ============================================
 " GetJobNm: Return the pdftex -jobname option value if it is set. {{{
 func tex#compiler#GetJobNm()
@@ -657,7 +658,6 @@ func s:Compile(fpath, outpdir, jobnm)
   echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
 endfunc
 " }}}
-
 " == Functions for compiling parts of a file.  ============================
 " RmvTmpFiles: cleans up temporary files created during part {{{ 
 " compilation
@@ -679,7 +679,6 @@ func! RmvTmpFiles()
     endwhile
   endif
 endfunc " }}}
-
 " ==========================================================================
 " Helper functions for
 " . viewing the log file in preview mode.
@@ -691,11 +690,10 @@ endfunc " }}}
 " Description:
 func! Tex_SetupErrorWindow()
   " Must capture buffer vars before opening the error win (new buf).
-  let debug = b:tex_debuglvl
+  let debuglvl = b:tex_debuglvl
+  let main_winnr = winnr()
 
   let mainfname = tex#lib#GetMainFileName()
-
-  let main_winnr = winnr()
 
   " close the quickfix window before trying to open it again, otherwise
   " whether or not we end up in the quickfix window after the :cwindow
@@ -729,7 +727,8 @@ func! Tex_SetupErrorWindow()
     endif
   endif
 
-endfunc " }}}
+endfunc
+" }}}
 " Tex_PositionPreviewWindow: positions the preview window correctly. {{{
 " Description:
 "   The purpose of this function is to count the number of times an error
