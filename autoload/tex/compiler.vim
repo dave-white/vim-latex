@@ -12,24 +12,103 @@
 " Script variables {{{
 " A list of formats for which need multiple compilations should be done as 
 " needed.
-let s:multcmplfmts = ["dvi", "pdf"]
-
-let s:fmtdeps_ps = ['dvi']
-let s:fmtdeps_pdf = []
-
-let s:idxcmd = 'makeindex "$*.idx"'
-
-let s:bibprg = 'biber'
-let s:bibcmd = s:bibprg
-if exists('b:tex_outpdir')
-  let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
-	       \.' --output-directory="'.b:tex_outpdir.'"'
+" ==== Compiler ===========================================================
+" {{{
+if exists("b:tex_multcmplfmts") && !empty(b:tex_multcmplfmts)
+  let s:multcmplfmts = b:tex_multcmplfmts
+else
+  let s:multcmplfmts = ["dvi", "pdf"]
 endif
-
+if exists("b:tex_fmtdeps_ps") && !empty(b:tex_fmtdeps_ps)
+  let s:fmtdeps_ps = b:tex_fmtdeps_ps
+else
+  let s:fmtdeps_ps = ["dvi"]
+endif
+if exists("b:tex_fmtdeps_pdf") && !empty(b:tex_fmtdeps_pdf)
+  let s:fmtdeps_pdf = b:tex_fmtdeps_pdf
+else
+  let s:fmtdeps_pdf = []
+endif
+if exists("b:tex_idxcmd") && !empty(b:tex_idxcmd)
+  let s:idxcmd = b:tex_idxcmd
+else
+  let s:idxcmd = 'makeindex "$*.idx"'
+endif
+" ====== Bibliography =====================================================
+" {{{
+if exists("b:tex_bibprg") && !empty(b:tex_bibprg)
+  let s:bibprg = b:tex_bibprg
+else
+  let s:bibprg = 'biber'
+endif
+if exists("b:tex_bibcmd") && !empty(b:tex_bibcmd)
+  let s:bibcmd = b:tex_bibcmd
+else
+  let s:bibcmd = s:bibprg
+  if exists('b:tex_outpdir')
+    let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
+		  \.' --output-directory="'.b:tex_outpdir.'"'
+  endif
+endif
+" }}}
+" ====== Error / Warning Display ==========================================
+if exists("b:tex_gotoerr")
+  let s:gotoerr = b:tex_gotoerr
+else
+  let s:gotoerr = 0
+endif
+" If set to 1, then latex-suite shows the context of the error in a preview
+" window beneath the window showing the actual errors.
+if exists("b:tex_show_err_cntxt")
+  let s:show_err_cntxt = b:tex_show_err_cntxt
+else
+  let s:show_err_cntxt = 0
+endif
+" Remove temp files created during part compilations when vim exits.
+if exists("b:tex_rmv_tmp_files")
+  let s:rmv_tmp_files = b:tex_rmv_tmp_files
+else
+  let s:rmv_tmp_files = 1
+endif
+" }}}
+" ==== Viewer =============================================================
+" {{{
+" the option below specifies an editor for the dvi viewer while starting up 
+" the dvi viewer according to Dimitri Antoniou's tip on vim.sf.net (tip 
+" #225)
+if exists("b:tex_dvi_viewer_set_editor")
+  let s:dvi_viewer_set_editor = b:tex_dvi_viewer_set_editor
+else
+  let s:dvi_viewer_set_editor = 0
+endif
+" For unix systems or macunix systens with enabled s:macasnix : Set this to 
+" 1 if you do not want to execute the viewer in the background
+if exists("b:tex_fgroundviewer")
+  let s:fgroundviewer = b:tex_fgroundviewer
+else
+  let s:fgroundviewer = 0
+endif
+" b:tex_viewrule_* takes precedence over view_prg_* and is executed as is 
+" (up to file name substitution).
+if exists("b:tex_viewrule_html") && !empty(b:tex_viewrule_html)
+  let s:viewrule_html = b:tex_viewrule_html
+else
+  let s:viewrule_html = 'MozillaFirebird "$*/index.html" &'
+endif
+if exists("b:tex_viewrule_dvi") && !empty(b:tex_viewrule_dvi)
+  let s:viewrule_dvi = b:tex_viewrule_dvi
+else
+  let s:viewrule_dvi = v:null
+endif
+" ====== Viewing Apps by OS ===============================================
+" {{{
+" Windows: {{{
 if has('win32')
   let s:viewprg_ps = 'gsview32'
   let s:viewprg_pdf = 'AcroRd32'
   let s:viewprg_dvi = 'yap -1'
+" }}}
+" MacOS: {{{
 elseif has('osx') || has('macunix')
   " Let the system pick.  If you want, you can override the choice here.
   let s:viewprg_ps = v:null
@@ -38,7 +117,13 @@ elseif has('osx') || has('macunix')
   let s:viewprg_dvi = v:null
   " Set this to 1 to disable opening a viewer with 'open -a'
   " Note: If you do this, you need to specify viewers above
-  let s:macasnix = 0
+  if exists("b:tex_macasnix")
+    let s:macasnix = b:tex_macasnix
+  else
+    let s:macasnix = 0
+  endif
+" }}}
+" Nix And Other: {{{
 else
   if executable('xdg-open')
     let s:viewprg_ps = 'xdg-open'
@@ -49,30 +134,13 @@ else
     let s:viewprg_pdf = 'xpdf'
     let s:viewprg_dvi = 'xdvi'
   endif
-  " the option below specifies an editor for the dvi viewer while starting
-  " up the dvi viewer according to Dimitri Antoniou's tip on vim.sf.net 
-  " (tip
-  " #225)
 endif
-let s:dvi_viewer_set_editor = 0
-" For unix systems or macunix systens with enabled Tex_TreatMacViewerAsUNIX:
-" Set this to 1 if you do not want to execute the viewer in the background
-let s:fground_viewer = 1
-
-" s:viewrule_* takes precedence over view_prg_* and is executed as is (up 
-" to file name substitution).
-let s:viewrule_html = 'MozillaFirebird "$*/index.html" &'
-let s:viewrule_dvi = v:null
-
-let s:goto_err = 0
-
-" If set to 1, then latex-suite shows the context of the error in a preview
-" window beneath the window showing the actual errors.
-let s:show_err_cntxt = 0
-
-" Remove temp files created during part compilations when vim exits.
-let s:rmv_tmp_files = 1
 " }}}
+for viewft in ["ps", "pdf", "dvi"]
+  if exists("b:tex_viewprg_{viewft}") && !empty(b:tex_viewprg_{viewft})
+    let s:viewprg_{viewft} = b:tex_viewprg_{viewft}
+  endif
+endfor
 
 " == External functions ===================================================
 " Run: Sets off the compilation process. {{{
@@ -210,8 +278,8 @@ func! tex#compiler#View(...)
   endif
 
   let cmd = substitute(cmd, '\V$*', fpath, 'g')
-  if b:tex_debug
-    call Tex_Debug("View: cmd = ".cmd, "comp")
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+    call tex#lib#debug("View: cmd = ".cmd, "comp")
   endif
 
   exec 'silent! !'.cmd
@@ -353,16 +421,17 @@ func tex#compiler#SeekFoward(...)
 
     " See if we should add &. On Mac (at least in MacVim), it seems
     " like this should NOT be added...
-    if s:fground_viewer
+    if s:fgroundviewer
       let execString = execString.' &'
     endif
 
   endif
 
-  if b:tex_debug
-    call Tex_Debug("tex#compiler#SeekFoward: execString = ".execString, "comp")
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+    call tex#lib#debug("tex#compiler#SeekFoward: execString = "
+	  \.execString, "comp")
   endif
-  execute execString
+  exe execString
   if !has('gui_running')
     redraw!
   endif
@@ -375,8 +444,8 @@ endfunc
 "       prepending the preamble and \end{document} and then asks tex#compiler#Run() to
 "       compile it.
 func! tex#compiler#PartCompile()
-  if b:tex_debug
-    call Tex_Debug('+PartCompile', 'comp')
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+    call tex#lib#debug('+PartCompile', 'comp')
   endif
 
   " Get a temporary file in the same directory as the file from which
@@ -497,8 +566,8 @@ func s:ExeCompiler(file, ...)
 
   " If there are any errors, then break from the rest of the steps
   let errLst = tex#lib#GetErrorList()
-  if b:tex_debug
-    call Tex_Debug("ExeCompiler: errLst = [".errLst."]", "comp")
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+    call tex#lib#debug("ExeCompiler: errLst = [".errLst."]", "comp")
   endif
   if errLst =~  'error'
     redraw!
@@ -622,7 +691,7 @@ endfunc " }}}
 " Description:
 func! Tex_SetupErrorWindow()
   " Must capture buffer vars before opening the error win (new buf).
-  let debug = b:tex_debug
+  let debug = b:tex_debuglvl
 
   let mainfname = tex#lib#GetMainFileName()
 
@@ -635,8 +704,8 @@ func! Tex_SetupErrorWindow()
   cwindow
   " create log file name from mainfname
   let mfnlog = fnamemodify(mainfname, ":t:r").'.log'
-  if debug
-    call Tex_Debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
+  if debuglvl >= 1
+    call tex#lib#debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
   endif
   " if we moved to a different window, then it means we had some errors.
   if main_winnr != winnr()
@@ -652,8 +721,8 @@ func! Tex_SetupErrorWindow()
     setlocal nowrap
 
     " resize the window to just fit in with the number of lines.
-    exec ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
-    if s:goto_err
+    exe ( line('$') < 4 ? line('$') : 4 ).' wincmd _'
+    if s:gotoerr
       call Tex_GotoErrorLocation(mfnlog)
     else
       exec main_winnr.' wincmd w'
@@ -673,10 +742,11 @@ func! Tex_PositionPreviewWindow(filename)
 
   if getline('.') !~ '|\d\+ \(error\|warning\)|'
     if !search('|\d\+ \(error\|warning\)|')
-      if b:tex_debug
-	call Tex_Debug("not finding error pattern anywhere in quickfix window :".bufname(bufnr('%'))
-      endif,
-	    \ 'comp')
+      if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+	let debugmsg = "not finding error pattern anywhere in quickfix ".
+	      \."window"." :".bufname(bufnr('%'))
+	call tex#lib#debug(debugmsg, 'comp')
+      endif
       pclose!
       return
     endif
