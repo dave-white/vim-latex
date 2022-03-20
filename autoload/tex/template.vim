@@ -41,7 +41,9 @@ func! s:ReadTemplate(...)
 
   let fname = s:FindInTemplateDir(filename.'.tex', ':p')
   let fname = fnameescape(fname)
-  call tex#lib#Debug("0read ".fname, 'templates')
+  if b:tex_debuglvl >= 1
+    call tex#lib#debug("0read ".fname, 'templates')
+  endif
 
   silent! exe "0read ".fname
 
@@ -72,7 +74,10 @@ func! s:ReadTemplate(...)
   " indentation can get duplicated in strange ways if ``formatoptions`` is non-empty.
   set formatoptions=
 
-  call tex#lib#Debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>", 'templates')
+  if b:tex_debuglvl >= 1
+    call tex#lib#debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '"
+	  \.s:phsTemp."', '".s:pheTemp."')\<CR>", 'templates')
+  endif
   silent exec "normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>"
 
   let &formatoptions = _formatoptions
@@ -80,7 +85,10 @@ func! s:ReadTemplate(...)
   " Restore register a
   call setreg("a", _a, "c")
 
-  call tex#lib#Debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '.s:exeTemp.', com = '.s:comTemp, 'templates')
+  if b:tex_debuglvl >= 1
+    call tex#lib#debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '
+	  \.s:exeTemp.', com = '.s:comTemp, 'templates')
+  endif
 
 endfunc
 

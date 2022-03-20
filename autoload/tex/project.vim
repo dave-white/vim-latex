@@ -32,8 +32,11 @@ func tex#project#SourceProj()
   exe 'cd '.fnameescape(expand('%:p:h'))
 
   if glob(tex#lib#GetMainFileName(':p').'.latexmain') != ''
-    call tex#lib#Debug("tex#project#SourceProj: sourcing [".Tex_GetMainFileName().".latexmain]", "proj")
-    exec 'source '.fnameescape(tex#lib#GetMainFileName().'.latexmain')
+    if b:tex_debuglvl >= 1
+      call tex#lib#debug("tex#project#SourceProj: sourcing ["
+	    \.Tex_GetMainFileName().".latexmain]", "proj")
+    endif
+    exe 'source '.fnameescape(tex#lib#GetMainFileName().'.latexmain')
   endif
 
   exe 'cd '.l:origdir
