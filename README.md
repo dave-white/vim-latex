@@ -16,22 +16,46 @@ An inexhaustive description of what I've changed:
 
 2. Global variables in the original become script variables in the 
    `autoload` scripts here, and the `ftplugin` now exclusively sets buffer 
-   variables. Each `autoload` script is to open with a segment in which the 
-   `ftplugin` buffer variable corresponding to each script variable is 
-   checked; if it exists/is populated, then the script variable is given 
-   the buffer value. This code looks as follows:
+   variables. When an `autoload` function needs to work with a parameter 
+   value in these variables, it sets a local variable, first checking the 
+   buffer variable and then the script. The code looks as follows:
    
    ```
+	" In ftplugin's texvimrc, where user defaults are set.
+	let b:tex_<param>
+
+	" At head of autoload script.
+	let s:<param> = <global_default_val>
+	...
+	" Inside a function.
 	if exists("b:tex_<param>")
-	 	let s:<param> = b:tex_<param>
+		let <param> = b:tex_<param>
 	else
-		let s:<param> = <default_global_val>
+		let <param> = s:<param>
 	endif
 	 ```
 
    I haven't yet fulfilled this everywhere.
 
-3. Rules for compiling to a particular target file type are to be located 
+3. There are four levels at which buffer variables get set, sourced in the 
+   following order:
+   
+   1. `$VIMRUNTIME/ftplugin/latex-suite/texvimrc` &mdash; the plugin's 
+      default buffer settings.
+   
+   2. `$VIMRUNTIME/ftplugin/tex/texvimrc` &mdash; the user's global default 
+      settings.
+   
+   3. `$TEXPROJDIR/texvimrc` &mdash; settings for all files comprising a 
+      LaTeX "project".
+
+   4. `$TEXFILENAME.vim` &mdash; settings for a particular TeX file.
+
+   E.g. One would, I imagine, set the name for output directories as 
+   something like `b:tex_outpdir = bld` in (2). The job name would be set 
+   by `b:tex_jobnm = <job_name>` in (3) or possibly (4).
+
+4. Rules for compiling to a particular target file type are to be located 
    in scripts with names like `tex2<targ>.vim` under `compiler/` as much as 
    practicable. Buffer variables may be used here for runtime 
    customization, and some may be set here. When the `ftplugin` is loaded, 
@@ -40,7 +64,7 @@ An inexhaustive description of what I've changed:
    I've only done this for the `pdf` target so far, and the script is a bit 
    messy.
 
-4. The `IMAP` plugin is not specific to the `tex` file type, hence should 
+5. The `IMAP` plugin is not specific to the `tex` file type, hence should 
    be, in my humble opinion, a standalone plugin. I've accordingly removed 
    it from my forked ftplugin.
 
