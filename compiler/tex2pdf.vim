@@ -5,8 +5,8 @@ if exists("b:tex_tex2pdf_cmplprg") && !empty(b:tex_tex2pdf_cmplprg)
   let s:cmplprg = b:tex_tex2pdf_cmplprg
 else
   let s:cmplprg = 'pdflatex'
+  let b:tex_cmplprg = s:cmplprg
 endif
-let b:tex_cmplprg = s:cmplprg
 let b:tex_flavor = 'latex'
 
 let strMkPrg = s:cmplprg

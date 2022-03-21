@@ -13,10 +13,7 @@
 func! tex#folding#SetupFolding()
   setlocal foldtext=SetFoldTxt()
 
-  if b:tex_folding
-    call tex#folding#MakeFolds(0, 0)
-  endif
-
+  call tex#folding#MakeFolds(0, 0)
 
   " Setup a local autocommand, if FileChangedShellPost is available
   if exists('##FileChangedShellPost')
@@ -24,7 +21,6 @@ func! tex#folding#SetupFolding()
       autocmd FileChangedShellPost <buffer> call tex#folding#MakeFolds(1, 0)
     augroup END
   endif
-
 endfunc
 " }}}
 " MakeFolds: function to create fold items for latex. {{{
@@ -301,8 +297,8 @@ func! tex#folding#MakeFolds(force, manual)
   call MakeSyntaxFolds(a:force)
 
   " Open all folds if this function was triggered automatically
-  " and b:tex_autoFolding is disabled
-  if !a:manual && !b:tex_autoFolding
+  " and b:tex_autofold is disabled
+  if !a:manual && !b:tex_autofold
     normal! zR
   endif
 endfunc

@@ -5,6 +5,42 @@ imap <silent> <script> <C-o><plug> <Nop>
 " Settings
 " ==========================================================================
 " Buffer and script variables. {{{
+if !exists("b:tex_debuglvl")
+  let b:tex_debuglvl = 0
+endif
+if !exists("b:tex_debugflg")
+  let b:tex_debugflg = or(
+	\ tex#lib#debugflg_brackets, or(
+	\ tex#lib#debugflg_compiler, or(
+	\ tex#lib#debugflg_custmacros, or(
+	\ tex#lib#debugflg_folding, or(
+	\ tex#lib#debugflg_imap, or(
+	\ tex#lib#debugflg_lib, or(
+	\ tex#lib#debugflg_menu, or(
+	\ tex#lib#debugflg_project, or(
+	\ tex#lib#debugflg_smartspace, or(
+	\ tex#lib#debugflg_template, 
+	\ tex#lib#debugflg_viewer))))))))))
+endif
+if !exists("b:tex_debuglog")
+  let b:tex_debuglog = v:null
+endif
+if !exists("b:tex_targ")
+  let b:tex_targ = "pdf"
+endif
+if !exists("b:tex_usemake")
+  let b:tex_usemake = 0
+endif
+if !exists("b:tex_mainfxpr")
+  let b:tex_mainfxpr = "main"
+endif
+if !exists("b:tex_fold")
+  let b:tex_fold = 0
+endif
+if !exists("b:tex_autofold")
+  let b:tex_autofold = 0
+endif
+
 let useIMAP = 0
 let s:runningimap = 1
 let smart_bs_pat =
@@ -29,12 +65,9 @@ command! -nargs=0 -range=% TPartCompile
 command! -nargs=0 TCompileThis let b:fragmentFile = 1
 command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
 
-nnoremap <Plug>Tex_RefreshFolds :call tex#folding#MakeFolds(1, 1)<cr>
-nnoremap <silent> <buffer> <Leader>rf :call tex#folding#MakeFolds(1, 1)<CR>
-
 command! -nargs=0 TProjectEdit :call tex#project#EditProj()
 
-com! -nargs=0 TVersion echo tex#version#GetVersion()
+com! -nargs=0 TVersion echo tex#lib#version()
 
 " texviewer:
 command -nargs=1 TLook    call Tex_Complete(<q-args>, 'tex')
@@ -51,6 +84,9 @@ if b:tex_envMaps || b:tex_envMenus
 endif
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 if b:tex_fold
+  nnoremap <Plug>Tex_RefreshFolds :call tex#folding#MakeFolds(1, 1)<cr>
+  nnoremap <silent> <buffer> <Leader>rf
+	\:call tex#folding#MakeFolds(1, 1)<CR>
   call tex#folding#SetupFolding()
 endif
 if v:version >= 602
@@ -155,11 +191,11 @@ endif
 " Mappings
 " ========================================================================
 " {{{
-nnoremap <buffer> <Leader>c :up \| call tex#compiler#Run()<cr>
+nnoremap <buffer> <Leader>c :up \| call tex#compiler#run()<cr>
 vnoremap <buffer> <Leader>c :up \| call tex#compiler#PartCompile()<cr>
-nnoremap <buffer> <Leader>v :call tex#compiler#View()<cr>
-nnoremap <buffer> <Leader>a :up \| let texrunerr = tex#compiler#Run()
-      \ \| if !texrunerr \| call tex#compiler#View() \| endif<cr>
+nnoremap <buffer> <Leader>v :call tex#compiler#view()<cr>
+nnoremap <buffer> <Leader>a :up \| let texrunerr = tex#compiler#run()
+      \ \| if texrunerr <= 0 \| call tex#compiler#view() \| endif<cr>
 nnoremap <buffer> <Leader>s :call tex#compiler#ForwardSearch()<cr>
 
 if s:runningimap

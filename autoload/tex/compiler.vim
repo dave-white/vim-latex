@@ -88,7 +88,7 @@ endif
 " }}}
 " == External functions ===================================================
 " Run: Sets off the compilation process. {{{
-func! tex#compiler#Run(...)
+func! tex#compiler#run(...)
   if &makeprg =~ "make"
     let cwd = getcwd()
     call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
@@ -134,7 +134,7 @@ func! tex#compiler#Run(...)
   if getftime(mainfpath) <= getftime(outpdir.'/'.jobnm.'.aux')
     " || (!usetmp exists("b:last_cmpl_time") && b:last_cmpl_time)
     echomsg "Nothing to do."
-    return 2
+    return -1
   endif
 
   " first get the dependency chain of this format.
@@ -174,7 +174,7 @@ endfunc
 " Description: opens the DVI viewer for the file being currently edited.
 " Again, if the current file is a \input in a master file, see text above
 " tex#compiler#Run() to see how to set this information.
-func! tex#compiler#View(...)
+func! tex#compiler#view(...)
   if a:0 > 0
     let targ = a:1
   else

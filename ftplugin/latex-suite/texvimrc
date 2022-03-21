@@ -24,36 +24,24 @@ if b:tex_usepython
   exec pyfilecmd.' '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
 endif
 " }}}
-let b:tex_debuglvl = 0
-let b:tex_debugflg = or(
-      \ tex#lib#debugflg_brackets, or(
-      \ tex#lib#debugflg_compiler, or(
-      \ tex#lib#debugflg_custmacros, or(
-      \ tex#lib#debugflg_folding, or(
-      \ tex#lib#debugflg_imap, or(
-      \ tex#lib#debugflg_lib, or(
-      \ tex#lib#debugflg_menu, or(
-      \ tex#lib#debugflg_project, or(
-      \ tex#lib#debugflg_smartspace, or(
-      \ tex#lib#debugflg_template, 
-      \ tex#lib#debugflg_viewer))))))))))
-let b:tex_debuglog = v:null
-let b:tex_mainFileXpr = "main"
+" let b:tex_debuglvl = 0
+" let b:tex_debugflg = 
+" let b:tex_debuglog = v:null
+" let b:tex_mainfxpr = "main"
 " Default target file type for compiling and viewing.
-let b:tex_targ = "pdf"
-let b:tex_usemake = 0
-let b:tex_tex2pdf_cmplprg = 'pdflatex'
-let b:tex_outpdir = ""
-let b:tex_jobnm = ""
-let b:tex_fold = 1
+" let b:tex_targ = "pdf"
+" let b:tex_usemake = 0
+" let b:tex_tex2pdf_cmplprg = 'pdflatex'
+" let b:tex_outpdir = ""
+" let b:tex_jobnm = ""
 " ==========================================================================
 " Compiling And Viewing: settings for autoload/tex/compiler.vim
 " {{{
 " == Compiling ============================================================
 " {{{
 " If set to 1 or v:true, compile via GNU `make` according to a Makefile.
-let b:tex_flavor = 'latex'
-let b:tex_bibprg = 'biber'
+" let b:tex_flavor = 'latex'
+" let b:tex_bibprg = 'biber'
 " The interaction between the below and tex/compiler.vim var settings does 
 " not quite work yet.
 " let b:tex_bibcmd = b:tex_bibprg
@@ -61,53 +49,55 @@ let b:tex_bibprg = 'biber'
 "   let b:tex_bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
 " 		    \.' --output-directory="'.b:tex_outpdir.'"'
 " endif
-let b:tex_multcmplfmts = ["dvi", "pdf"]
-let b:tex_fmtdeps_ps = ['dvi']
-let b:tex_fmtdeps_pdf = []
-let b:tex_idxcmd = 'makeindex "$*.idx"'
-let b:tex_gotoerr = 0
+" let b:tex_multcmplfmts = ["dvi", "pdf"]
+" let b:tex_fmtdeps_ps = ['dvi']
+" let b:tex_fmtdeps_pdf = []
+" let b:tex_idxcmd = 'makeindex "$*.idx"'
+" let b:tex_gotoerr = 0
 " If set to 1, then latex-suite shows the context of the error in a preview
 " window beneath the window showing the actual errors.
-let b:tex_show_err_cntxt = 0
+" let b:tex_show_err_cntxt = 0
 " Remove temp files created during part compilations when vim exits.
-let b:tex_rmv_tmp_files = 1
+" let b:tex_rmv_tmp_files = 1
 " }}}
 " == Viewing ==============================================================
 " {{{
-let b:tex_dvi_viewer_set_editor = 0
+" let b:tex_dvi_viewer_set_editor = 0
 " For unix systems or macunix systens with enabled s:macasnix : Set this to 
 " 1 if you do not want to execute the viewer in the background
-let b:tex_fgroundviewer = 1
+" let b:tex_fgroundviewer = 1
 " b:tex_viewrule_* takes precedence over view_prg_* and is executed as is 
 " (up to file name substitution).
-let b:tex_viewrule_html = 'MozillaFirebird "$*/index.html" &'
-let b:tex_viewrule_dvi = v:null
-let b:tex_viewprg_ps = ''
-let b:tex_viewprg_pdf = ''
-let b:tex_viewprg_dvi = ''
-let b:tex_macasnix = 0
+" let b:tex_viewrule_html = 'MozillaFirebird "$*/index.html" &'
+" let b:tex_viewrule_dvi = v:null
+" let b:tex_viewprg_ps = ''
+" let b:tex_viewprg_pdf = ''
+" let b:tex_viewprg_dvi = ''
+" let b:tex_macasnix = 0
 " }}}
 " }}}
 " ==========================================================================
 " Folding: settings for autoload/tex/folding.vim
 " {{{
-let b:tex_foldedMisc = 'item,slide,preamble,<<<'
-let b:tex_foldedCmds = ''
-let b:tex_foldedEnvs = 'verbatim,comment,eq,gather,align,figure,table,'
-      \.'thebibliography,keywords,abstract,titlepage'
-let b:tex_foldedSecs = 'part,chapter,section,subsection,subsubsection,'
-      \.'paragraph'
+" let b:tex_fold = 1
+" let b:tex_autofold = 1
+" let b:tex_foldedMisc = 'item,slide,preamble,<<<'
+" let b:tex_foldedCmds = ''
+" let b:tex_foldedEnvs = 'verbatim,comment,eq,gather,align,figure,table,'
+"       \.'thebibliography,keywords,abstract,titlepage'
+" let b:tex_foldedSecs = 'part,chapter,section,subsection,subsubsection,'
+"       \.'paragraph'
 " }}}
 " ==========================================================================
 " Indenting: settings for indent/tex.vim
 " {{{
-let b:tex_indent_brace = 1
-let b:tex_indent_items = 1
-let b:tex_items = '\\bibitem\>\|\\item\>'
-let b:tex_itemize_env =  
-\'itemize\|description\|enumerate\|thebibliography'
-let b:tex_noindent_env = 'document\|verbatim\|comment\|lstlisting'
-let b:tex_indent_ifelsefi = 1
+" let b:tex_indent_brace = 1
+" let b:tex_indent_items = 1
+" let b:tex_items = '\\bibitem\>\|\\item\>'
+" let b:tex_itemize_env =  
+" \'itemize\|description\|enumerate\|thebibliography'
+" let b:tex_noindent_env = 'document\|verbatim\|comment\|lstlisting'
+" let b:tex_indent_ifelsefi = 1
 " }}}
 " ==========================================================================
 " Unorganized: misc. settings.
@@ -173,8 +163,6 @@ let b:tex_pkgMenu = 0
 let b:tex_nestPkgMenu = 1
 let b:tex_menuPrefix = 'TeX-'
 let b:tex_useUtfMenus = 0
-let b:tex_folding = 1
-let b:tex_autoFolding = 1
 let b:tex_tagListSupport = 1
 let b:tex_internalTagDfns = 1
 let b:tex_completion_explorer = ','

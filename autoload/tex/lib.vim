@@ -235,15 +235,15 @@ func tex#lib#GetMainFileName(...)
     let modifier = ':p'
   endif
 
-  if b:tex_mainFileXpr =~ '^\/.*'
+  if b:tex_mainfxpr =~ '^\/.*'
     " Absolute path.
-    let l:fname = glob(b:tex_mainFileXpr)
+    let l:fname = glob(b:tex_mainfxpr)
     if filereadable(l:fname)
       return fnamemodify(l:fname, modifier)
     endif
   else
     " Relative path/name.
-    let l:fname = tex#lib#FindFileAbove(b:tex_mainFileXpr)
+    let l:fname = tex#lib#FindFileAbove(b:tex_mainfxpr)
     if filereadable(l:fname)
       return fnamemodify(l:fname, modifier)
     endif
