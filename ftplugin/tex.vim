@@ -11,9 +11,16 @@ let b:did_tex_plugin = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+let s:path = expand('<sfile>:p:h')
+if len(split(expand('<sfile>:t:r'), '_')) > 1
+  let s:path .= '/'.split(expand('<sfile>:t:r'), '_')[1]
+else
+  let s:path .= '/latex'
+endif
+
 " TEXRC: Load user's settings. {{{
 " Global settings.
-runtime ftplugin/latex-suite/texvimrc
+exe "so ".s:path."/texvimrc"
 runtime ftplugin/tex/texvimrc
 
 " Settings local to project.
@@ -108,8 +115,6 @@ command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
 command -nargs=1 TLookBib call Tex_Complete(<q-args>, 'bib')
 com! -nargs=0 TClearCiteHist unlet! tex#viewer#cite_search_hist
 
-let s:path = expand('<sfile>:p:h').'/latex-suite'
-
 call tex#project#SourceProj()
 exe 'source '.fnameescape(s:path.'/texmenuconf.vim')
 if b:tex_envMaps || b:tex_envMenus
@@ -118,8 +123,8 @@ endif
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 if b:tex_fold
   nnoremap <silent> <buffer> <Leader>rf
-	\:call tex#folding#MakeFolds(1, 1)<CR>
-  call tex#folding#SetupFolding()
+	\:call tex#fold#MakeFolds(1, 1)<CR>
+  call tex#fold#SetupFolding()
 endif
 if v:version >= 602
   com! -complete=custom,tex#template#CompleteTemplateName -nargs=? TTemplate

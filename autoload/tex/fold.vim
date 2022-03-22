@@ -1,5 +1,5 @@
 "===========================================================================
-" 	     File: folding.vim
+" 	     File: fold.vim
 "      Author: Srinath Avadhanula
 "      		   modifications/additions by Zhang Linbo, Gerd Wachsmuth
 "     Created: Tue Apr 23 05:00 PM 2002 PST
@@ -10,15 +10,15 @@
 " == External functions ===================================================
 " SetupFolding: sets maps for every buffer {{{
 " Description: 
-func! tex#folding#SetupFolding()
+func! tex#fold#SetupFolding()
   setlocal foldtext=SetFoldTxt()
 
-  call tex#folding#MakeFolds(0, 0)
+  call tex#fold#MakeFolds(0, 0)
 
   " Setup a local autocommand, if FileChangedShellPost is available
   if exists('##FileChangedShellPost')
     augroup LatexSuite
-      autocmd FileChangedShellPost <buffer> call tex#folding#MakeFolds(1, 0)
+      autocmd FileChangedShellPost <buffer> call tex#fold#MakeFolds(1, 0)
     augroup END
   endif
 endfunc
@@ -27,7 +27,7 @@ endfunc
 "
 " used in conjunction with MakeSyntaxFolds().
 " see ../plugin/syntaxFolds.vim for documentation
-func! tex#folding#MakeFolds(force, manual)
+func! tex#fold#MakeFolds(force, manual)
   " Setup folded items lists b:tex_foldedxxxx
   " 	1. Use default value if b:tex_foldedxxxxxx is not defined
   " 	2. prepend default value to b:tex_foldedxxxxxx if it starts with ','
