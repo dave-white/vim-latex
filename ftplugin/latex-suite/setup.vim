@@ -84,7 +84,6 @@ if b:tex_envMaps || b:tex_envMenus
 endif
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 if b:tex_fold
-  nnoremap <Plug>Tex_RefreshFolds :call tex#folding#MakeFolds(1, 1)<cr>
   nnoremap <silent> <buffer> <Leader>rf
 	\:call tex#folding#MakeFolds(1, 1)<CR>
   call tex#folding#SetupFolding()
