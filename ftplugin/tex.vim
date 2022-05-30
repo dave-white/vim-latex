@@ -240,12 +240,11 @@ if s:runningimap
   inoremap <buffer> <space> <c-r>=tex#imap#GetRunningImap(32)<cr>
   inoremap <buffer> <cr> <c-r>=tex#imap#GetRunningImap(13)<cr>
 
-  inoremap == <c-r>='&= '<cr>
-  inoremap ~~ <c-r>='&\approx '<cr>
-  inoremap =~ <c-r>='\approx'<cr>
-  inoremap :: <c-r>='\dots'<cr>
-  inoremap .. <c-r>='\dotsc'<cr>
-  inoremap ** <c-r>='\dotsb'<cr>
+  inoremap <buffer> == <c-r>='&= '<cr>
+  inoremap <buffer> =~ <c-r>='\cong'<cr>
+  inoremap <buffer> :: <c-r>='\dots'<cr>
+  inoremap <buffer> ... <c-r>='\dotsc'<cr>
+  inoremap <buffer> *** <c-r>='\dotsb'<cr>
 
   inoremap <buffer> __ <c-r>=IMAP_PutTextWithMovement('_{<++>}<++>')<cr>
   inoremap <buffer> ^^ <c-r>=IMAP_PutTextWithMovement('^{<++>}<++>')<cr>

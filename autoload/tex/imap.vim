@@ -108,15 +108,15 @@ let s:runningimap_ldrs = ['\'] ", ';']
 let s:imapDict_92_9 = {
       \ "tex"	      : "\\TeX{}",
       \ "latex"	      : "\\LaTeX{}",
-      \ "input"	      : "\\input{<++>}\n<++>",
-      \ "usepackage"    : "\\usepackage[<++>]{<++>,}\n<++>",
-      \ "section"	      : "\\section{<++>}\n<++>",
+      \ "input"	      : "\\input{<++>}",
+      \ "usepackage"    : "\\usepackage[<++>]{<++>}",
+      \ "newcommand"    : "\\newcommand{<++>}[<++>][<++>]{<++>}",
+      \ "section"	: "\\section{<++>}\n<++>",
       \ "subsection"    : "\\subsection{<++>}\n<++>",
       \ "ssection"      : "\\subsection{<++>}\n<++>",
       \ "subsubsection" : "\\subsubsection{<++>}\n<++>",
       \ "sssection"     : "\\subsubsection{<++>}\n<++>",
       \ "paragraph"     : "\\paragraph{<++>} <++>",
-      \ "item"	      : "\\item <++>",
       \ "frametitle"    : "\\frametitle{<++>}\n<++>",
       \ "boldsymbol"    : "\\boldsymbol{<++>}<++>",
       \ "text"	      : "\\text{<++>}<++>",
@@ -124,24 +124,25 @@ let s:imapDict_92_9 = {
       \ "mathbf"	      : "\\mathbf{<++>}<++>",
       \ "mbf"	      : "\\mathbf{<++>}<++>",
       \ "mathbb"	      : "\\mathbb{<++>}<++>",
-      \ "mbb"	      : "\\mathbb{<++>}<++>",
+      \ "bb"	      : "\\mathbb{<++>}<++>",
       \ "mathrm"	      : "\\mathrm{<++>}<++>",
-      \ "mr"	      : "\\mathrm{<++>}<++>",
+      \ "rm"	      : "\\mathrm{<++>}<++>",
       \ "mathcal"	      : "\\mathcal{<++>}<++>",
-      \ "mc"	      : "\\mathcal{<++>}<++>",
+      \ "cal"	      : "\\mathcal{<++>}<++>",
       \ "mathscr"	      : "\\mathscr{<++>}<++>",
-      \ "ms"	      : "\\mathscr{<++>}<++>",
+      \ "scr"	      : "\\mathscr{<++>}<++>",
       \ "textbf"	      : "\\textbf{<++>}<++>",
-      \ "tb"	      : "\\textbf{<++>}<++>",
+      \ "bf"	      : "\\textbf{<++>}<++>",
       \ "textit"	      : "\\textit{<++>}<++>",
-      \ "ti"	      : "\\textit{<++>}<++>",
+      \ "it"	      : "\\textit{<++>}<++>",
       \ "textsc"	      : "\\textsc{<++>}<++>",
-      \ "ts"	      : "\\textsc{<++>}<++>",
+      \ "sc"	      : "\\textsc{<++>}<++>",
       \ "texttt"	      : "\\texttt{<++>}<++>",
       \ "tt"	      : "\\texttt{<++>}<++>",
       \ "emph"	      : "\\emph{<++>}<++>",
       \ "cite"	      : "\\cite[<++>]{<++>}<++>",
       \ "ref"	      : "\\ref{<++>}<++>",
+      \ "eqref"	      : "\\eqref{eq:<++>}<++>",
       \ "hyperref"      : "\\hyperref[<++>]{<++>}<++>",
       \ "label"	      : "\\label{<++>}<++>",
       \ 'a' : '\alpha',
@@ -184,27 +185,29 @@ let s:imapDict_92_9 = {
       \ '_' : '\bar{<++>}<++>',
       \ '6' : '\partial',
       \ '8' : '\infty',
-      \ '/' : '\setminus',
-      \ '%' : '\frac{<++>}{<++>}<++>',
+      \ '-' : '\setminus',
+      \ '/' : '\frac{<++>}{<++>}<++>',
       \ '@' : '\circ',
       \ '0' : '^\circ',
       \ '=' : '\equiv',
       \ '.' : '\cdot',
       \ '*' : '\times',
-      \ '&' : '\cap',
-      \ '+' : '\cup',
-      \ '(' : '\subset',
-      \ ')' : '\supset',
-      \ '$' : "\\int_{<++>}^{<++>}<++>",
-      \ '2' : '\sqrt{<++>}<++>',
-      \ ':' : '\dot{<++>}<++>',
-      \ '~' : '\tilde{<++>}<++>',
-      \ 'M' : '\sum_{<++>}^{<++>}<++>',
-      \ 'V' : '\wedge',
-      \ '<' : '\le',
-      \ '>' : '\ge',
-      \ ',' : '\nonumber',
+      \ '2' : '\sqrt[<++>]{<++>}<++>',
+      \ 'nonumber' : '\nonumber',
       \ "square" : '\square',
+      \ "tilde" : '\tilde{<++>}<++>',
+      \ "hat" : '\hat{<++>}<++>',
+      \ "bar" : '\bar{<++>}<++>',
+      \ "widetilde" : '\widetilde{<++>}<++>',
+      \ "wtilde" : '\widetilde{<++>}<++>',
+      \ "widehat" : '\widehat{<++>}<++>',
+      \ "what" : '\widehat{<++>}<++>',
+      \ "widebar" : '\widebar{<++>}<++>',
+      \ "wbar" : '\widebar{<++>}<++>',
+      \ "wedge" : '\wedge',
+      \ 'int' : "\\int_{<++>}^{<++>}<++>",
+      \ 'dot' : '\dot{<++>}<++>',
+      \ 'sum' : '\sum_{<++>}^{<++>}<++>',
       \ }
 " }}}
 
@@ -212,19 +215,21 @@ let s:imapDict_92_9 = {
 " Leader 92 = '\'
 " Trigger 32 = "\<space>"
 let s:imapDict_92_32 = {
+      \ "tex"	      : "\\TeX{} <++>",
+      \ "latex"	      : "\\LaTeX{} <++>",
       \ "item"	      : "\\item ",
-      \ "boldsymbol"    : "\\boldsymbol ",
-      \ "mathbf"	      : "\\mathbf ",
+      \ "boldsymbol"  : "\\boldsymbol ",
+      \ "mathbf"      : "\\mathbf ",
       \ "mbf"	      : "\\mathbf ",
-      \ "mathbb"	      : "\\mathbb ",
-      \ "mbb"	      : "\\mathbb ",
-      \ "mathrm"	      : "\\mathrm ",
-      \ "mr"	      : "\\mathrm ",
-      \ "mathcal"	      : "\\mathcal ",
-      \ "mc"	      : "\\mathcal ",
-      \ "mathscr"	      : "\\mathscr ",
-      \ "ms"	      : "\\mathscr ",
-      \ "a" : "\\alpha ",
+      \ "mathbb"      : "\\mathbb ",
+      \ "bb"	      : "\\mathbb ",
+      \ "mathrm"      : "\\mathrm ",
+      \ "rm"	      : "\\mathrm ",
+      \ "mathcal"     : "\\mathcal ",
+      \ "cal"	      : "\\mathcal ",
+      \ "mathscr"     : "\\mathscr ",
+      \ "scr"	      : "\\mathscr ",
+      \ "a" : '\alpha ',
       \ 'b' : '\beta ',
       \ 'c' : '\varsigma ',
       \ 'd' : '\delta ',
@@ -271,20 +276,23 @@ let s:imapDict_92_32 = {
       \ '=' : '\equiv ',
       \ '.' : '\cdot ',
       \ '*' : '\times ',
-      \ '&' : '\cap ',
-      \ '+' : '\cup ',
-      \ '(' : '\subset ',
-      \ ')' : '\supset ',
-      \ '$' : "\\int ",
       \ '2' : '\sqrt ',
-      \ ':' : '\dot ',
       \ '~' : '\tilde ',
-      \ 'M' : '\sum ',
-      \ 'V' : '\wedge ',
-      \ '<' : '\le ',
-      \ '>' : '\ge ',
-      \ ',' : '\nonumber ',
-      \ "square" : '\square ',
+      \ 'nonumber' : '\nonumber',
+      \ "square" : '\square',
+      \ "tilde" : '\tilde ',
+      \ "hat" : '\hat ',
+      \ "bar" : '\bar ',
+      \ "widetilde" : '\widetilde ',
+      \ "wtilde" : '\widetilde ',
+      \ "widehat" : '\widehat ',
+      \ "what" : '\widehat ',
+      \ "widebar" : '\widebar ',
+      \ "wbar" : '\widebar ',
+      \ "wedge" : '\wedge ',
+      \ 'int' : '\int ',
+      \ 'dot' : '\dot ',
+      \ 'sum' : '\sum ',
       \ }
 " }}}
 
@@ -359,47 +367,55 @@ let s:imapDict_92_32 = {
 " Leader 92 = '\'
 " Trigger 13 = "\<cr>"
 let s:imapDict_92_13 = {
-      \ "document"     : "\\begin{document}\n<++>\n\\end{document}",
-      \ "displaymath"  :
-      \ "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
-      \ "math"	     :
-      \ "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
-      \ "equation"     :
-      \ "\\begin{equation}"
-      \ . "\n\\label{eqn:<++>}\n<++>\n\\end{equation}\n<++>",
-      \ "eqn"     :
-      \ "\\begin{equation}"
-      \ . "\n\\label{eqn:<++>}\n<++>\n\\end{equation}\n<++>",
-      \ "equationstar" :
-      \ "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
-      \ "eqs"	     :
-      \ "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
-      \ "align"	     : "\\begin{align}\n<++>\n\\end{align}\n<++>",
-      \ "alignstar"    : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
-      \ "als"	     : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
-      \ "enumerate"    :
-      \ "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
-      \ "itemize"	     :
-      \ "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
-      \ "frame"	     : "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
-      \ "definition"   :
-      \ "\\begin{dfn}\n\\label{dfn:<++>}\n<++>\n\\end{dfn}\n<++>",
-      \ "dfn"   :
-      \ "\\begin{dfn}\n\\label{dfn:<++>}\n<++>\n\\end{dfn}\n<++>",
-      \ "theorem"	     :
-      \ "\\begin{thm}[<++>]\n\\label{thm:<++>}\n<++>\n\\end{thm}\n<++>",
-      \ "thm"	     :
-      \ "\\begin{thm}[<++>]\n\\label{thm:<++>}\n<++>\n\\end{thm}\n<++>",
-      \ "nthm"	     :
-      \ "\\begin{nthm}[<++>]\n\\label{thm:<++>}\n<++>\n\\end{nthm}\n<++>",
-      \ "proposition"  :
-      \ "\\begin{prop}\n\\label{prop:<++>}\n<++>\n\\end{prop}\n<++>",
-      \ "lemma"	     :
-      \ "\\begin{lem}\n\\label{lem:<++>}\n<++>\n\\end{lem}\n<++>",
-      \ "corollary"    :
-      \ "\\begin{cor}\n\\label{cor:<++>}\n<++>\n\\end{cor}\n<++>",
-      \ "proof"    : "\\begin{proof}\n<++>\n\\end{proof}\n<++>",
-      \ }
+    \ "document"     : "\\begin{document}\n<++>\n\\end{document}",
+    \ "maketitle"     : "\\maketitle\n<++>",
+    \ "title"     : "\\maketitle\n<++>",
+    \ "tableofcontents"     : "\\tableofcontents\n<++>",
+    \ "toc"     : "\\tableofcontents\n<++>",
+    \ "center" : "\\begin{center}\n<++>\n\\end{center}\n<++>",
+    \ "figure"
+    \ : "\\begin{figure} \\label{fig:<++>}"
+    \ . "\n<++>\n\\caption{<++>}\n\\end{figure}\n<++>",
+    \ "tikzpicture" : "\\begin{tikzpicture}\n<++>\n\\end{tikzpicture}\n<++>",
+    \ "tabular" : "\\begin{tabular}[<++>]{<++>}\n<++>\n\\end{tabular}\n<++>",
+    \ "array" : "\\begin{array}{<++>}\n<++>\n\\end{array}\n<++>",
+    \ "abstract"     : "\\begin{abstract}\n<++>\n\\end{abstract}\n<++>",
+    \ "block"     : "\\block{<++>}{\n<++>\n}\n<++>",
+    \ "onslide"     : "\\onslide<<++>-<++>>{<++>}\n<++>",
+    \ "*onslide"     : "\\onslide*<<++>-<++>>{<++>}\n<++>",
+    \ "displaymath" : "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
+    \ "math" : "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
+    \ "equation"
+    \ : "\\begin{equation} \\label{eq:<++>}\n<++>\n\\end{equation}\n<++>"
+    \ "*equation" : "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>"
+    \ "align"	     : "\\begin{align}\n<++>\n\\end{align}\n<++>",
+    \ "*align"    : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
+    \ "enumerate" : "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
+    \ "itemize"	: "\\begin{itemize}\n\\item <++>\n\\end{itemize}\n<++>",
+    \ "frame"	     : "\\begin{frame}\n<++>\n\\end{frame}\n<++>",
+    \ "theorem"
+    \ : "\\begin{theorem}[<++>] \\label{thm:<++>}\n<++>\n\\end{thm}\n<++>",
+    \ "thm" : "\\begin{thm}[<++>] \\label{thm:<++>}\n<++>\n\\end{thm}\n<++>",
+    \ "athm"
+    \ : "\\begin{athm}[<++>] \\label{thm:\theathm}\n<++>\n\\end{thm}\n<++>",
+    \ "proposition"
+    \ : "\\begin{prop}[<++>] \\label{prop:<++>}\n<++>\n\\end{prop}\n<++>",
+    \ "lemma"
+    \ : "\\begin{lem}[<++>] \\label{lem:<++>}\n<++>\n\\end{lem}\n<++>",
+    \ "corollary"
+    \ : "\\begin{cor}[<++>] \\label{cor:<++>}\n<++>\n\\end{cor}\n<++>",
+    \ "definition"
+    \ : "\\begin{defn}[<++>] \\label{def:<++>}\n<++>\n\\end{defn}\n<++>",
+    \ "example"
+    \ : "\\begin{exm}[<++>] \\label{exm:<++>}\n<++>\n\\end{exm}\n<++>",
+    \ "remark"
+    \ : "\\begin{rem}[<++>] \\label{rem:<++>}\n<++>\n\\end{rem}\n<++>",
+    \ "observation"
+    \ : "\\begin{obs}[<++>] \\label{obs:<++>}\n<++>\n\\end{obs}\n<++>",
+    \ "note"
+    \ : "\\begin{note}[<++>] \\label{note:<++>}\n<++>\n\\end{note}\n<++>",
+    \ "proof"    : "\\begin{proof}[<++>]\n<++>\n\\end{proof}\n<++>",
+    \ }
 " }}}
 
 " }}}
