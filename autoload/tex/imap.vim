@@ -386,8 +386,8 @@ let s:imapDict_92_13 = {
     \ "displaymath" : "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
     \ "math" : "\\begin{displaymath}\n<++>\n\\end{displaymath}\n<++>",
     \ "equation"
-    \ : "\\begin{equation} \\label{eq:<++>}\n<++>\n\\end{equation}\n<++>"
-    \ "*equation" : "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>"
+    \ : "\\begin{equation} \\label{eq:<++>}\n<++>\n\\end{equation}\n<++>",
+    \ "*equation" : "\\begin{equation*}\n<++>\n\\end{equation*}\n<++>",
     \ "align"	     : "\\begin{align}\n<++>\n\\end{align}\n<++>",
     \ "*align"    : "\\begin{align*}\n<++>\n\\end{align*}\n<++>",
     \ "enumerate" : "\\begin{enumerate}\n\\item <++>\n\\end{enumerate}\n<++>",
