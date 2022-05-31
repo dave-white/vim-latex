@@ -131,11 +131,12 @@ func! tex#compiler#run(...)
   let jobnm = tex#compiler#GetJobNm()
   let outpdir = tex#compiler#GetOutpDir(mainfpath)
 
-  if getftime(mainfpath) <= getftime(outpdir.'/'.jobnm.'.aux')
-    " || (!usetmp exists("b:last_cmpl_time") && b:last_cmpl_time)
-    echomsg "Nothing to do."
-    return -1
-  endif
+  " " run only if tex file is newer than its aux file
+  " if getftime(mainfpath) <= getftime(outpdir.'/'.jobnm.'.aux')
+  "   " || (!usetmp exists("b:last_cmpl_time") && b:last_cmpl_time)
+  "   echomsg "Nothing to do."
+  "   return -1
+  " endif
 
   " first get the dependency chain of this format.
   if exists("b:tex_fmtdeps[\"".targ."\"]")
@@ -156,13 +157,8 @@ func! tex#compiler#run(...)
   let depidx = 0
   while !err && (depidx < len(fmtdeps))
     let depidx += 1
-    " let err = s:Compile(fpath, outpdir, jobnm)
     let err = s:Compile(mainfpath, fmtdeps[depidx-1], outpdir, jobnm)
   endwhile
-  " let b:last_cmpl_time = localtime()
-  " if usetmp
-  "   call delete(fpath)
-  " endif
 
   call chdir(cwd)
   redraw!
@@ -547,7 +543,7 @@ func s:ExeCompiler(file, ...)
   if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
     call tex#lib#debug("ExeCompiler: errLst = [".errLst."]", "comp")
   endif
-  if errLst =~  'error'
+  if errLst =~ 'error'
     redraw!
     return 1
   endif
@@ -560,7 +556,7 @@ func s:Compile(fpath, targ, outpdir, jobnm)
   let auxfile = a:outpdir.'/'.a:jobnm.'.aux'
   let bcffile = a:outpdir.'/'.a:jobnm.'.bcf'
   let bblfile = a:outpdir.'/'.a:jobnm.'.bbl'
-  let idxFile = a:outpdir.'/'.a:jobnm.'.idx'
+  " let idxFile = a:outpdir.'/'.a:jobnm.'.idx'
 
   if !empty(a:outpdir)
     call mkdir(a:outpdir, "p")
@@ -577,25 +573,27 @@ func s:Compile(fpath, targ, outpdir, jobnm)
   let fname = fnamemodify(a:fpath, ":t")
   " close any preview windows left open.
   pclose!
-  " Record the 'state' of auxilliary files before compilation.
+  " Record the 'state' of auxiliary files before compilation.
   let auxPreHash = system(md5cmd." ".auxfile)
-  let idxPreHash = system(md5cmd." ".idxFile)
+  " let idxPreHash = system(md5cmd." ".idxFile)
   let bcfPreHash = system(md5cmd." ".bcffile)
 
   " Run the composed compiler command
-  let err = s:ExeCompiler(fname, [
-	\ 'Reference %.%# undefined',
-	\ 'Rerun to get cross-references right'
-	\ ])
+  let err = s:ExeCompiler(fname)
+  echomsg "Ran ".b:tex_cmplprg."."
   if err
     return 1
   endif
-
-  let rerun = 0
   let runCnt = 1
 
+  let rerun = 0
+  let errlist = tex#lib#GetErrorList()
+  if errlist =~ 'Rerun'
+    let rerun = 1
+  endif
+
   " Run BibLatex 'backend' if *.bcf (BibLatex control file) has changed.
-  if bcfPreHash != system(md5cmd." ".bcffile)
+  if filereadable(bcffile) && bcfPreHash != system(md5cmd." ".bcffile)
     let bblPreHash = system(md5cmd." ".bblfile)
 
     if exists("b:tex_bibcmd") && !empty(b:tex_bibcmd)
@@ -617,26 +615,18 @@ func s:Compile(fpath, targ, outpdir, jobnm)
     endif
   endif
 
-  " Recompile up to four times as necessary.
+  " Recompile up to three more times as necessary.
   if exists("b:tex_multcmplfmts") && !empty(b:tex_multcmplfmts)
     let multcmplfmts = b:tex_multcmplfmts
   else
     let multcmplfmts = s:multcmplfmts
   endif
   if index(multcmplfmts, a:targ) >= 0
-    while rerun && (runCnt < 5)
+    while rerun && !err && (runCnt < 4)
       let rerun = 0
       let runCnt += 1
 
       let err = s:ExeCompiler(fname)
-      if err
-	let timeWrd = "time"
-	if runCnt != 1
-	  let timeWrd .= "s"
-	endif
-	echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
-	return 1
-      endif
 
       let auxPostHash = system(md5cmd." ".auxfile)
       if auxPostHash != auxPreHash
@@ -646,11 +636,15 @@ func s:Compile(fpath, targ, outpdir, jobnm)
     endwhile
   endif
 
-  let timeWrd = "time"
-  if runCnt != 1
-    let timeWrd .= "s"
+  if runCnt > 1
+    let timeWrd = "time"
+    if runCnt > 2
+      let timeWrd .= "s"
+    endif
+    echomsg "Ran ".b:tex_cmplprg." ".(runCnt-1)." more ".timeWrd."."
   endif
-  echomsg "Ran ".b:tex_cmplprg." ".runCnt." ".timeWrd."."
+
+  return err
 endfunc
 " }}}
 " == Functions for compiling parts of a file.  ============================
