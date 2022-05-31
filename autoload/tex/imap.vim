@@ -269,8 +269,8 @@ let s:imapDict_92_32 = {
       \ '_' : '\bar ',
       \ '6' : '\partial ',
       \ '8' : '\infty ',
-      \ '/' : '\setminus ',
-      \ '%' : '\frac ',
+      \ '-' : '\setminus ',
+      \ '/' : '\frac ',
       \ '@' : '\circ ',
       \ '0' : '^\circ ',
       \ '=' : '\equiv ',
@@ -407,7 +407,9 @@ let s:imapDict_92_13 = {
     \ "definition"
     \ : "\\begin{defn}[<++>] \\label{def:<++>}\n<++>\n\\end{defn}\n<++>",
     \ "example"
-    \ : "\\begin{exm}[<++>] \\label{exm:<++>}\n<++>\n\\end{exm}\n<++>",
+    \ : "\\begin{defn}[<++>] \\label{def:<++>}\n<++>\n\\end{defn}\n<++>",
+    \ "problem"
+    \ : "\\begin{prob}[<++>] \\label{prob:<++>}\n<++>\n\\end{prob}\n<++>",
     \ "remark"
     \ : "\\begin{rem}[<++>] \\label{rem:<++>}\n<++>\n\\end{rem}\n<++>",
     \ "observation"
