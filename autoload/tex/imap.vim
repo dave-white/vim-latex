@@ -290,9 +290,7 @@ let s:imapDict_92_32 = {
       \ "widebar" : '\widebar ',
       \ "wbar" : '\widebar ',
       \ "wedge" : '\wedge ',
-      \ 'int' : '\int ',
       \ 'dot' : '\dot ',
-      \ 'sum' : '\sum ',
       \ }
 " }}}
 
