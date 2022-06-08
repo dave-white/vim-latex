@@ -651,7 +651,7 @@ if !empty(b:tex_promptEnvs)
   function! Tex_FastEnvironmentInsert(isvisual)
 
     let start_line = line('.')
-    let pos = Tex_GetPos()
+    let pos = tex#lib#GetPos()
     let s:isvisual = a:isvisual
 
     " Position the cursor at the start of the file
@@ -688,16 +688,16 @@ if !empty(b:tex_promptEnvs)
     if documentline != 0 && start_line >= documentline
       " We are after the '\begin{document}'.
       " Put an environment.
-      call Tex_SetPos(pos)
+      call tex#lib#SetPos(pos)
       return Tex_DoEnvironment()
     elseif classline != 0 && start_line >= classline
       " We are after the '\documentclass'.
       " Insert a package.
-      call Tex_SetPos(pos)
+      call tex#lib#SetPos(pos)
       return Tex_package_from_line()
     else
       " Otherwise, insert an environment.
-      call Tex_SetPos(pos)
+      call tex#lib#SetPos(pos)
       return Tex_DoEnvironment()
     endif
   endfunction 
@@ -924,7 +924,7 @@ function! Tex_GetCurrentEnv()
     endif
   endif
 
-  call Tex_SetPos(pos)
+  call tex#lib#SetPos(pos)
   return env_name
 endfunction
 " }}}
@@ -1120,7 +1120,7 @@ if !empty(b:tex_promptCmds)
 
     if !exists('com_name')
       echomsg "You are not inside command"
-      call Tex_SetPos(pos_com)
+      call tex#lib#SetPos(pos_com)
       return 0
     endif
 
@@ -1128,11 +1128,11 @@ if !empty(b:tex_promptCmds)
     let change_com = PromptForCommand('Do you want to change it to (number or name)? ')
 
     if change_com == ''
-      call Tex_SetPos(pos_com)
+      call tex#lib#SetPos(pos_com)
       return 0
     else
       call <SID>ChangeCommand(change_com)
-      call Tex_SetPos(pos_com)
+      call tex#lib#SetPos(pos_com)
       return 0
     endif
 
