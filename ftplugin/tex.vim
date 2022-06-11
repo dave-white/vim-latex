@@ -18,7 +18,7 @@ else
   let s:path .= '/latex'
 endif
 
-" TEXRC: Load user's settings. {{{
+" TEXRC: Load settings/params. {{{
 " Global settings.
 exe "so ".s:path."/texvimrc"
 runtime ftplugin/tex/texvimrc
@@ -36,6 +36,22 @@ if filereadable(file_texrc)
   exe 'so '.file_texrc
 endif
 " }}}
+
+let s:line1 = readfile(fpath, '', 1)[0]
+if s:line1 =~ '^%%texvim:'
+  let s:pat = '\W\s*\(\w\+\)\s*=\s*\(\S\+\)\s*\W\?'
+  let s:pos = match(s:line1, s:pat)
+  while s:pos > -1
+    let s:pair =
+	\ matchlist(s:line1[s:pos:], s:pat)[1:2]
+    let s:param = s:pair[0]
+    let s:val = s:pair[1]
+    let b:tex_{substitute(s:param, '-', '_', "g")} = s:val
+
+    let s:pos += len(':'.s:param.'='.s:val)
+    let s:pos = match(s:line1[s:pos:], s:pat)
+  endwhile
+endif
 
 " Setup: {{{
 nmap <silent> <script> <plug> i

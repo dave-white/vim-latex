@@ -12,11 +12,11 @@ let b:tex_flavor = 'latex'
 let strMkPrg = s:cmplprg
       \.' -file-line-error-style'
       \.' -interaction=nonstopmode'
-if exists('b:tex_outpdir') && !empty(b:tex_outpdir)
-  let strMkPrg .= ' -output-directory="'.b:tex_outpdir.'"'
+if exists('b:tex_output_directory') && !empty(b:tex_output_directory)
+  let strMkPrg .= ' -output-directory="'.b:tex_output_directory.'"'
 endif
-if exists('b:tex_jobnm') && !empty(b:tex_jobnm)
-  let strMkPrg .= ' -jobname="'.b:tex_jobnm.'"'
+if exists('b:tex_jobname') && !empty(b:tex_jobname)
+  let strMkPrg .= ' -jobname="'.b:tex_jobname.'"'
 endif
 
 exe "CompilerSet makeprg=".escape(strMkPrg, " '\"\\")

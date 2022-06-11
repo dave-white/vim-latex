@@ -21,9 +21,9 @@ let s:idxcmd = 'makeindex "$*.idx"'
 " {{{
 let s:bibprg = 'biber'
 let s:bibcmd = s:bibprg
-if exists('b:tex_outpdir')
-  let s:bibcmd .= ' --input-directory="'.b:tex_outpdir.'"'
-		\.' --output-directory="'.b:tex_outpdir.'"'
+if exists('b:tex_output_directory')
+  let s:bibcmd .= ' --input-directory="'.b:tex_output_directory.'"'
+		\.' --output-directory="'.b:tex_output_directory.'"'
 endif
 " }}}
 " ====== Error / Warning Display ==========================================
@@ -241,8 +241,8 @@ func! tex#compiler#view(...)
 
 
   let fpath = tex#compiler#GetOutpDir(expand('%:p'))
-  if exists("b:tex_jobnm")
-    let fpath .= b:tex_jobnm
+  if exists("b:tex_jobname")
+    let fpath .= b:tex_jobname
   else
     let fpath .= expand('%:r')
   endif
@@ -475,8 +475,8 @@ endfunc " }}}
 " == External helper functions ============================================
 " GetJobNm: Return the pdftex -jobname option value if it is set. {{{
 func tex#compiler#GetJobNm()
-  if exists('b:tex_jobnm')
-    return b:tex_jobnm
+  if exists('b:tex_jobname')
+    return b:tex_jobname
   elseif exists('b:tex_main_fxpr')
     return glob(b:tex_main_fxpr)
   else
@@ -498,8 +498,8 @@ func tex#compiler#GetOutpDir(...)
     let mod = a:2
   endif
 
-  if !empty(b:tex_outpdir)
-    let out_dir = fnameescape(fpathHead.'/'.b:tex_outpdir)
+  if !empty(b:tex_output_directory)
+    let out_dir = fnameescape(fpathHead.'/'.b:tex_output_directory)
     return fnamemodify(out_dir, mod)
   else
     return fnamemodify(fpathHead, mod)
