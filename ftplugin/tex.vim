@@ -18,6 +18,7 @@ else
   let s:path .= '/latex'
 endif
 
+" Settings: Load settings/params. {{{
 " TEXRC: Load settings/params. {{{
 " Global settings.
 exe "so ".s:path."/texvimrc"
@@ -37,21 +38,26 @@ if filereadable(file_texrc)
 endif
 " }}}
 
-let s:line1 = readfile(fpath, '', 1)[0]
-if s:line1 =~ '^%%texvim:'
-  let s:pat = '\W\s*\(\w\+\)\s*=\s*\(\S\+\)\s*\W\?'
-  let s:pos = match(s:line1, s:pat)
-  while s:pos > -1
-    let s:pair =
-	\ matchlist(s:line1[s:pos:], s:pat)[1:2]
-    let s:param = s:pair[0]
-    let s:val = s:pair[1]
-    let b:tex_{substitute(s:param, '-', '_', "g")} = s:val
+" TeX File: Read params from first and last line of tex file. {{{
+let s:extreme_ln_l = readfile(fpath, '', 1) + readfile(fpath, '', -1)
+for s:extreme_ln in s:extreme_ln_l
+  if s:extreme_ln =~ '^%\+texvim:'
+    let s:pat = '\W\s*\(\w\+\)\s*=\s*\(\S\+\)\s*\W\?'
+    let s:pos = match(s:extreme_ln, s:pat)
+    while s:pos > -1
+      let s:pair =
+	  \ matchlist(s:extreme_ln[s:pos:], s:pat)[1:2]
+      let s:param = s:pair[0]
+      let s:val = s:pair[1]
+      let b:tex_{substitute(s:param, '-', '_', "g")} = s:val
 
-    let s:pos += len(':'.s:param.'='.s:val)
-    let s:pos = match(s:line1[s:pos:], s:pat)
-  endwhile
-endif
+      let s:pos += len(':'.s:param.'='.s:val)
+      let s:pos = match(s:extreme_ln[s:pos:], s:pat)
+    endwhile
+  endif
+endfor
+" }}}
+" }}}
 
 " Setup: {{{
 nmap <silent> <script> <plug> i
