@@ -515,9 +515,9 @@ func tex#imap#GetRunningImap(trigger)
   let l:leader = l:line[l:leaderIdx]
   let l:token = slice(l:line, l:leaderIdx + 1, l:col - 1)
   " Abort if token is empty.
-  " if empty(l:token)
-  "   return nr2char(a:trigger)
-  " endif
+  if empty(l:token)
+    return nr2char(a:trigger)
+  endif
 
   " Choose dictionary based on leader and trigger
   let l:imapDict = s:imapDict_{char2nr(l:leader)}_{a:trigger}
