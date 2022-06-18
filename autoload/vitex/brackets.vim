@@ -33,13 +33,13 @@
 
 " MathBF: encloses te previous letter/number in \mathbf{} {{{
 " Description: 
-func! tex#brackets#MathBF()
+func! vitex#brackets#MathBF()
   return "\<Left>\\mathbf{\<Right>}"
 endfunc " }}}
 " MathCal: enclose the previous letter/number in \mathcal {{{
 " Description:
 " 	if the last character is not a letter/number, then insert \cite{}
-func! tex#brackets#MathCal()
+func! vitex#brackets#MathCal()
   let line = getline(line("."))
   let char = line[col(".")-2]
 
@@ -62,7 +62,7 @@ endfunc
 " 	2. <<M-l>		\langle<++>\rangle<++>
 " 	3. q<M-l>		\lefteqn{<++>}<++>
 " otherwise insert  \label{<++>}<++>
-func! tex#brackets#LeftRight()
+func! vitex#brackets#LeftRight()
   let line = getline(line("."))
   let char = line[col(".")-2]
   let previous = line[col(".")-3]
@@ -86,7 +86,7 @@ endfunc " }}}
 " PutLeftRight: maps <M-l> in normal mode {{{
 " Description:
 " Put \left...\right in front of the matched brackets.
-func! tex#brackets#PutLeftRight()
+func! vitex#brackets#PutLeftRight()
   let previous = getline(line("."))[col(".") - 2]
   let char = getline(line("."))[col(".") - 1]
   if previous == '\'

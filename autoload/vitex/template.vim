@@ -11,11 +11,11 @@
 "===========================================================================
 
 " SetTemplateMenu: sets up the menu for templates {{{
-func! tex#template#SetTemplateMenu()
+func! vitex#template#SetTemplateMenu()
   let flist = s:FindInTemplateDir('')
   let i = 1
   while 1
-    let fname = tex#lib#Strntok(flist, ',', i)
+    let fname = vitex#lib#Strntok(flist, ',', i)
     if fname == ''
       break
     endif
@@ -33,8 +33,8 @@ func! s:ReadTemplate(...)
   else
     let filelist = s:FindInTemplateDir('')
     let filename = 
-	  \ tex#lib#ChooseFromPrompt("Choose a template file:\n" . 
-	  \ tex#lib#Tex_CreatePrompt(filelist, 2, ',') . 
+	  \ vitex#lib#ChooseFromPrompt("Choose a template file:\n" . 
+	  \ vitex#lib#Tex_CreatePrompt(filelist, 2, ',') . 
 	  \ "\nEnter number or name of file :", 
 	  \ filelist, ',')
   endif
@@ -42,7 +42,7 @@ func! s:ReadTemplate(...)
   let fname = s:FindInTemplateDir(filename.'.tex', ':p')
   let fname = fnameescape(fname)
   if b:tex_debuglvl >= 1
-    call tex#lib#debug("0read ".fname, 'templates')
+    call vitex#lib#debug("0read ".fname, 'templates')
   endif
 
   silent! exe "0read ".fname
@@ -75,7 +75,7 @@ func! s:ReadTemplate(...)
   set formatoptions=
 
   if b:tex_debuglvl >= 1
-    call tex#lib#debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '"
+    call vitex#lib#debug("normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '"
 	  \.s:phsTemp."', '".s:pheTemp."')\<CR>", 'templates')
   endif
   silent exec "normal! i\<C-r>=IMAP_PutTextWithMovement(@a, '".s:phsTemp."', '".s:pheTemp."')\<CR>"
@@ -86,7 +86,7 @@ func! s:ReadTemplate(...)
   call setreg("a", _a, "c")
 
   if b:tex_debuglvl >= 1
-    call tex#lib#debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '
+    call vitex#lib#debug('phs = '.s:phsTemp.', phe = '.s:pheTemp.', exe = '
 	  \.s:exeTemp.', com = '.s:comTemp, 'templates')
   endif
 
@@ -102,9 +102,9 @@ func! s:FindInTemplateDir(filename, ...)
   let pattern = (a:filename != '' ? a:filename : '*.tex')
 
   if exists("b:tex_customTemplateDirectory") && b:tex_customTemplateDirectory != ''
-    return call("tex#lib#FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
+    return call("vitex#lib#FindInDirectory", [pattern, 0, b:tex_customTemplateDirectory] + a:000)
   else
-    return call("tex#lib#FindInDirectory", [pattern, 1, 'templates'] + a:000 )
+    return call("vitex#lib#FindInDirectory", [pattern, 1, 'templates'] + a:000 )
   endif
 endfunc
 " }}}
@@ -120,7 +120,7 @@ func! s:ProcessTemplate()
     exec 'silent! g/'.s:comTemp.s:comTemp.'/d'
 
     " A function only puts one item into the search history...
-    call tex#viewer#CleanSearchHistory()
+    call vitex#viewer#CleanSearchHistory()
   endif
 endfunc
 
@@ -145,7 +145,7 @@ if v:version >= 602
   "	Description: get list of template names with FindInTemplateDir(), remove full path
   "	and return list of names separated with newlines.
   "
-  func! tex#template#CompleteTemplateName(A,P,L)
+  func! vitex#template#CompleteTemplateName(A,P,L)
     " Get name of macros from all runtimepath directories
     let tmplnames = s:FindInTemplateDir('')
     " Separate names with \n not ,

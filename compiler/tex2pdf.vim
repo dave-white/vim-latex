@@ -223,9 +223,9 @@ func! <SID>SetTexCompilerLevel(...)
   if a:0 > 0
     let level = a:1
   else
-    call tex#lib#ResetIncrementNumber(0)
+    call vitex#lib#ResetIncrementNumber(0)
     " echo substitute(b:tex_ignwarnpats, \ '^\|\n\zs\S', 
-    " '\=Itex#lib#ncrementNumber(1)." ".submatch(0)', 'g')
+    " '\=Ivitex#lib#ncrementNumber(1)." ".submatch(0)', 'g')
     let level = input("\nChoose an ignore level: ")
     if level == ''
       return
@@ -291,8 +291,8 @@ call <SID>SetEfm()
 " ERRORFILE: Set the errorfile if not already set by somebody else. {{{
 if &errorfile ==# ''  ||  &errorfile ==# 'errors.err'
   try
-    execute 'set errorfile='.fnameescape(tex#compiler#GetOutpDir()
-	  \.tex#compiler#GetJobName().'.log')
+    execute 'set errorfile='.fnameescape(vitex#compiler#GetOutpDir()
+	  \.vitex#compiler#GetJobName().'.log')
   catch
   endtry
 endif
@@ -301,7 +301,7 @@ endif
 
 " Debugging {{{
 if b:tex_debuglvl >= 1
-  call tex#lib#debug("compiler/tex.vim: sourcing this file", "comp")
+  call vitex#lib#debug("compiler/tex.vim: sourcing this file", "comp")
 endif
 " }}}
 

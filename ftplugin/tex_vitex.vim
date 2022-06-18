@@ -15,18 +15,18 @@ let s:path = expand('<sfile>:p:h')
 if len(split(expand('<sfile>:t:r'), '_')) > 1
   let s:path .= '/'.split(expand('<sfile>:t:r'), '_')[1]
 else
-  let s:path .= '/latex'
+  let s:path .= '/vitex'
 endif
 
 " Settings: Load settings/params. {{{
 " TEXRC: Load settings/params. {{{
 " Global settings.
-exe "so ".s:path."/texvimrc"
-runtime ftplugin/tex/texvimrc
+exe "so ".s:path."/vitexrc"
+runtime ftplugin/tex/vitexrc
 
 " Settings local to project.
 let fpath = fnameescape(expand('%:p'))
-let proj_texrc = tex#lib#FindFileAbove('texvimrc', fpath)
+let proj_texrc = vitex#lib#FindFileAbove('vitexrc', fpath)
 if filereadable(proj_texrc)
   exe 'so '.proj_texrc
 endif
@@ -72,17 +72,17 @@ if !exists("b:tex_debuglvl")
 endif
 if !exists("b:tex_debugflg")
   let b:tex_debugflg = or(
-	\ tex#lib#debugflg_brackets, or(
-	\ tex#lib#debugflg_compiler, or(
-	\ tex#lib#debugflg_custmacros, or(
-	\ tex#lib#debugflg_folding, or(
-	\ tex#lib#debugflg_imap, or(
-	\ tex#lib#debugflg_lib, or(
-	\ tex#lib#debugflg_menu, or(
-	\ tex#lib#debugflg_project, or(
-	\ tex#lib#debugflg_smartspace, or(
-	\ tex#lib#debugflg_template, 
-	\ tex#lib#debugflg_viewer))))))))))
+	\ vitex#lib#debugflg_brackets, or(
+	\ vitex#lib#debugflg_compiler, or(
+	\ vitex#lib#debugflg_custmacros, or(
+	\ vitex#lib#debugflg_folding, or(
+	\ vitex#lib#debugflg_imap, or(
+	\ vitex#lib#debugflg_lib, or(
+	\ vitex#lib#debugflg_menu, or(
+	\ vitex#lib#debugflg_project, or(
+	\ vitex#lib#debugflg_smartspace, or(
+	\ vitex#lib#debugflg_template, 
+	\ vitex#lib#debugflg_viewer))))))))))
 endif
 if !exists("b:tex_debuglog")
   let b:tex_debuglog = v:null
@@ -121,23 +121,23 @@ let smart_dot = 1
 " }}}
 
 command! -nargs=0 -range=% TPartCompile
-      \ :<line1>, <line2> silent! call tex#compiler#PartCompile()
+      \ :<line1>, <line2> silent! call vitex#compiler#PartCompile()
 " Setting b:fragmentFile = 1 makes RunLatex consider the present 
 " file the _main_ file irrespective of the presence of a .latexmain file.
 command! -nargs=0 TCompileThis let b:fragmentFile = 1
 command! -nargs=0 TCompileMainFile let b:fragmentFile = 0
 
-command! -nargs=0 TProjectEdit :call tex#project#EditProj()
+command! -nargs=0 TProjectEdit :call vitex#project#EditProj()
 
-com! -nargs=0 TVersion echo tex#lib#version()
+com! -nargs=0 TVersion echo vitex#lib#version()
 
 " texviewer:
 command -nargs=1 TLook    call Tex_Complete(<q-args>, 'tex')
 command -nargs=1 TLookAll call Tex_Complete(<q-args>, 'all')
 command -nargs=1 TLookBib call Tex_Complete(<q-args>, 'bib')
-com! -nargs=0 TClearCiteHist unlet! tex#viewer#cite_search_hist
+com! -nargs=0 TClearCiteHist unlet! vitex#viewer#cite_search_hist
 
-call tex#project#SourceProj()
+call vitex#project#SourceProj()
 exe 'source '.fnameescape(s:path.'/texmenuconf.vim')
 if b:tex_envMaps || b:tex_envMenus
   exe 'source '.fnameescape(s:path.'/envmacros.vim')
@@ -145,32 +145,32 @@ endif
 exe 'source '.fnameescape(s:path.'/elementmacros.vim')
 if b:tex_fold
   nnoremap <silent> <buffer> <Leader>rf
-	\:call tex#fold#MakeFolds(1, 1)<CR>
-  call tex#fold#SetupFolding()
+	\:call vitex#fold#MakeFolds(1, 1)<CR>
+  call vitex#fold#SetupFolding()
 endif
 if v:version >= 602
-  com! -complete=custom,tex#template#CompleteTemplateName -nargs=? TTemplate
-	\ :call tex#template#ReadTemplate(<f-args>)
+  com! -complete=custom,vitex#template#CompleteTemplateName -nargs=? TTemplate
+	\ :call vitex#template#ReadTemplate(<f-args>)
 else
-  com! -nargs=? TTemplate :call tex#template#ReadTemplate(<f-args>)
+  com! -nargs=? TTemplate :call vitex#template#ReadTemplate(<f-args>)
 	\| :startinsert
 endif
 if b:tex_menus
-  call tex#template#SetTemplateMenu()
+  call vitex#template#SetTemplateMenu()
 endif
 " source advanced math functions
 if b:tex_advMath
-  inoremap <buffer> <silent> <M-b> <C-r>=tex#brackets#MathBF()<CR>
-  inoremap <buffer> <silent> <M-c> <C-r>=tex#brackets#MathCal()<CR>
-  inoremap <buffer> <silent> <M-l> <C-r>=tex#brackets#LeftRight()<CR>
+  inoremap <buffer> <silent> <M-b> <C-r>=vitex#brackets#MathBF()<CR>
+  inoremap <buffer> <silent> <M-c> <C-r>=vitex#brackets#MathCal()<CR>
+  inoremap <buffer> <silent> <M-l> <C-r>=vitex#brackets#LeftRight()<CR>
   vnoremap <buffer> <silent> <M-b> <C-C>`>a}<Esc>`<i\mathbf{<Esc>
   vnoremap <buffer> <silent> <M-c> <C-C>`>a}<Esc>`<i\mathcal{<Esc>
-  nnoremap <buffer> <silent> <M-l> :call tex#brackets#PutLeftRight()<CR>
+  nnoremap <buffer> <silent> <M-l> :call vitex#brackets#PutLeftRight()<CR>
 endif
 if smart_space
   let b:tw = &l:tw
   setlocal tw=0
-  inoremap <buffer> <silent> <Space> <Space><Esc>:call tex#smartspace#Fill(b:tw)<CR>a
+  inoremap <buffer> <silent> <Space> <Space><Esc>:call vitex#smartspace#Fill(b:tw)<CR>a
 endif
 if b:tex_diacritics
   exe 'source '.fnameescape(s:path.'/diacritics.vim')
@@ -186,26 +186,26 @@ if has('gui_running') && b:tex_mathMenus && b:tex_menus
 endif
 " custmacros:
 if b:tex_menus
-  call tex#custmacros#SetCustomMacrosMenu()
+  call vitex#custmacros#SetCustomMacrosMenu()
 endif
-com! -nargs=? TMacroNew :call tex#custmacros#NewMacro(<f-args>)
+com! -nargs=? TMacroNew :call vitex#custmacros#NewMacro(<f-args>)
 " This macros had to have 2 versions:
 if v:version >= 602 
-  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacro
-	\ :let s:retVal = tex#custmacros#ReadMacro(<f-args>) <bar> normal! i<C-r>=s:retVal<CR>
-  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacroEdit
-	\ :call tex#custmacros#EditMacro(<f-args>)
-  com! -complete=custom,tex#custmacros#CompleteMacroNm -nargs=? TMacroDelete
-	\ :call tex#custmacros#DeleteMacro(<f-args>)
+  com! -complete=custom,vitex#custmacros#CompleteMacroNm -nargs=? TMacro
+	\ :let s:retVal = vitex#custmacros#ReadMacro(<f-args>) <bar> normal! i<C-r>=s:retVal<CR>
+  com! -complete=custom,vitex#custmacros#CompleteMacroNm -nargs=? TMacroEdit
+	\ :call vitex#custmacros#EditMacro(<f-args>)
+  com! -complete=custom,vitex#custmacros#CompleteMacroNm -nargs=? TMacroDelete
+	\ :call vitex#custmacros#DeleteMacro(<f-args>)
 else
-  com! -nargs=? TMacro :let s:retVal = tex#custmacros#ReadMacro(<f-args>)
+  com! -nargs=? TMacro :let s:retVal = vitex#custmacros#ReadMacro(<f-args>)
 	\ <bar> normal! i<C-r>=s:retVal<CR>
-  com! -nargs=? TMacroEdit   :call tex#custmacros#EditMacro(<f-args>)
-  com! -nargs=? TMacroDelete :call tex#custmacros#DeleteMacro(<f-args>)
+  com! -nargs=? TMacroEdit   :call vitex#custmacros#EditMacro(<f-args>)
+  com! -nargs=? TMacroDelete :call vitex#custmacros#DeleteMacro(<f-args>)
 endif
 
 exe 'source '.fnameescape(s:path.'/bibtex.vim')
-call tex#viewer#SetTexViewerMaps()
+call vitex#viewer#SetTexViewerMaps()
 exe 'setlocal dict^='.fnameescape(s:path.'/dictionaries/dictionary')
 
 " =========================================================================
@@ -250,17 +250,17 @@ endif
 " Mappings
 " ========================================================================
 " {{{
-nnoremap <buffer> <Leader>c :up \| call tex#compiler#run()<cr>
-vnoremap <buffer> <Leader>c :up \| call tex#compiler#PartCompile()<cr>
-nnoremap <buffer> <Leader>v :call tex#compiler#view()<cr>
-nnoremap <buffer> <Leader>a :up \| let texrunerr = tex#compiler#run()
-      \ \| if texrunerr <= 0 \| call tex#compiler#view() \| endif<cr>
-nnoremap <buffer> <Leader>s :call tex#compiler#ForwardSearch()<cr>
+nnoremap <buffer> <Leader>c :up \| call vitex#compiler#run()<cr>
+vnoremap <buffer> <Leader>c :up \| call vitex#compiler#PartCompile()<cr>
+nnoremap <buffer> <Leader>v :call vitex#compiler#view()<cr>
+nnoremap <buffer> <Leader>a :up \| let texrunerr = vitex#compiler#run()
+      \ \| if texrunerr <= 0 \| call vitex#compiler#view() \| endif<cr>
+nnoremap <buffer> <Leader>s :call vitex#compiler#ForwardSearch()<cr>
 
 if s:runningimap
-  inoremap <buffer> <tab> <c-r>=tex#imap#GetRunningImap(9)<cr>
-  inoremap <buffer> <space> <c-r>=tex#imap#GetRunningImap(32)<cr>
-  inoremap <buffer> <cr> <c-r>=tex#imap#GetRunningImap(13)<cr>
+  " inoremap <buffer> <tab> <c-r>=vitex#imap#GetRunningImap(9)<cr>
+  " inoremap <buffer> <space> <c-r>=vitex#imap#GetRunningImap(32)<cr>
+  " inoremap <buffer> <cr> <c-r>=vitex#imap#GetRunningImap(13)<cr>
 
   inoremap <buffer> == <c-r>='&= '<cr>
   inoremap <buffer> =~ <c-r>='\cong'<cr>

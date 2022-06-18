@@ -13,7 +13,7 @@ let s:mainMenuNm = b:tex_menuPrefix.'S&uite.'
 " ==========================================================================
 " MenuConf: configure the menus as compact/extended, with/without math
 " ==========================================================================
-func! tex#menu#ConfigMenu(type, action) " {{{
+func! vitex#menu#ConfigMenu(type, action) " {{{
   let menuloc = s:mainMenuNm.'Configure\ Menu.'
   if a:type == 'math'
     if a:action == 1

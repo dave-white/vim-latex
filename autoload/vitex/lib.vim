@@ -1,21 +1,21 @@
-let tex#lib#debugflg_brackets = 0x1
-let tex#lib#debugflg_compiler = 0x2
-let tex#lib#debugflg_custmacros = 0x4
-let tex#lib#debugflg_folding = 0x8
-let tex#lib#debugflg_imap = 0x10
-let tex#lib#debugflg_lib = 0x20
-let tex#lib#debugflg_menu = 0x40
-let tex#lib#debugflg_project = 0x80
-let tex#lib#debugflg_smartspace = 0x100
-let tex#lib#debugflg_template = 0x200
-let tex#lib#debugflg_viewer = 0x400
+let vitex#lib#debugflg_brackets = 0x1
+let vitex#lib#debugflg_compiler = 0x2
+let vitex#lib#debugflg_custmacros = 0x4
+let vitex#lib#debugflg_folding = 0x8
+let vitex#lib#debugflg_imap = 0x10
+let vitex#lib#debugflg_lib = 0x20
+let vitex#lib#debugflg_menu = 0x40
+let vitex#lib#debugflg_project = 0x80
+let vitex#lib#debugflg_smartspace = 0x100
+let vitex#lib#debugflg_template = 0x200
+let vitex#lib#debugflg_viewer = 0x400
 " =========================================================================
 " Helper functions for debugging
 " =========================================================================
 " Debug: appends the argument into s:debugString {{{
 " Description: Do not want a memory leak! Set this to zero so that 
 " latex-suite always starts out in a non-debugging mode.
-func tex#lib#debug(str, ...)
+func vitex#lib#debug(str, ...)
   if a:0 > 0
     let pattern = a:1
   else
@@ -44,7 +44,7 @@ endfunc
 " PrintDebug: prings s:debugString {{{
 " Description: 
 " 
-func tex#lib#PrintDebug(...)
+func vitex#lib#PrintDebug(...)
   if a:0 > 0
     let pattern = a:1
   else
@@ -57,7 +57,7 @@ endfunc " }}}
 " ClearDebug: clears the s:debugString string {{{
 " Description: 
 " 
-func tex#lib#ClearDebug(...)
+func vitex#lib#ClearDebug(...)
   if a:0 > 0
     let pattern = a:1
   else
@@ -70,7 +70,7 @@ endfunc " }}}
 " ShowVariableValue: debugging help {{{
 " provides a way to examine script local variables from outside the script.
 " very handy for debugging.
-func tex#lib#ShowVariableValue(...)
+func vitex#lib#ShowVariableValue(...)
   let i = 1
   while i <= a:0
     exe 'let arg = a:'.i
@@ -88,13 +88,13 @@ endfunc
 " Helper functions for grepping
 " ======================================================================== 
 " Grep: shorthand for :vimgrep {{{
-func tex#lib#Grep(string, where)
+func vitex#lib#Grep(string, where)
   exec 'silent! vimgrep! /'.a:string.'/ '.a:where
 endfunc
 
 " }}}
 " Grepadd: shorthand for :vimgrepadd {{{
-func tex#lib#Grepadd(string, where)
+func vitex#lib#Grepadd(string, where)
   exec 'silent! vimgrepadd! /'.a:string.'/ '.a:where
 endfunc
 
@@ -104,7 +104,7 @@ endfunc
 " ======================================================================== 
 " FindFileAbove: Search up the path from current file's directory for {{{ 
 " file matching expr.  Return str = absolute path to file matching expr.
-func tex#lib#FindFileAbove(xpr, ...)
+func vitex#lib#FindFileAbove(xpr, ...)
   if a:0 < 1
     let curr_dir = fnameescape(expand('%:p:h'))
   else
@@ -129,13 +129,13 @@ endfunc
 " }}}
 " Strntok: extract the n^th token from a list {{{
 " example: Strntok('1,23,3', ',', 2) = 23
-func! tex#lib#Strntok(s, tok, n)
+func! vitex#lib#Strntok(s, tok, n)
   return matchstr(a:s . a:tok[0], '\v(\zs([^' . a:tok . ']*)\ze['
 	\ . a:tok . ']){' . a:n . '}')
 endfunc
 " }}}
 " CountMatches: count number of matches of pat in string {{{
-func! tex#lib#CountMatches( string, pat )
+func! vitex#lib#CountMatches( string, pat )
   let pos = 0
   let cnt = 0
   while pos >= 0
@@ -160,7 +160,7 @@ endfunc
 " "(1) item1\t(2)item2\n(3)item3\t(4)item4"
 "
 " This string can be used in the input() function.
-func tex#lib#CreatePrompt(promptList, cols)
+func vitex#lib#CreatePrompt(promptList, cols)
   " There is one more item than matches of the seperator
   let num_common = len(a:promptList)
 
@@ -187,12 +187,12 @@ endfunc
 " CleanSearchHistory: removes last search item from search history {{{
 " Description: This function needs to be globally visible because its
 "              called from outside the script during expansion.
-func tex#lib#CleanSearchHistory()
+func vitex#lib#CleanSearchHistory()
   call histdel("/", -1)
   let @/ = histget("/", -1)
 endfunc
 nmap <silent> <script> <plug>cleanHistory
-      \ :call tex#lib#CleanSearchHistory()<CR>
+      \ :call vitex#lib#CleanSearchHistory()<CR>
 
 " }}}
 " GetVarValue: gets the value of the variable {{{
@@ -201,7 +201,7 @@ nmap <silent> <script> <plug>cleanHistory
 " 	exists and if so, returns the corresponding value. If none exist, 
 " 	return
 " 	an empty string.
-func tex#lib#GetVarValue(varname, ...)
+func vitex#lib#GetVarValue(varname, ...)
   if exists('w:'.a:varname)
     return w:{a:varname}
   elseif exists('b:'.a:varname)
@@ -228,7 +228,7 @@ endfunc " }}}
 "               returning.
 " NOTE: From version 1.6 onwards, this function always trims away the 
 " .latexmain part of the file name before applying the modifier argument.
-func tex#lib#GetMainFileName(...)
+func vitex#lib#GetMainFileName(...)
   if a:0 > 0
     let modifier = a:1
   else
@@ -243,7 +243,7 @@ func tex#lib#GetMainFileName(...)
     endif
   else
     " Relative path/name.
-    let l:fname = tex#lib#FindFileAbove(b:tex_mainfxpr)
+    let l:fname = vitex#lib#FindFileAbove(b:tex_mainfxpr)
     if filereadable(l:fname)
       return fnamemodify(l:fname, modifier)
     endif
@@ -253,7 +253,7 @@ endfunc
 " }}}
 " ChooseFromPrompt: process a user input to a prompt string {{{
 " " Description: 
-func tex#lib#ChooseFromPrompt(dialog, list)
+func vitex#lib#ChooseFromPrompt(dialog, list)
   let inp = input(a:dialog)
   " This is a workaround for a bug(?) in vim, see
   " https://github.com/vim/vim/issues/778
@@ -268,7 +268,7 @@ endfunc
 " IncrementNumber: returns an incremented number each time {{{
 " Description: 
 let s:incnum = 0
-func tex#lib#IncrementNumber(increm)
+func vitex#lib#IncrementNumber(increm)
   let s:incnum = s:incnum + a:increm
   return s:incnum
 endfunc 
@@ -276,7 +276,7 @@ endfunc
 " }}}
 " ResetIncrementNumber: increments s:incnum to zero {{{
 " Description: 
-func tex#lib#ResetIncrementNumber(val)
+func vitex#lib#ResetIncrementNumber(val)
   let s:incnum = a:val
 endfunc
 " }}}
@@ -293,7 +293,7 @@ endfunc
 " was acheived by using a tokenizer approach rather than using Strntok 
 " which would have been more obvious.
 "
-func tex#lib#FindInDirectory(filename, rtp, directory, ...)
+func vitex#lib#FindInDirectory(filename, rtp, directory, ...)
   " how to expand each filename. ':p:t:r' modifies each filename to its
   " trailing part without extension.
   let expand = (a:0 > 0 ? a:1 : ':p:t:r')
@@ -345,8 +345,8 @@ endfunc
 " }}}
 " FindInRtp: check if file exists in &rtp {{{
 " Description:	Wrapper around FindInDirectory, using a:rtp
-func tex#lib#FindInRtp(filename, directory, ...)
-  return call("tex#lib#FindInDirectory",
+func vitex#lib#FindInRtp(filename, directory, ...)
+  return call("vitex#lib#FindInDirectory",
 	\ [ a:filename, 1, a:directory ] + a:000 )
 endfunc
 
@@ -354,7 +354,7 @@ endfunc
 " GetErrorList: returns vim's clist {{{
 " Description: returns the contents of the error list available via the 
 "			   :clist command.
-func tex#lib#GetErrorList()
+func vitex#lib#GetErrorList()
   let _a = @a
   redir @a | silent! clist | redir END
   let errlist = @a
@@ -371,7 +371,7 @@ endfunc " }}}
 " Description: Unlike vim's native tempname(), this function returns the 
 " name of a temporary file in the directory specified. This enables us to 
 " create temporary files in a specified directory.
-func tex#lib#GetTempName(dirname)
+func vitex#lib#GetTempName(dirname)
   let prefix = 'latexSuiteTemp'
   let slash = (a:dirname =~ '\\$\|/$' ? '' : '/')
   let i = 0
@@ -386,7 +386,7 @@ func tex#lib#GetTempName(dirname)
 endfunc
 " }}}
 " FindFile: finds a file in the vim's 'path' {{{
-func tex#lib#FindFile(fname, path, suffixesadd)
+func vitex#lib#FindFile(fname, path, suffixesadd)
   if exists('*findfile')
     let _suffixesadd = &suffixesadd
     let &suffixesadd = a:suffixesadd
@@ -417,7 +417,7 @@ func tex#lib#FindFile(fname, path, suffixesadd)
   return retval
 endfunc " }}}
 " GetPos: gets position of cursor {{{
-func tex#lib#GetPos()
+func vitex#lib#GetPos()
   if exists('*getcurpos')
     return getcurpos()
   elseif exists('*getpos')
@@ -427,7 +427,7 @@ func tex#lib#GetPos()
   endif
 endfunc " }}}
 " SetPos: sets position of cursor {{{
-func tex#lib#SetPos(pos)
+func vitex#lib#SetPos(pos)
   if exists('*setpos')
     call setpos('.', a:pos)
   else
@@ -594,7 +594,7 @@ endfunc
 " library functions without making calls to external programs.
 " =========================================================================
 " GotoTempFile: open a temp file. reuse from next time on {{{
-func tex#lib#GotoTempFile()
+func vitex#lib#GotoTempFile()
   if !exists('s:tempFileName')
     let s:tempFileName = tempname()
   endif
@@ -604,7 +604,7 @@ endfunc " }}}
 
 if b:tex_usepython
 
-  func tex#lib#FileContains(regex, fpath)
+  func vitex#lib#FileContains(regex, fpath)
     exec b:tex_pythonCmd . ' isPresentInFile(r"'.a:regex.'", r"'
 	  \.a:fpath.'")'
 
@@ -613,7 +613,7 @@ if b:tex_usepython
   
 elseif executable('awk')
 
-  func tex#lib#FileContains(regex, fpath)
+  func vitex#lib#FileContains(regex, fpath)
     let l:awkCmd = "awk "
     let l:awkCmd .= "'BEGIN { ret = 0 } "
     let l:awkCmd .= "/".a:regex."/ "
@@ -625,7 +625,7 @@ elseif executable('awk')
 
 else
 
-  func tex#lib#FileContains(regex, fpath)
+  func vitex#lib#FileContains(regex, fpath)
     let ln_lst = readfile(a:fpath)
     let idx = 0
     let found = 0
@@ -659,7 +659,7 @@ endif
 " at that point. We'll try to "stabilize" that version by releasing a few 
 " pre-releases and then keep that as a stable point.
 
-func tex#lib#version()
+func vitex#lib#version()
   return "dave-white/vim-latex: version 0.1.0"
 endfunc 
 

@@ -88,7 +88,7 @@ endif
 " }}}
 " == External functions ===================================================
 " Run: Sets off the compilation process. {{{
-func! tex#compiler#run(...)
+func! vitex#compiler#run(...)
   if &makeprg =~ "make"
     let cwd = getcwd()
     call chdir(fnameescape(fnamemodify(fpath, ":p:h")))
@@ -110,7 +110,7 @@ func! tex#compiler#run(...)
   endif
 
   if fnamemodify(mainfpath, ":e") != 'tex'
-    echo "calling tex#compiler#Run from a non-tex file"
+    echo "calling vitex#compiler#Run from a non-tex file"
     return 1
   endif
 
@@ -128,8 +128,8 @@ func! tex#compiler#run(...)
   "   let fpath = mainfpath
   " endif
 
-  let jobnm = tex#compiler#GetJobNm()
-  let outpdir = tex#compiler#GetOutpDir(mainfpath)
+  let jobnm = vitex#compiler#GetJobNm()
+  let outpdir = vitex#compiler#GetOutpDir(mainfpath)
 
   " " run only if tex file is newer than its aux file
   " if getftime(mainfpath) <= getftime(outpdir.'/'.jobnm.'.aux')
@@ -169,8 +169,8 @@ endfunc
 " View: opens viewer {{{
 " Description: opens the DVI viewer for the file being currently edited.
 " Again, if the current file is a \input in a master file, see text above
-" tex#compiler#Run() to see how to set this information.
-func! tex#compiler#view(...)
+" vitex#compiler#Run() to see how to set this information.
+func! vitex#compiler#view(...)
   if a:0 > 0
     let targ = a:1
   else
@@ -240,7 +240,7 @@ func! tex#compiler#view(...)
   endif
 
 
-  let fpath = tex#compiler#GetOutpDir(expand('%:p'))
+  let fpath = vitex#compiler#GetOutpDir(expand('%:p'))
   if exists("b:tex_jobname")
     let fpath .= b:tex_jobname
   else
@@ -248,8 +248,8 @@ func! tex#compiler#view(...)
   endif
 
   let cmd = substitute(cmd, '\V$*', fpath, 'g')
-  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
-    call tex#lib#debug("View: cmd = ".cmd, "comp")
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, vitex#lib#debugflg_compiler)
+    call vitex#lib#debug("View: cmd = ".cmd, "comp")
   endif
 
   exec 'silent! !'.cmd
@@ -262,7 +262,7 @@ endfunc
 " }}}
 " SeekFoward: searches for current location in dvi file. {{{
 " Description: if the DVI viewer is compatible, then take the viewer to that
-"              position in the dvi file. see docs for tex#compiler#Run() to set a
+"              position in the dvi file. see docs for vitex#compiler#Run() to set a
 "              master file if this is an \input'ed file.
 " Tip: With YAP on Windows, it is possible to do forward and inverse searches
 "      on DVI files. to do forward search, you'll have to compile the file
@@ -271,7 +271,7 @@ endfunc
 "           gvim --servername LATEX --remote-silent +%l "%f"
 "      For inverse search, if you are reading this, then just pressing \ls
 "      will work.
-func tex#compiler#SeekFoward(...)
+func vitex#compiler#SeekFoward(...)
   if a:0 > 0
     let targ = a:1
   else
@@ -287,15 +287,15 @@ func tex#compiler#SeekFoward(...)
 
   let origdir = fnameescape(getcwd())
 
-  let mainfnameRoot = shellescape(fnamemodify(tex#lib#GetMainFileName(), ':t:r'), 1)
-  let mainfnameFull = tex#lib#GetMainFileName(':p:r')
+  let mainfnameRoot = shellescape(fnamemodify(vitex#lib#GetMainFileName(), ':t:r'), 1)
+  let mainfnameFull = vitex#lib#GetMainFileName(':p:r')
   let target_file = shellescape(mainfnameFull . "." . targ, 1)
   let sourcefile = shellescape(expand('%'), 1)
   let sourcefileFull = shellescape(expand('%:p'), 1)
   let linenr = line('.')
   " cd to the location of the file to avoid problems with directory name
   " containing spaces.
-  call chdir(fnameescape(tex#lib#GetMainFileName(':p:h')))
+  call chdir(fnameescape(vitex#lib#GetMainFileName(':p:h')))
 
   " inverse search tips taken from Dimitri Antoniou's tip and Benji Fisher's
   " tips on vim.sf.net (vim.sf.net tip #225)
@@ -402,8 +402,8 @@ func tex#compiler#SeekFoward(...)
 
   endif
 
-  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
-    call tex#lib#debug("tex#compiler#SeekFoward: execString = "
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, vitex#lib#debugflg_compiler)
+    call vitex#lib#debug("vitex#compiler#SeekFoward: execString = "
 	  \.execString, "comp")
   endif
   exe execString
@@ -416,17 +416,17 @@ endfunc
 " }}}
 " PartCompile: compiles selected fragment {{{
 " Description: creates a temporary file from the selected fragment of text
-"       prepending the preamble and \end{document} and then asks tex#compiler#Run() to
+"       prepending the preamble and \end{document} and then asks vitex#compiler#Run() to
 "       compile it.
-func! tex#compiler#PartCompile()
-  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
-    call tex#lib#debug('+PartCompile', 'comp')
+func! vitex#compiler#PartCompile()
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, vitex#lib#debugflg_compiler)
+    call vitex#lib#debug('+PartCompile', 'comp')
   endif
 
   " Get a temporary file in the same directory as the file from which
   " fragment is being extracted. This is to enable the use of relative path
   " names in the fragment.
-  let tmpfile = tex#lib#GetTempName(expand('%:p:h'))
+  let tmpfile = vitex#lib#GetTempName(expand('%:p:h'))
 
   " Remember all the temp files and for each temp file created, remember
   " where the temp file came from.
@@ -449,7 +449,7 @@ func! tex#compiler#PartCompile()
 
   " If mainfile exists open it in tiny window and extract preamble there,
   " otherwise do it from current file
-  let mainfile = tex#lib#GetMainFileName(":p")
+  let mainfile = vitex#lib#GetMainFileName(":p")
   exe 'bot 1 split '.escape(mainfile, ' ')
   exe '1,/\s*\\begin{document}/w '.tmpfile
   wincmd q
@@ -470,11 +470,11 @@ func! tex#compiler#PartCompile()
   " set this as a fragment file.
   let b:fragmentFile = 1
 
-  silent! call tex#compiler#Run()
+  silent! call vitex#compiler#Run()
 endfunc " }}}
 " == External helper functions ============================================
 " GetJobNm: Return the pdftex -jobname option value if it is set. {{{
-func tex#compiler#GetJobNm()
+func vitex#compiler#GetJobNm()
   if exists('b:tex_jobname')
     return b:tex_jobname
   elseif exists('b:tex_main_fxpr')
@@ -486,7 +486,7 @@ endfunc
 " }}}
 " GetOutpDir: Return the current output directory for tex file being {{{ 
 " built.
-func tex#compiler#GetOutpDir(...)
+func vitex#compiler#GetOutpDir(...)
   if a:0 < 1
     let fpathHead = expand('%:p:h')
     let mod = ':p'
@@ -539,9 +539,9 @@ func s:ExeCompiler(file, ...)
   let b:tex_ignwarnpats = orig_ignpats
 
   " If there are any errors, then break from the rest of the steps
-  let errLst = tex#lib#GetErrorList()
-  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
-    call tex#lib#debug("ExeCompiler: errLst = [".errLst."]", "comp")
+  let errLst = vitex#lib#GetErrorList()
+  if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, vitex#lib#debugflg_compiler)
+    call vitex#lib#debug("ExeCompiler: errLst = [".errLst."]", "comp")
   endif
   if errLst =~ 'error'
     redraw!
@@ -587,7 +587,7 @@ func s:Compile(fpath, targ, outpdir, jobnm)
   let runCnt = 1
 
   let rerun = 0
-  let errlist = tex#lib#GetErrorList()
+  let errlist = vitex#lib#GetErrorList()
   if errlist =~ 'Rerun'
     let rerun = 1
   endif
@@ -698,7 +698,7 @@ func! Tex_SetupErrorWindow()
   endif
   let main_winnr = winnr()
 
-  let mainfname = tex#lib#GetMainFileName()
+  let mainfname = vitex#lib#GetMainFileName()
 
   " close the quickfix window before trying to open it again, otherwise
   " whether or not we end up in the quickfix window after the :cwindow
@@ -708,7 +708,7 @@ func! Tex_SetupErrorWindow()
   " create log file name from mainfname
   let mfnlog = fnamemodify(mainfname, ":t:r").'.log'
   if debuglvl >= 1
-    call tex#lib#debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
+    call vitex#lib#debug('Tex_SetupErrorWindow: mfnlog = '.mfnlog, 'comp')
   endif
   " if we moved to a different window, then it means we had some errors.
   if main_winnr != winnr()
@@ -746,10 +746,10 @@ func! Tex_PositionPreviewWindow(filename)
 
   if getline('.') !~ '|\d\+ \(error\|warning\)|'
     if !search('|\d\+ \(error\|warning\)|')
-      if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, tex#lib#debugflg_compiler)
+      if (b:tex_debuglvl >= 1) && and(b:tex_debugflg, vitex#lib#debugflg_compiler)
 	let debugmsg = "not finding error pattern anywhere in quickfix ".
 	      \."window"." :".bufname(bufnr('%'))
-	call tex#lib#debug(debugmsg, 'comp')
+	call vitex#lib#debug(debugmsg, 'comp')
       endif
       pclose!
       return

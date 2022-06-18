@@ -10,15 +10,15 @@
 " == External functions ===================================================
 " SetupFolding: sets maps for every buffer {{{
 " Description: 
-func! tex#fold#SetupFolding()
+func! vitex#fold#SetupFolding()
   setlocal foldtext=SetFoldTxt()
 
-  call tex#fold#MakeFolds(0, 0)
+  call vitex#fold#MakeFolds(0, 0)
 
   " Setup a local autocommand, if FileChangedShellPost is available
   if exists('##FileChangedShellPost')
     augroup LatexSuite
-      autocmd FileChangedShellPost <buffer> call tex#fold#MakeFolds(1, 0)
+      autocmd FileChangedShellPost <buffer> call vitex#fold#MakeFolds(1, 0)
     augroup END
   endif
 endfunc
@@ -27,7 +27,7 @@ endfunc
 "
 " used in conjunction with MakeSyntaxFolds().
 " see ../plugin/syntaxFolds.vim for documentation
-func! tex#fold#MakeFolds(force, manual)
+func! vitex#fold#MakeFolds(force, manual)
   " Setup folded items lists b:tex_foldedxxxx
   " 	1. Use default value if b:tex_foldedxxxxxx is not defined
   " 	2. prepend default value to b:tex_foldedxxxxxx if it starts with ','

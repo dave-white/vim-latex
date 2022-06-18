@@ -6,20 +6,11 @@
 "
 " Description: 
 "
-"    Requires: vim-latex/plugin/imaps.vim#IMAP_PutTextWithMovement()
-" 
-"        NOTE: This file is best viewed with Vim-6.0+ with folding turned 
-"        on.
+"        NOTE: This file is best viewed with Vim-6.0+ with folding turned on.
 "==========================================================================
 
 let s:runningimap_ldrs = ['\'] ", ';']
 
-" Unincorporated IMAPs {{{
-" call IMAP (b:tex_leader.'-', '\bigcap', "tex")
-" call IMAP (b:tex_leader.'+', '\bigcup', "tex")
-" call IMAP (b:tex_leader.':', '\ddot{<++>}<++>', "tex")
-" call IMAP (b:tex_leader.'|', '\Big|', "tex")
-" }}}
 " Imap Dictionaries: {{{
 " Form: { [ key = macro name, value = expansion text ], ... }
 " Description: {{{ Each dictionary has a name of the form 
@@ -174,9 +165,13 @@ let s:imapDict_92_9 = {
       \ '^' : '\hat{<++>}<++>',
       \ '_' : '\bar{<++>}<++>',
       \ '6' : '\partial',
+      \ 'partial' : '\partial',
       \ '8' : '\infty',
+      \ 'infty' : '\infty',
       \ '-' : '\setminus',
+      \ 'setminus' : '\setminus',
       \ '/' : '\frac{<++>}{<++>}<++>',
+      \ 'frac' : '\frac{<++>}{<++>}<++>',
       \ '@' : '\circ',
       \ '0' : '^\circ',
       \ '=' : '\equiv',
@@ -258,9 +253,13 @@ let s:imapDict_92_32 = {
       \ '^' : '\hat ',
       \ '_' : '\bar ',
       \ '6' : '\partial ',
+      \ 'partial' : '\partial ',
       \ '8' : '\infty ',
+      \ 'infty' : '\infty ',
       \ '-' : '\setminus ',
+      \ 'setminus' : '\setminus ',
       \ '/' : '\frac ',
+      \ 'frac' : '\frac ',
       \ '@' : '\circ ',
       \ '0' : '^\circ ',
       \ '=' : '\equiv ',
@@ -423,20 +422,22 @@ let s:imapDict_92_32 = {
 " Description: {{{ Look up expansion text corresponding to the user-typed 
 " token, or to a macro name matching it, in selected dictionary above.
 " }}}
-func s:ExpansionLookup(dict, token)
+func s:ExpansionLookup(trigger, leader, token)
   let l:expansion = ''
+  " Choose dictionary based on leader and trigger
+  let l:dict = s:imapDict_{char2nr(a:leader)}_{a:trigger}
 
   " User-typed token matches a macro name (dict key) exactly, so return 
   " corresponding expansion text immediately.
-  if has_key(a:dict, a:token)
-    let l:expansion = a:dict[a:token]
+  if has_key(l:dict, a:token)
+    let l:expansion = l:dict[a:token]
     return l:expansion
   endif
 
   " User-typed token does not match a macro name exactly, so build a list 
   " of those it pattern-matches.
   let l:macroMatchList = []
-  for l:macro in keys(a:dict)
+  for l:macro in keys(l:dict)
     if l:macro =~ '\C^'.a:token.'\w*$'
       let l:macroMatchList = add(l:macroMatchList, l:macro)
     endif
@@ -444,13 +445,21 @@ func s:ExpansionLookup(dict, token)
 
   " Found no macro name matching user-typed token, so return blank string.
   if empty(l:macroMatchList)
-    return l:expansion
+    if a:trigger == 13 " <cr>
+      return "\\begin{".a:token."}\n<++>\n\\end{".a:token."}"
+    elseif a:trigger == 9 " <tab>
+      return "\\".a:token."{<++>}<++>"
+    " elseif a:trigger == 32 " <space>
+    "   return "\\begin{".a:token."}\n<++>\n\\end{".a:token."}"
+    else
+      return l:expansion
+    endif
   endif
 
   if len(l:macroMatchList) == 1
     " Unique macro key matching token, so just grab that one's 
     " corresponding expansion text.
-    let l:expansion = a:dict[l:macroMatchList[0]]
+    let l:expansion = l:dict[l:macroMatchList[0]]
   else " Ask user which macro they want.
     call sort(l:macroMatchList)
     let l:selMacroList = ['Select macro:']
@@ -461,7 +470,7 @@ func s:ExpansionLookup(dict, token)
     endfor
     let l:selMacro = l:macroMatchList[
 	  \ inputlist(l:selMacroList) - 1 ]
-    let l:expansion = a:dict[l:selMacro]
+    let l:expansion = l:dict[l:selMacro]
   endif
 
   return l:expansion
@@ -498,9 +507,9 @@ func tex#imap#GetRunningImap(trigger)
   let l:stop = l:col - 2 - l:maxMacroNameLen
   while l:leaderIdx >= l:stop
       \ && index(s:runningimap_ldrs, l:line[l:leaderIdx]) < 0
-      if l:line[l:leaderIdx] =~ '\W'
-	" No non-word characters allowed in macro names/tokens for the moment, 
-	" so return immediately if we encounter one.
+      if l:line[l:leaderIdx] =~ '\s'
+	" No whitespace characters allowed in macro names/tokens, so return 
+	" immediately if we encounter one.
 	return nr2char(a:trigger)
       endif
     let l:leaderIdx -= 1
@@ -519,12 +528,9 @@ func tex#imap#GetRunningImap(trigger)
     return nr2char(a:trigger)
   endif
 
-  " Choose dictionary based on leader and trigger
-  let l:imapDict = s:imapDict_{char2nr(l:leader)}_{a:trigger}
-
   " Look up expansion text corresponding to the user-typed token, or to a 
   " macro name matching it, in selected dictionary above.
-  let l:expansion = s:ExpansionLookup(l:imapDict, l:token)
+  let l:expansion = s:ExpansionLookup(a:trigger, l:leader, l:token)
 
   " Don't paste in a blank; just return the trigger.
   if empty(l:expansion)
@@ -540,4 +546,3 @@ func tex#imap#GetRunningImap(trigger)
   return s:AddMovement(l:printText, l:ln)
 endfunc
 " }}}
-

@@ -11,9 +11,9 @@
 " Description: If project file exists (*.latexmain) open it in window 
 " created with ':split', if no create ':new' window and read there project 
 " template
-func tex#project#EditProj()
+func vitex#project#EditProj()
   let file = expand("%:p")
-  let mainfname = tex#lib#GetMainFileName()
+  let mainfname = vitex#lib#GetMainFileName()
   if glob(mainfname.'.latexmain') != ''
     exec 'split '.fnameescape(mainfname.'.latexmain')
   else
@@ -27,16 +27,16 @@ endfunc
 " }}}
 " SourceProj: loads the .latexmain file {{{
 " Description: If a *.latexmain file exists, then sources it
-func tex#project#SourceProj()
+func vitex#project#SourceProj()
   let l:origdir = fnameescape(getcwd())
   exe 'cd '.fnameescape(expand('%:p:h'))
 
-  if glob(tex#lib#GetMainFileName(':p').'.latexmain') != ''
+  if glob(vitex#lib#GetMainFileName(':p').'.latexmain') != ''
     if b:tex_debuglvl >= 1
-      call tex#lib#debug("tex#project#SourceProj: sourcing ["
+      call vitex#lib#debug("vitex#project#SourceProj: sourcing ["
 	    \.Tex_GetMainFileName().".latexmain]", "proj")
     endif
-    exe 'source '.fnameescape(tex#lib#GetMainFileName().'.latexmain')
+    exe 'source '.fnameescape(vitex#lib#GetMainFileName().'.latexmain')
   endif
 
   exe 'cd '.l:origdir

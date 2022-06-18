@@ -12,33 +12,33 @@ let s:macrodir = fnameescape(expand('<sfile>:p:h'))."/macros/"
 
 " }}}
 " SetCustomMacrosMenu: sets up the menu for Macros {{{
-func! tex#custmacros#SetCustomMacrosMenu()
-  let flist = tex#lib#FindInRtp('', 'macros')
+func! vitex#custmacros#SetCustomMacrosMenu()
+  let flist = vitex#lib#FindInRtp('', 'macros')
   exe 'amenu '.b:tex_macroMenuLoc
-	\.'&New :call tex#custmacros#NewMacro("FFFromMMMenu")<CR>'
+	\.'&New :call vitex#custmacros#NewMacro("FFFromMMMenu")<CR>'
   exe 'amenu '.b:tex_macroMenuLoc.'&Redraw :call RedrawMacro()<CR>'
 
   let i = 1
   while 1
-    let fname = tex#lib#Strntok(flist, ',', i)
+    let fname = vitex#lib#Strntok(flist, ',', i)
     if fname == ''
       break
     endif
     exe "amenu ".b:tex_macroMenuLoc."&Delete.&".i.":<tab>".fname
-	  \." :call tex#custmacros#DeleteMacro('".fname."')<CR>"
+	  \." :call vitex#custmacros#DeleteMacro('".fname."')<CR>"
     exe "amenu ".b:tex_macroMenuLoc."&Edit.&".i.":<tab>".fname
-	  \."   :call tex#custmacros#EditMacro('".fname."')<CR>"
+	  \."   :call vitex#custmacros#EditMacro('".fname."')<CR>"
     exe "imenu ".b:tex_macroMenuLoc."&".i.":<tab>".fname
-	  \." <C-r>=tex#custmacros#ReadMacro('".fname."')<CR>"
+	  \." <C-r>=vitex#custmacros#ReadMacro('".fname."')<CR>"
     exe "nmenu ".b:tex_macroMenuLoc."&".i.":<tab>".fname
-	  \." i<C-r>=tex#custmacros#ReadMacro('".fname."')<CR>"
+	  \." i<C-r>=vitex#custmacros#ReadMacro('".fname."')<CR>"
     let i += 1
   endwhile
 endfunc 
 
 " }}}
 " NewMacro: opens new file in macros directory {{{
-func! tex#custmacros#NewMacro(...)
+func! vitex#custmacros#NewMacro(...)
   " Allow for calling :TMacroNew without argument or from menu and prompt
   " for name.
   if a:0 > 0
@@ -57,7 +57,7 @@ func! tex#custmacros#NewMacro(...)
     if newmacroname == ''
       return
     endif
-  elseif tex#lib#FindInRtp(newmacroname, 'macros') != ''
+  elseif vitex#lib#FindInRtp(newmacroname, 'macros') != ''
     " If macro with this name already exists, prompt for another name.
     exe "echomsg 'Macro ".newmacroname." already exists. Try another name.'"
     let newmacroname = input("Name of new macro: ")
@@ -80,10 +80,10 @@ endfunc
 " ChooseMacro: choose a macro file {{{
 " " Description: 
 func! s:ChooseMacro(ask)
-  let filelist = tex#lib#FindInRtp('', 'macros')
-  let filename = tex#lib#ChooseFromPrompt(
+  let filelist = vitex#lib#FindInRtp('', 'macros')
+  let filename = vitex#lib#ChooseFromPrompt(
 	\ a:ask."\n" . 
-	\ tex#lib#CreatePrompt(filelist, 2, ',') .
+	\ vitex#lib#CreatePrompt(filelist, 2, ',') .
 	\ "\nEnter number or filename :",
 	\ filelist, ',')
   return filename
@@ -91,7 +91,7 @@ endfunc
 
 " }}}
 " DeleteMacro: deletes macro file {{{
-func! tex#custmacros#DeleteMacro(...)
+func! vitex#custmacros#DeleteMacro(...)
   if a:0 > 0
     let filename = a:1
   else
@@ -114,7 +114,7 @@ endfunc
 
 " }}}
 " EditMacro: edits macro file {{{
-func! tex#custmacros#EditMacro(...)
+func! vitex#custmacros#EditMacro(...)
   if a:0 > 0
     let filename = a:1
   else
@@ -144,7 +144,7 @@ func! tex#custmacros#EditMacro(...)
 	  exec 'split '.fnameescape(s:macrodir.filename.'-local')
 	elseif ch == 2
 	  new
-	  exe '0read '.tex#lib#FindInRtp(filename, 'macros', ':p')
+	  exe '0read '.vitex#lib#FindInRtp(filename, 'macros', ':p')
 	  " This is possible macro was edited before, wipe it out.
 	  if bufexists(s:macrodir.filename.'-local')
 	    exe 'bwipe '.s:macrodir.filename.'-local'
@@ -157,7 +157,7 @@ func! tex#custmacros#EditMacro(...)
 	" If file doesn't exist, open new file, read in system macro and
 	" save it in local macro dir with suffix -local
 	new
-	exe '0read '.tex#lib#FindInRtp(filename, 'macros', ':p')
+	exe '0read '.vitex#lib#FindInRtp(filename, 'macros', ':p')
 	exe 'write '.s:macrodir.filename.'-local'
       endif
     endif
@@ -169,7 +169,7 @@ endfunc
 " }}}
 " ReadMacro: reads in a macro from a macro file.  {{{
 "            allowing for placement via placeholders.
-func! tex#custmacros#ReadMacro(...)
+func! vitex#custmacros#ReadMacro(...)
 
   if a:0 > 0
     let filename = a:1
@@ -177,7 +177,7 @@ func! tex#custmacros#ReadMacro(...)
     let filename = s:ChooseMacro('Choose a macro file for insertion:')
   endif
 
-  let fname = tex#lib#FindInRtp(filename, 'macros', ':p')
+  let fname = vitex#lib#FindInRtp(filename, 'macros', ':p')
 
   let markerString = '<---- Latex Suite End Macro ---->'
   let _a = @a
@@ -191,7 +191,7 @@ func! tex#custmacros#ReadMacro(...)
   " 3. not remove anything from the previous line.
   silent! exec "normal! $v0k$\"_x"
 
-  call tex#viewer#CleanSearchHistory()
+  call vitex#viewer#CleanSearchHistory()
 
   let @a = substitute(@a, '['."\n\r\t ".']*$', '', '')
   let textWithMovement = IMAP_PutTextWithMovement(@a)
@@ -206,11 +206,11 @@ endfunc
 " This macros had to have 2 versions:
 if v:version >= 602 
   " CompleteMacroNm: for completing names in TMacro...  commands {{{
-  "	Description: get list of macro names with tex#lib#FindInRtp(), remove full 
+  "	Description: get list of macro names with vitex#lib#FindInRtp(), remove full 
   "	path and return list of names separated with newlines.
-  func! tex#custmacros#CompleteMacroNm(A,P,L)
+  func! vitex#custmacros#CompleteMacroNm(A,P,L)
     " Get name of macros from all runtimepath directories
-    let macronames = tex#lib#FindInRtp('', 'macros')
+    let macronames = vitex#lib#FindInRtp('', 'macros')
     " Separate names with \n not ,
     let macronames = substitute(macronames,',','\n','g')
     return macronames

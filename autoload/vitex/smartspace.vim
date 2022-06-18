@@ -19,7 +19,7 @@
 "       broken because of the faulty 'tw' setting.
 
 " Fill: " {{{
-func! tex#smartspace#Fill(width) 
+func! vitex#smartspace#Fill(width) 
   if a:width != 0 && col(".") > a:width
     " For future use, record the current line and the number of the current column
     let current_line = getline(".")
