@@ -41,7 +41,7 @@ endif
 " TeX File: Read params from first and last line of tex file. {{{
 let s:extreme_ln_l = readfile(fpath, '', 1) + readfile(fpath, '', -1)
 for s:extreme_ln in s:extreme_ln_l
-  if s:extreme_ln =~ '^%\+texvim:'
+  if s:extreme_ln =~ '^%\+vitex:'
     let s:pat = '\W\s*\(\w\+\)\s*=\s*\(\S\+\)\s*\W\?'
     let s:pos = match(s:extreme_ln, s:pat)
     while s:pos > -1
