@@ -250,6 +250,9 @@ endif
 " Mappings
 " ========================================================================
 " {{{
+nnoremap <buffer> <Leader>m :up \| !make<cr>
+nnoremap <buffer> <Leader>b :up \| !make<cr>
+
 nnoremap <buffer> <Leader>c :up \| call vitex#compiler#run()<cr>
 vnoremap <buffer> <Leader>c :up \| call vitex#compiler#PartCompile()<cr>
 nnoremap <buffer> <Leader>v :call vitex#compiler#view()<cr>
@@ -614,7 +617,7 @@ let &cpo = s:save_cpo
 if b:tex_usemake
   setlocal makeprg=make
 elseif b:tex_targ == "pdf"
-  compiler tex2pdf
+  compiler latexmk2pdf
 else
   compiler tex
 endif
